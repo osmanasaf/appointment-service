@@ -43,8 +43,8 @@
 - **Pinia** (state)
 - **vue-router**
 - **axios**
-- **Hedef ek bağımlılıklar (henüz kurulmamış):** Tailwind CSS 4, PrimeVue 4, Lucide Vue, vee-validate + zod, vue-sonner, ApexCharts Vue, FullCalendar Vue, vue-i18n
-- Klasör: `frontend/src/{api,views,stores,router,components}`
+- **Ek bağımlılıklar (kurulu):** Tailwind CSS 4, PrimeVue 4, Lucide Vue, vee-validate + zod, vue-sonner, ApexCharts, FullCalendar Vue, vue-i18n
+- **Frontend ayrı Git repo:** `appointment-frontend/` (workspace’te `appointment` klasörü ile yan yana). Kaynak kökü: `src/{api,views,stores,router,components}`
 
 ### Mobil (planlanan)
 - **Flutter** (önerilen) — alternatif React Native + Expo
@@ -154,7 +154,7 @@ Bu bölüm, projeye yeni bir LLM girdiğinde uyması gereken kuralları içerir:
 6. **Migration yaz.** Entity değişikliklerinde Flyway script ekle (`V<timestamp>__description.sql`).
 7. **Test ekle.** Yeni servis/endpoint için en az happy path + error case.
 8. **OpenAPI güncelle.** Swagger annotation'ları doğru olsun.
-9. **Frontend tarafı:** TypeScript tip tanımı `frontend/src/api/*` altında. Yeni endpoint için tip ekle, store/composable yaz, component bağla.
+9. **Frontend tarafı:** TypeScript tip tanımı `appointment-frontend` repo’sunda `src/api/*` altında. Yeni endpoint için tip ekle, store/composable yaz, component bağla.
 10. **i18n key kullan.** Hard-coded Türkçe metin koyma; `t('appointment.create.success')` gibi.
 11. **Boş durum + loading + error** her listelemede olmalı.
 12. **Mobil-first responsive.** Tailwind breakpoint: `sm md lg xl 2xl`.
@@ -176,7 +176,8 @@ Bu bölüm, projeye yeni bir LLM girdiğinde uyması gereken kuralları içerir:
 
 ### Frontend
 ```bash
-cd frontend
+cd ../appointment-frontend   # veya appointment-frontend repo kökü
+cp .env.development.example .env.development   # VITE_API_BASE_URL ile
 npm install
 npm run dev          # http://localhost:5173
 npm run build

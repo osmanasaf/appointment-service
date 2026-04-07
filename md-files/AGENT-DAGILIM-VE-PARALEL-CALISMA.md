@@ -155,14 +155,14 @@
 9. `vite.config.ts` güncelle (Tailwind plugin)
 10. `main.ts` güncelle (PrimeVue, Sonner, i18n kayıt)
 
-#### Tasarım Sistemi (`frontend/src/assets/`)
+#### Tasarım Sistemi (`appointment-frontend/src/assets/`)
 11. `tailwind.config.ts` — renk paleti (primary, success, warning, danger, neutral), font (Inter)
 12. `src/assets/theme.ts` — PrimeVue tema konfigürasyonu
 13. `src/assets/style.css` — global stiller, Inter font import
 14. `src/locales/tr.json` — Türkçe çeviriler (temel anahtarlar)
 15. `src/locales/en.json` — İngilizce
 
-#### Temel Bileşenler (`frontend/src/components/ui/`)
+#### Temel Bileşenler (`appointment-frontend/src/components/ui/`)
 16. `AppButton.vue` — variant (primary/secondary/danger/ghost), size, loading
 17. `AppCard.vue` — başlık, içerik, eylemler slotu
 18. `AppModal.vue` — başlık, içerik, footer

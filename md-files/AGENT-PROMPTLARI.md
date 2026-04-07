@@ -152,7 +152,7 @@ git checkout -b feature/frontend-modernization
 
 MEVCUT FRONTEND:
 - Vue 3 + Vite + TypeScript + Pinia + vue-router + axios
-- frontend/src/views/ içinde iskelet sayfalar var (AdminLayout, DashboardView, vb.)
+- appointment-frontend repo: `src/views/` içinde iskelet sayfalar (AdminLayout, DashboardView, vb.)
 - Hiç UI kiti yok, Tailwind yok, validasyon yok
 
 YÜKLENECEKLERİ:
@@ -166,7 +166,7 @@ npm install @fullcalendar/vue3 @fullcalendar/core @fullcalendar/daygrid @fullcal
 npm install vue-i18n
 
 DOSYA YAPISI (oluşturulacak):
-frontend/src/
+appointment-frontend/src/
 ├── assets/
 │   ├── style.css          ← Tailwind + global stiller + Inter font
 │   └── theme.ts           ← PrimeVue tema config
