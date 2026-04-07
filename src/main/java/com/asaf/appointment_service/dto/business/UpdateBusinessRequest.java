@@ -1,0 +1,40 @@
+package com.asaf.appointment_service.dto.business;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
+
+public record UpdateBusinessRequest(
+    @Size(min = 2, max = 100, message = "İşletme adı 2-100 karakter arasında olmalıdır")
+    String name,
+
+    @Email(message = "Geçerli bir e-posta adresi giriniz")
+    String email,
+
+    @Size(max = 500, message = "Adres en fazla 500 karakter olabilir")
+    String address,
+
+    @Size(max = 1000, message = "Açıklama en fazla 1000 karakter olabilir")
+    String description,
+
+    String logoUrl,
+
+    Boolean autoConfirm,
+
+    @Min(value = 1, message = "Hatırlatma en az 1 saat önce olmalıdır")
+    @Max(value = 72, message = "Hatırlatma en fazla 72 saat önce olabilir")
+    Integer reminderHoursBefore,
+
+    Boolean sameDayBookingAllowed,
+
+    @Min(value = 1, message = "İleri tarihli randevu en az 1 gün olmalıdır")
+    @Max(value = 90, message = "İleri tarihli randevu en fazla 90 gün olabilir")
+    Integer maxAdvanceBookingDays,
+
+    @Min(value = 1, message = "Müşteri başına günlük randevu en az 1 olmalıdır")
+    @Max(value = 10, message = "Müşteri başına günlük randevu en fazla 10 olabilir")
+    Integer maxAppointmentsPerCustomerPerDay,
+
+    Boolean whatsappSendPrice
+) {}

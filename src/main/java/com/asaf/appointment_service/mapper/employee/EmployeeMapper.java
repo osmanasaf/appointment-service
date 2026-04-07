@@ -1,0 +1,41 @@
+package com.asaf.appointment_service.mapper.employee;
+
+import com.asaf.appointment_service.dto.employee.CreateEmployeeRequest;
+import com.asaf.appointment_service.dto.employee.EmployeeResponse;
+import com.asaf.appointment_service.entity.employee.Employee;
+import java.util.List;
+
+public class EmployeeMapper {
+
+    private EmployeeMapper() {}
+
+    public static Employee toEntity(CreateEmployeeRequest request) {
+        return Employee.builder()
+            .businessId(request.businessId())
+            .name(request.name())
+            .phone(request.phoneCountryCode(), request.phoneNumber())
+            .email(request.email())
+            .bio(request.bio())
+            .owner(request.owner())
+            .build();
+    }
+
+    public static EmployeeResponse toResponse(Employee entity) {
+        return new EmployeeResponse(
+            entity.getId(),
+            entity.getBusinessId(),
+            entity.getName(),
+            entity.getFormattedPhoneNumber(),
+            entity.getEmail(),
+            entity.getBio(),
+            entity.getProfileImageUrl(),
+            entity.getStatus(),
+            entity.isOwner(),
+            entity.getCreatedAt()
+        );
+    }
+
+    public static List<EmployeeResponse> toResponseList(List<Employee> entities) {
+        return entities.stream().map(EmployeeMapper::toResponse).toList();
+    }
+}
