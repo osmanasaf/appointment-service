@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "businesses")
@@ -56,6 +57,10 @@ public class Business extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    private BusinessCategory category;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private BusinessStatus status = BusinessStatus.ACTIVE;
 
     protected Business() {}
@@ -75,6 +80,7 @@ public class Business extends BaseEntity {
         this.maxAdvanceBookingDays = builder.maxAdvanceBookingDays;
         this.maxAppointmentsPerCustomerPerDay = builder.maxAppointmentsPerCustomerPerDay;
         this.whatsappSendPrice = builder.whatsappSendPrice;
+        this.category = builder.category;
         this.status = builder.status;
     }
 
@@ -88,6 +94,12 @@ public class Business extends BaseEntity {
         this.address = address;
         this.description = description;
         this.logoUrl = logoUrl;
+    }
+
+    public void updateCategory(BusinessCategory category) {
+        if (category != null) {
+            this.category = category;
+        }
     }
 
     public void updateSettings(boolean autoConfirm, int reminderHoursBefore,
@@ -178,6 +190,10 @@ public class Business extends BaseEntity {
         return whatsappSendPrice;
     }
 
+    public BusinessCategory getCategory() {
+        return category;
+    }
+
     public BusinessStatus getStatus() {
         return status;
     }
@@ -197,6 +213,7 @@ public class Business extends BaseEntity {
         private int maxAdvanceBookingDays = 30;
         private Integer maxAppointmentsPerCustomerPerDay;
         private boolean whatsappSendPrice = false;
+        private BusinessCategory category;
         private BusinessStatus status = BusinessStatus.ACTIVE;
 
         public Builder name(String name) {
@@ -265,6 +282,11 @@ public class Business extends BaseEntity {
             return this;
         }
 
+        public Builder category(BusinessCategory category) {
+            this.category = category;
+            return this;
+        }
+
         public Builder status(BusinessStatus status) {
             this.status = status;
             return this;
@@ -276,6 +298,9 @@ public class Business extends BaseEntity {
             }
             if (slug == null || slug.isBlank()) {
                 throw new IllegalArgumentException("İşletme slug zorunludur");
+            }
+            if (category == null) {
+                throw new IllegalArgumentException("İşletme kategorisi zorunludur");
             }
             return new Business(this);
         }

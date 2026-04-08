@@ -17,6 +17,7 @@ public class BusinessMapper {
             .email(request.email())
             .address(request.address())
             .description(request.description())
+            .category(request.category())
             .build();
     }
 
@@ -30,6 +31,8 @@ public class BusinessMapper {
             entity.getAddress(),
             entity.getDescription(),
             entity.getLogoUrl(),
+            entity.getCategory(),
+            entity.getCategory() != null ? entity.getCategory().getLabel() : null,
             entity.isAutoConfirm(),
             entity.getReminderHoursBefore(),
             entity.isSameDayBookingAllowed(),

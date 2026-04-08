@@ -1,7 +1,9 @@
 package com.asaf.appointment_service.dto.business;
 
+import com.asaf.appointment_service.entity.business.BusinessCategory;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record CreateBusinessRequest(
@@ -21,7 +23,10 @@ public record CreateBusinessRequest(
     String address,
 
     @Size(max = 1000, message = "Açıklama en fazla 1000 karakter olabilir")
-    String description
+    String description,
+
+    @NotNull(message = "İşletme kategorisi zorunludur")
+    BusinessCategory category
 ) {
     public CreateBusinessRequest {
         if (phoneCountryCode == null || phoneCountryCode.isBlank()) {

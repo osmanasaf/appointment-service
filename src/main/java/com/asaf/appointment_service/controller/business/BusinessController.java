@@ -1,13 +1,17 @@
 package com.asaf.appointment_service.controller.business;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
+import com.asaf.appointment_service.dto.business.BusinessCategoryResponse;
 import com.asaf.appointment_service.dto.business.BusinessResponse;
 import com.asaf.appointment_service.dto.business.CreateBusinessRequest;
 import com.asaf.appointment_service.dto.business.UpdateBusinessRequest;
 import com.asaf.appointment_service.entity.business.Business;
+import com.asaf.appointment_service.entity.business.BusinessCategory;
 import com.asaf.appointment_service.mapper.business.BusinessMapper;
 import com.asaf.appointment_service.service.business.BusinessService;
 import jakarta.validation.Valid;
+import java.util.Arrays;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -62,5 +66,13 @@ public class BusinessController {
     public ResponseEntity<ApiResponse<BusinessResponse>> getBusinessBySlug(@PathVariable String slug) {
         Business business = businessService.findBySlug(slug);
         return ResponseEntity.ok(ApiResponse.success(BusinessMapper.toResponse(business)));
+    }
+
+    @GetMapping("/categories")
+    public ResponseEntity<ApiResponse<List<BusinessCategoryResponse>>> getCategories() {
+        List<BusinessCategoryResponse> categories = Arrays.stream(BusinessCategory.values())
+            .map(BusinessCategoryResponse::from)
+            .toList();
+        return ResponseEntity.ok(ApiResponse.success(categories));
     }
 }
