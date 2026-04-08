@@ -2,6 +2,7 @@ package com.asaf.appointment_service.service.appointment;
 
 import com.asaf.appointment_service.dto.appointment.AvailableSlotResponse;
 import com.asaf.appointment_service.entity.business.Business;
+import com.asaf.appointment_service.entity.business.BusinessCategory;
 import com.asaf.appointment_service.entity.business.BusinessWorkingHours;
 import com.asaf.appointment_service.entity.employee.Employee;
 import com.asaf.appointment_service.entity.employee.EmployeeServiceCapability;
@@ -200,6 +201,7 @@ class AvailabilityServiceCapabilityTest {
     private Business buildBusiness() {
         return Business.builder()
             .name("Test Salon").slug("test-salon")
+            .category(BusinessCategory.OTHER)
             .sameDayBookingAllowed(true)
             .maxAdvanceBookingDays(30)
             .build();

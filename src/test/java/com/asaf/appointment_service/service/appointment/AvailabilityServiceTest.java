@@ -3,6 +3,7 @@ package com.asaf.appointment_service.service.appointment;
 import com.asaf.appointment_service.dto.appointment.AvailableSlotResponse;
 import com.asaf.appointment_service.entity.appointment.Appointment;
 import com.asaf.appointment_service.entity.business.Business;
+import com.asaf.appointment_service.entity.business.BusinessCategory;
 import com.asaf.appointment_service.entity.business.BusinessWorkingHours;
 import com.asaf.appointment_service.entity.employee.Employee;
 import com.asaf.appointment_service.entity.service.ServiceDefinition;
@@ -60,6 +61,7 @@ class AvailabilityServiceTest {
         Long serviceId = 1L;
 
         Business business = Business.builder().name("Test").slug("test")
+            .category(BusinessCategory.OTHER)
             .sameDayBookingAllowed(true).maxAdvanceBookingDays(30).build();
         Employee employee = Employee.builder().businessId(businessId).name("Test").build();
         ServiceDefinition service = ServiceDefinition.builder()
@@ -95,6 +97,7 @@ class AvailabilityServiceTest {
         LocalDateTime conflictEnd = LocalDateTime.of(date, LocalTime.of(11, 0));
 
         Business business = Business.builder().name("Test").slug("test")
+            .category(BusinessCategory.OTHER)
             .sameDayBookingAllowed(true).maxAdvanceBookingDays(30).build();
         Employee employee = Employee.builder().businessId(businessId).name("Test").build();
         ServiceDefinition service = ServiceDefinition.builder()

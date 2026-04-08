@@ -52,13 +52,19 @@ public class AuthService {
             throw new IllegalArgumentException("Bu email zaten kayıtlı");
         }
 
+        String phone = request.phoneNumber() != null ? request.phoneNumber().trim() : "";
+        if (phone.isBlank()) {
+            phone = "0000000000";
+        }
+
         Business business = businessService.createBusiness(new CreateBusinessRequest(
             request.businessName(),
+            phone,
             "+90",
-            request.phoneNumber(),
             request.email(),
             null,
-            null
+            null,
+            request.businessCategory()
         ));
         subscriptionService.initializeTrialSubscription(business.getId());
 

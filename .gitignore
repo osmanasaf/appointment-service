@@ -43,3 +43,22 @@ compile_log.txt
 compile_output.txt
 errors.log
 errors2.log
+
+### Env, secrets & local Spring overrides ###
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+.secrets/
+**/application-local.properties
+**/application-secret.properties
+**/application-*.local.properties
+
+### Markdown — dahili dokümantasyon repoya girmez (README hariç) ###
+*.md
+!README.md
+
+### Dahili doküman klasörü ###
+md-files/

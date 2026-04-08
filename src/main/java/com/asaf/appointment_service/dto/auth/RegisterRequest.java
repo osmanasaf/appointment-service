@@ -1,7 +1,9 @@
 package com.asaf.appointment_service.dto.auth;
 
+import com.asaf.appointment_service.entity.business.BusinessCategory;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record RegisterRequest(
@@ -19,5 +21,8 @@ public record RegisterRequest(
     String phoneNumber,
 
     @NotBlank(message = "İşletme adı zorunludur")
-    String businessName
+    String businessName,
+
+    @NotNull(message = "İşletme kategorisi zorunludur")
+    BusinessCategory businessCategory
 ) {}
