@@ -32,6 +32,13 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.asaf.appointment_service.exception.employee.EmployeeOnLeaveException;
+import com.asaf.appointment_service.repository.employee.EmployeeLeaveRepository;
+import com.asaf.appointment_service.service.employee.EmployeeCapabilityService;
+import com.asaf.appointment_service.service.employee.EmployeeScheduleService;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+
 @Service
 public class AppointmentService extends BaseService<Appointment, Long, AppointmentRepository> {
 
@@ -40,29 +47,38 @@ public class AppointmentService extends BaseService<Appointment, Long, Appointme
     private final BusinessService businessService;
     private final CustomerService customerService;
     private final EmployeeService employeeService;
+    private final EmployeeCapabilityService employeeCapabilityService;
     private final ServiceDefinitionService serviceDefinitionService;
     private final PackageService packageService;
     private final PackageSessionService packageSessionService;
     private final CustomerPackageRepository customerPackageRepository;
+    private final EmployeeLeaveRepository employeeLeaveRepository;
+    private final EmployeeScheduleService employeeScheduleService;
     private final ApplicationEventPublisher eventPublisher;
 
     public AppointmentService(AppointmentRepository repository,
                               BusinessService businessService,
                               CustomerService customerService,
                               EmployeeService employeeService,
+                              EmployeeCapabilityService employeeCapabilityService,
                               ServiceDefinitionService serviceDefinitionService,
                               PackageService packageService,
                               PackageSessionService packageSessionService,
                               CustomerPackageRepository customerPackageRepository,
+                              EmployeeLeaveRepository employeeLeaveRepository,
+                              EmployeeScheduleService employeeScheduleService,
                               ApplicationEventPublisher eventPublisher) {
         super(repository, "Randevu");
         this.businessService = businessService;
         this.customerService = customerService;
         this.employeeService = employeeService;
+        this.employeeCapabilityService = employeeCapabilityService;
         this.serviceDefinitionService = serviceDefinitionService;
         this.packageService = packageService;
         this.packageSessionService = packageSessionService;
         this.customerPackageRepository = customerPackageRepository;
+        this.employeeLeaveRepository = employeeLeaveRepository;
+        this.employeeScheduleService = employeeScheduleService;
         this.eventPublisher = eventPublisher;
     }
 
@@ -72,6 +88,8 @@ public class AppointmentService extends BaseService<Appointment, Long, Appointme
         customerService.findByIdOrThrow(request.customerId());
         employeeService.findByIdOrThrow(request.employeeId());
         ServiceDefinition service = serviceDefinitionService.findByIdOrThrow(request.serviceId());
+
+        employeeCapabilityService.validateCapability(request.employeeId(), request.serviceId());
 
         int totalDuration = service.totalDurationMinutes();
         LocalDateTime endTime = request.scheduledAt().plusMinutes(totalDuration);
@@ -152,6 +170,15 @@ public class AppointmentService extends BaseService<Appointment, Long, Appointme
             saved.getId(), saved.getBusinessId(), saved.getCustomerId(),
             saved.getScheduledAt(), saved.getCancellationReason()));
         log.info("Randevu iptal edildi: appointmentId={}", appointmentId);
+        return saved;
+    }
+
+    @Transactional
+    public Appointment reassignAppointmentEmployee(Long appointmentId, Long newEmployeeId) {
+        Appointment appointment = findByIdOrThrow(appointmentId);
+        appointment.reassignEmployee(newEmployeeId);
+        Appointment saved = repository.save(appointment);
+        log.info("Randevu yeniden atandı: appointmentId={}, newEmployeeId={}", appointmentId, newEmployeeId);
         return saved;
     }
 
@@ -269,6 +296,31 @@ public class AppointmentService extends BaseService<Appointment, Long, Appointme
         List<Appointment> conflicts = repository.findConflictingAppointments(employeeId, start, end);
         if (!conflicts.isEmpty()) {
             throw new SlotNotAvailableException("Seçilen saatte başka bir randevu mevcut");
+        }
+        validateEmployeeNotOnLeave(employeeId, start);
+        validateEmployeeSchedule(employeeId, start);
+    }
+
+    private void validateEmployeeSchedule(Long employeeId, LocalDateTime scheduledAt) {
+        DayOfWeek day = scheduledAt.getDayOfWeek();
+        employeeScheduleService.getScheduleForDay(employeeId, day).ifPresent(schedule -> {
+            if (schedule.isClosed()) {
+                throw new SlotNotAvailableException("Çalışan bu gün çalışmamaktadır");
+            }
+            LocalTime time = scheduledAt.toLocalTime();
+            if (time.isBefore(schedule.getStartTime()) || !time.isBefore(schedule.getEndTime())) {
+                throw new SlotNotAvailableException("Seçilen saat çalışanın mesai saatleri dışında");
+            }
+        });
+    }
+
+    private void validateEmployeeNotOnLeave(Long employeeId, LocalDateTime scheduledAt) {
+        boolean onLeave = employeeLeaveRepository
+            .findActiveByEmployeeIdAndDate(employeeId, scheduledAt.toLocalDate())
+            .stream()
+            .anyMatch(leave -> leave.overlapsWithDateTime(scheduledAt));
+        if (onLeave) {
+            throw new EmployeeOnLeaveException();
         }
     }
 }

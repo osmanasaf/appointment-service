@@ -39,6 +39,15 @@ public class Employee extends BaseEntity {
     @Column(name = "is_owner")
     private boolean owner = false;
 
+    @Column(length = 100)
+    private String title;
+
+    @Column(name = "experience_years")
+    private Integer experienceYears;
+
+    @Column(name = "accepts_online_booking", nullable = false)
+    private boolean acceptsOnlineBooking = true;
+
     protected Employee() {}
 
     private Employee(Builder builder) {
@@ -51,6 +60,9 @@ public class Employee extends BaseEntity {
         this.profileImageUrl = builder.profileImageUrl;
         this.status = builder.status;
         this.owner = builder.owner;
+        this.title = builder.title;
+        this.experienceYears = builder.experienceYears;
+        this.acceptsOnlineBooking = builder.acceptsOnlineBooking;
     }
 
     public static Builder builder() {
@@ -62,6 +74,18 @@ public class Employee extends BaseEntity {
         this.email = email;
         this.bio = bio;
         this.profileImageUrl = profileImageUrl;
+    }
+
+    public void updateFullProfile(String name, String title, String email, String bio,
+                                   String profileImageUrl, Integer experienceYears,
+                                   boolean acceptsOnlineBooking) {
+        this.name = name;
+        this.title = title;
+        this.email = email;
+        this.bio = bio;
+        this.profileImageUrl = profileImageUrl;
+        this.experienceYears = experienceYears;
+        this.acceptsOnlineBooking = acceptsOnlineBooking;
     }
 
     public void activate() {
@@ -118,6 +142,18 @@ public class Employee extends BaseEntity {
         return owner;
     }
 
+    public String getTitle() {
+        return title;
+    }
+
+    public Integer getExperienceYears() {
+        return experienceYears;
+    }
+
+    public boolean isAcceptsOnlineBooking() {
+        return acceptsOnlineBooking;
+    }
+
     public static class Builder {
         private Long businessId;
         private String name;
@@ -128,6 +164,9 @@ public class Employee extends BaseEntity {
         private String profileImageUrl;
         private EmployeeStatus status = EmployeeStatus.ACTIVE;
         private boolean owner = false;
+        private String title;
+        private Integer experienceYears;
+        private boolean acceptsOnlineBooking = true;
 
         public Builder businessId(Long businessId) {
             this.businessId = businessId;
@@ -167,6 +206,21 @@ public class Employee extends BaseEntity {
 
         public Builder owner(boolean owner) {
             this.owner = owner;
+            return this;
+        }
+
+        public Builder title(String title) {
+            this.title = title;
+            return this;
+        }
+
+        public Builder experienceYears(Integer years) {
+            this.experienceYears = years;
+            return this;
+        }
+
+        public Builder acceptsOnlineBooking(boolean accepts) {
+            this.acceptsOnlineBooking = accepts;
             return this;
         }
 

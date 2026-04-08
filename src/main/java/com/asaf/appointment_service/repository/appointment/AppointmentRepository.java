@@ -28,11 +28,19 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     @Query("SELECT a FROM Appointment a WHERE a.employeeId = :employeeId " +
            "AND a.status IN ('PENDING', 'CONFIRMED', 'RISKY') " +
-           "AND (a.scheduledAt < :end AND a.endAt > :start)")
+           "AND a.scheduledAt < :end AND a.endAt > :start")
     List<Appointment> findConflictingAppointments(
         @Param("employeeId") Long employeeId,
         @Param("start") LocalDateTime start,
         @Param("end") LocalDateTime end
+    );
+
+    @Query("SELECT a FROM Appointment a WHERE a.employeeId = :employeeId " +
+           "AND a.status IN ('PENDING', 'CONFIRMED', 'RISKY') " +
+           "AND a.scheduledAt > :now ORDER BY a.scheduledAt")
+    List<Appointment> findFutureActiveByEmployeeId(
+        @Param("employeeId") Long employeeId,
+        @Param("now") LocalDateTime now
     );
 
     @Query("SELECT a FROM Appointment a WHERE a.businessId = :businessId " +

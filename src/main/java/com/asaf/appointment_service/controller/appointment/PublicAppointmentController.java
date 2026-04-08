@@ -9,9 +9,11 @@ import com.asaf.appointment_service.dto.business.BusinessResponse;
 import com.asaf.appointment_service.dto.employee.EmployeeResponse;
 import com.asaf.appointment_service.dto.service.ServiceResponse;
 import com.asaf.appointment_service.entity.appointment.Appointment;
+import com.asaf.appointment_service.entity.appointment.AppointmentSource;
 import com.asaf.appointment_service.entity.business.Business;
 import com.asaf.appointment_service.entity.customer.Customer;
 import com.asaf.appointment_service.entity.employee.Employee;
+import com.asaf.appointment_service.entity.employee.EmployeeServiceCapability;
 import com.asaf.appointment_service.entity.service.ServiceDefinition;
 import com.asaf.appointment_service.mapper.appointment.AppointmentMapper;
 import com.asaf.appointment_service.mapper.business.BusinessMapper;
@@ -21,9 +23,9 @@ import com.asaf.appointment_service.service.appointment.AppointmentService;
 import com.asaf.appointment_service.service.appointment.AvailabilityService;
 import com.asaf.appointment_service.service.business.BusinessService;
 import com.asaf.appointment_service.service.customer.CustomerService;
+import com.asaf.appointment_service.service.employee.EmployeeCapabilityService;
 import com.asaf.appointment_service.service.employee.EmployeeService;
 import com.asaf.appointment_service.service.service.ServiceDefinitionService;
-import com.asaf.appointment_service.entity.appointment.AppointmentSource;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
@@ -45,6 +47,7 @@ public class PublicAppointmentController {
 
     private final BusinessService businessService;
     private final EmployeeService employeeService;
+    private final EmployeeCapabilityService capabilityService;
     private final ServiceDefinitionService serviceDefinitionService;
     private final CustomerService customerService;
     private final AppointmentService appointmentService;
@@ -52,62 +55,92 @@ public class PublicAppointmentController {
 
     public PublicAppointmentController(BusinessService businessService,
                                         EmployeeService employeeService,
+                                        EmployeeCapabilityService capabilityService,
                                         ServiceDefinitionService serviceDefinitionService,
                                         CustomerService customerService,
                                         AppointmentService appointmentService,
                                         AvailabilityService availabilityService) {
         this.businessService = businessService;
         this.employeeService = employeeService;
+        this.capabilityService = capabilityService;
         this.serviceDefinitionService = serviceDefinitionService;
         this.customerService = customerService;
         this.appointmentService = appointmentService;
         this.availabilityService = availabilityService;
     }
-
     @GetMapping("/businesses/{slug}")
     public ResponseEntity<ApiResponse<BusinessResponse>> getBusinessBySlug(@PathVariable String slug) {
         Business business = businessService.findBySlug(slug);
         return ResponseEntity.ok(ApiResponse.success(BusinessMapper.toResponse(business)));
     }
-
     @GetMapping("/businesses/{slug}/employees")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getActiveEmployees(@PathVariable String slug) {
         Business business = businessService.findBySlug(slug);
         List<Employee> employees = employeeService.findActiveByBusinessId(business.getId());
         return ResponseEntity.ok(ApiResponse.success(EmployeeMapper.toResponseList(employees)));
     }
-
     @GetMapping("/businesses/{slug}/services")
     public ResponseEntity<ApiResponse<List<ServiceResponse>>> getActiveServices(@PathVariable String slug) {
         Business business = businessService.findBySlug(slug);
         List<ServiceDefinition> services = serviceDefinitionService.findActiveByBusinessId(business.getId());
         return ResponseEntity.ok(ApiResponse.success(ServiceMapper.toResponseList(services)));
     }
-
-    @GetMapping("/availability")
-    public ResponseEntity<ApiResponse<List<AvailableSlotResponse>>> getAvailableSlots(
-            @RequestParam Long businessId,
-            @RequestParam Long employeeId,
+    @GetMapping("/businesses/{slug}/services/{serviceId}/employees")
+    public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesForService(
+            @PathVariable String slug,
+            @PathVariable Long serviceId) {
+        Business business = businessService.findBySlug(slug);
+        List<EmployeeServiceCapability> capabilities =
+            capabilityService.getActiveByServiceAndBusiness(serviceId, business.getId());
+        List<Employee> employees = capabilities.stream()
+            .map(c -> employeeService.findByIdOrThrow(c.getEmployeeId()))
+            .filter(Employee::isActive)
+            .toList();
+        return ResponseEntity.ok(ApiResponse.success(EmployeeMapper.toResponseList(employees)));
+    }
+    @GetMapping("/businesses/{slug}/availability")
+    public ResponseEntity<ApiResponse<List<AvailableSlotResponse>>> getAvailableSlotsBySlug(
+            @PathVariable String slug,
             @RequestParam Long serviceId,
+            @RequestParam(required = false) Long employeeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        
-        List<AvailableSlotResponse> slots = availabilityService.getAvailableSlots(
-            businessId, employeeId, serviceId, date);
+        Business business = businessService.findBySlug(slug);
+        List<AvailableSlotResponse> slots =
+            availabilityService.getAvailableSlots(business.getId(), employeeId, serviceId, date);
         return ResponseEntity.ok(ApiResponse.success(slots));
     }
 
+    @GetMapping("/businesses/{slug}/availability/dates")
+    public ResponseEntity<ApiResponse<List<LocalDate>>> getAvailableDatesBySlug(
+            @PathVariable String slug,
+            @RequestParam Long serviceId,
+            @RequestParam(required = false) Long employeeId,
+            @RequestParam(defaultValue = "30") int daysAhead) {
+        Business business = businessService.findBySlug(slug);
+        List<LocalDate> dates =
+            availabilityService.getAvailableDates(business.getId(), employeeId, serviceId, daysAhead);
+        return ResponseEntity.ok(ApiResponse.success(dates));
+    }
+    @GetMapping("/availability")
+    public ResponseEntity<ApiResponse<List<AvailableSlotResponse>>> getAvailableSlots(
+            @RequestParam Long businessId,
+            @RequestParam(required = false) Long employeeId,
+            @RequestParam Long serviceId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        List<AvailableSlotResponse> slots =
+            availabilityService.getAvailableSlots(businessId, employeeId, serviceId, date);
+        return ResponseEntity.ok(ApiResponse.success(slots));
+    }
     @GetMapping("/availability/dates")
     public ResponseEntity<ApiResponse<List<LocalDate>>> getAvailableDates(
             @RequestParam Long businessId,
-            @RequestParam Long employeeId,
+            @RequestParam(required = false) Long employeeId,
             @RequestParam Long serviceId,
             @RequestParam(defaultValue = "30") int daysAhead) {
-        
-        List<LocalDate> dates = availabilityService.getAvailableDates(
-            businessId, employeeId, serviceId, daysAhead);
+        List<LocalDate> dates =
+            availabilityService.getAvailableDates(businessId, employeeId, serviceId, daysAhead);
         return ResponseEntity.ok(ApiResponse.success(dates));
     }
-
     @PostMapping("/businesses/{slug}/appointments")
     public ResponseEntity<ApiResponse<AppointmentResponse>> createPublicAppointment(
             @PathVariable String slug,
@@ -151,10 +184,9 @@ public class PublicAppointmentController {
         );
 
         Appointment appointment = appointmentService.createAppointment(appointmentRequest);
-        
         return ResponseEntity
             .status(HttpStatus.CREATED)
-            .body(ApiResponse.success(AppointmentMapper.toResponse(appointment), 
+            .body(ApiResponse.success(AppointmentMapper.toResponse(appointment),
                 "Randevu talebiniz alındı"));
     }
 }

@@ -1,6 +1,7 @@
 package com.asaf.appointment_service.mapper.employee;
 
 import com.asaf.appointment_service.dto.employee.CreateEmployeeRequest;
+import com.asaf.appointment_service.dto.employee.EmployeeDetailResponse;
 import com.asaf.appointment_service.dto.employee.EmployeeResponse;
 import com.asaf.appointment_service.entity.employee.Employee;
 import java.util.List;
@@ -25,12 +26,33 @@ public class EmployeeMapper {
             entity.getId(),
             entity.getBusinessId(),
             entity.getName(),
+            entity.getTitle(),
             entity.getFormattedPhoneNumber(),
             entity.getEmail(),
             entity.getBio(),
             entity.getProfileImageUrl(),
             entity.getStatus(),
             entity.isOwner(),
+            entity.getExperienceYears(),
+            entity.isAcceptsOnlineBooking(),
+            entity.getCreatedAt()
+        );
+    }
+
+    public static EmployeeDetailResponse toDetailResponse(Employee entity) {
+        return new EmployeeDetailResponse(
+            entity.getId(),
+            entity.getBusinessId(),
+            entity.getName(),
+            entity.getTitle(),
+            entity.getFormattedPhoneNumber(),
+            entity.getEmail(),
+            entity.getBio(),
+            entity.getProfileImageUrl(),
+            entity.getStatus(),
+            entity.isOwner(),
+            entity.getExperienceYears(),
+            entity.isAcceptsOnlineBooking(),
             entity.getCreatedAt()
         );
     }

@@ -7,6 +7,12 @@ import com.asaf.appointment_service.dto.service.UpdateServiceRequest;
 import com.asaf.appointment_service.entity.service.ServiceDefinition;
 import com.asaf.appointment_service.mapper.service.ServiceMapper;
 import com.asaf.appointment_service.service.service.ServiceDefinitionService;
+import com.asaf.appointment_service.dto.employee.EmployeeResponse;
+import com.asaf.appointment_service.entity.employee.Employee;
+import com.asaf.appointment_service.entity.employee.EmployeeServiceCapability;
+import com.asaf.appointment_service.mapper.employee.EmployeeMapper;
+import com.asaf.appointment_service.service.employee.EmployeeCapabilityService;
+import com.asaf.appointment_service.service.employee.EmployeeService;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -21,14 +27,27 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.asaf.appointment_service.dto.employee.EmployeeResponse;
+import com.asaf.appointment_service.entity.employee.Employee;
+import com.asaf.appointment_service.entity.employee.EmployeeServiceCapability;
+import com.asaf.appointment_service.mapper.employee.EmployeeMapper;
+import com.asaf.appointment_service.service.employee.EmployeeCapabilityService;
+import com.asaf.appointment_service.service.employee.EmployeeService;
+
 @RestController
 @RequestMapping("/api/v1/services")
 public class ServiceController {
 
     private final ServiceDefinitionService serviceDefinitionService;
+    private final EmployeeCapabilityService capabilityService;
+    private final EmployeeService employeeService;
 
-    public ServiceController(ServiceDefinitionService serviceDefinitionService) {
+    public ServiceController(ServiceDefinitionService serviceDefinitionService,
+                              EmployeeCapabilityService capabilityService,
+                              EmployeeService employeeService) {
         this.serviceDefinitionService = serviceDefinitionService;
+        this.capabilityService = capabilityService;
+        this.employeeService = employeeService;
     }
 
     @PostMapping
@@ -92,5 +111,15 @@ public class ServiceController {
     public ResponseEntity<ApiResponse<Void>> deleteService(@PathVariable Long id) {
         serviceDefinitionService.deleteById(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Hizmet silindi"));
+    }
+
+    @GetMapping("/{id}/employees")
+    public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getCapableEmployees(@PathVariable Long id) {
+        serviceDefinitionService.findByIdOrThrow(id);
+        List<EmployeeServiceCapability> capabilities = capabilityService.getByService(id);
+        List<Employee> employees = capabilities.stream()
+            .map(c -> employeeService.findByIdOrThrow(c.getEmployeeId()))
+            .toList();
+        return ResponseEntity.ok(ApiResponse.success(EmployeeMapper.toResponseList(employees)));
     }
 }

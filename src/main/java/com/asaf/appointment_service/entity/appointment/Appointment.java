@@ -9,6 +9,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(name = "appointments")
@@ -112,6 +113,11 @@ public class Appointment extends BaseEntity {
         this.status = AppointmentStatus.CANCELLED;
         this.cancelledAt = LocalDateTime.now();
         this.cancellationReason = reason;
+    }
+
+    public void reassignEmployee(Long newEmployeeId) {
+        Objects.requireNonNull(newEmployeeId, "Yeni çalışan ID zorunludur");
+        this.employeeId = newEmployeeId;
     }
 
     public void complete() {

@@ -2,6 +2,7 @@ package com.asaf.appointment_service.common.exception;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
 import com.asaf.appointment_service.common.dto.ApiResponse.ErrorDetails;
+import com.asaf.appointment_service.exception.employee.EmployeeOnLeaveException;
 import com.asaf.appointment_service.exception.plan.PlanLimitExceededException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -62,6 +63,14 @@ public class GlobalExceptionHandler {
         log.warn("Plan limit exceeded: {}", ex.getMessage());
         return ResponseEntity
             .status(HttpStatus.PAYMENT_REQUIRED)
+            .body(ApiResponse.error(new ErrorDetails(ex.getCode(), ex.getMessage(), null, LocalDateTime.now())));
+    }
+
+    @ExceptionHandler(EmployeeOnLeaveException.class)
+    public ResponseEntity<ApiResponse<Void>> handleEmployeeOnLeave(EmployeeOnLeaveException ex) {
+        log.warn("Employee on leave conflict: {}", ex.getMessage());
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
             .body(ApiResponse.error(new ErrorDetails(ex.getCode(), ex.getMessage(), null, LocalDateTime.now())));
     }
 

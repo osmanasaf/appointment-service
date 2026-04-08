@@ -26,6 +26,21 @@ public class EmployeeService extends BusinessAwareService<Employee, Long, Employ
         return repository.save(employee);
     }
 
+    @Transactional
+    public Employee updateProfile(Long id, com.asaf.appointment_service.dto.employee.UpdateEmployeeProfileRequest request) {
+        Employee employee = findByIdOrThrow(id);
+        employee.updateFullProfile(
+            request.name(),
+            request.title(),
+            request.email(),
+            request.bio(),
+            request.profileImageUrl(),
+            request.experienceYears(),
+            request.acceptsOnlineBooking()
+        );
+        return repository.save(employee);
+    }
+
     @Transactional(readOnly = true)
     public List<Employee> findByBusinessId(Long businessId) {
         validateBusinessExists(businessId);

@@ -9,6 +9,8 @@ import com.asaf.appointment_service.entity.service.ServiceDefinition;
 import com.asaf.appointment_service.repository.appointment.AppointmentRepository;
 import com.asaf.appointment_service.repository.business.BusinessWorkingHoursRepository;
 import com.asaf.appointment_service.service.business.BusinessService;
+import com.asaf.appointment_service.service.employee.EmployeeCapabilityService;
+import com.asaf.appointment_service.service.employee.EmployeeScheduleService;
 import com.asaf.appointment_service.service.employee.EmployeeService;
 import com.asaf.appointment_service.service.service.ServiceDefinitionService;
 import java.time.LocalDate;
@@ -35,6 +37,10 @@ class AvailabilityServiceTest {
     private BusinessService businessService;
     @Mock
     private EmployeeService employeeService;
+    @Mock
+    private EmployeeCapabilityService capabilityService;
+    @Mock
+    private EmployeeScheduleService scheduleService;
     @Mock
     private ServiceDefinitionService serviceDefinitionService;
     @Mock
@@ -63,6 +69,7 @@ class AvailabilityServiceTest {
         when(businessService.findByIdOrThrow(businessId)).thenReturn(business);
         when(employeeService.findByIdOrThrow(employeeId)).thenReturn(employee);
         when(serviceDefinitionService.findByIdOrThrow(serviceId)).thenReturn(service);
+        when(capabilityService.effectiveDuration(employeeId, serviceId, 60)).thenReturn(60);
         when(workingHoursRepository.findByBusinessIdAndDayOfWeek(businessId, date.getDayOfWeek()))
             .thenReturn(Optional.of(hours));
         when(appointmentRepository.findConflictingAppointments(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
@@ -100,6 +107,7 @@ class AvailabilityServiceTest {
         when(businessService.findByIdOrThrow(businessId)).thenReturn(business);
         when(employeeService.findByIdOrThrow(employeeId)).thenReturn(employee);
         when(serviceDefinitionService.findByIdOrThrow(serviceId)).thenReturn(service);
+        when(capabilityService.effectiveDuration(employeeId, serviceId, 60)).thenReturn(60);
         when(workingHoursRepository.findByBusinessIdAndDayOfWeek(businessId, date.getDayOfWeek()))
             .thenReturn(Optional.of(hours));
         when(appointmentRepository.findConflictingAppointments(eq(employeeId), any(LocalDateTime.class), any(LocalDateTime.class)))
