@@ -50,7 +50,9 @@ public class BusinessService extends BaseService<Business, Long, BusinessReposit
             Objects.requireNonNullElse(request.description(), business.getDescription()),
             Objects.requireNonNullElse(request.logoUrl(), business.getLogoUrl())
         );
-        
+
+        business.updateCategory(request.category());
+
         business.updateSettings(
             Objects.requireNonNullElse(request.autoConfirm(), business.isAutoConfirm()),
             Objects.requireNonNullElse(request.reminderHoursBefore(), business.getReminderHoursBefore()),

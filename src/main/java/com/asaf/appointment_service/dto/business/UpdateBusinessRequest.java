@@ -1,5 +1,6 @@
 package com.asaf.appointment_service.dto.business;
 
+import com.asaf.appointment_service.entity.business.BusinessCategory;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -8,6 +9,8 @@ import jakarta.validation.constraints.Size;
 public record UpdateBusinessRequest(
     @Size(min = 2, max = 100, message = "İşletme adı 2-100 karakter arasında olmalıdır")
     String name,
+
+    BusinessCategory category,
 
     @Email(message = "Geçerli bir e-posta adresi giriniz")
     String email,

@@ -1,6 +1,7 @@
 package com.asaf.appointment_service.config;
 
 import com.asaf.appointment_service.dto.business.CreateBusinessRequest;
+import com.asaf.appointment_service.entity.business.BusinessCategory;
 import com.asaf.appointment_service.dto.customer.CreateCustomerRequest;
 import com.asaf.appointment_service.dto.employee.CreateEmployeeRequest;
 import com.asaf.appointment_service.dto.service.CreateServiceRequest;
@@ -77,7 +78,8 @@ public class DataSeeder implements ApplicationRunner {
                 "+90",
                 SEED_EMAIL,
                 null,
-                null
+                null,
+                BusinessCategory.HAIR_SALON
         ));
         subscriptionService.initializeTrialSubscription(business.getId());
 

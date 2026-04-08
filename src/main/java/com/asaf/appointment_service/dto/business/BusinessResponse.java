@@ -1,5 +1,6 @@
 package com.asaf.appointment_service.dto.business;
 
+import com.asaf.appointment_service.entity.business.BusinessCategory;
 import com.asaf.appointment_service.entity.business.BusinessStatus;
 import java.time.LocalDateTime;
 
@@ -12,6 +13,8 @@ public record BusinessResponse(
     String address,
     String description,
     String logoUrl,
+    BusinessCategory category,
+    String categoryLabel,
     boolean autoConfirm,
     int reminderHoursBefore,
     boolean sameDayBookingAllowed,
