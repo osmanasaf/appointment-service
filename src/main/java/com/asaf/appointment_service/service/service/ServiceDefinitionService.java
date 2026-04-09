@@ -23,9 +23,9 @@ public class ServiceDefinitionService extends BaseService<ServiceDefinition, Lon
     }
 
     @Transactional
-    public ServiceDefinition createService(CreateServiceRequest request) {
-        businessService.findByIdOrThrow(request.businessId());
-        ServiceDefinition service = ServiceMapper.toEntity(request);
+    public ServiceDefinition createService(Long businessId, CreateServiceRequest request) {
+        businessService.findByIdOrThrow(businessId);
+        ServiceDefinition service = ServiceMapper.toEntity(businessId, request);
         return repository.save(service);
     }
 
@@ -77,6 +77,11 @@ public class ServiceDefinitionService extends BaseService<ServiceDefinition, Lon
         ServiceDefinition service = findByIdOrThrow(id);
         service.deactivate();
         return repository.save(service);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ServiceDefinition> findAllByIds(List<Long> ids) {
+        return repository.findAllById(ids);
     }
 
     @Override

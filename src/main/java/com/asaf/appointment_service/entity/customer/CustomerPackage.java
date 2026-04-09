@@ -40,14 +40,16 @@ public class CustomerPackage extends BaseEntity {
     protected CustomerPackage() {}
 
     private CustomerPackage(Builder builder) {
+        if (builder.id != null) this.setId(builder.id);
         this.customerId = builder.customerId;
         this.serviceId = builder.serviceId;
         this.businessId = builder.businessId;
         this.name = builder.name;
         this.totalSessions = builder.totalSessions;
-        this.remainingSessions = builder.totalSessions;
+        this.remainingSessions = builder.remainingSessions != null ? builder.remainingSessions : builder.totalSessions;
         this.expiresAt = builder.expiresAt;
         this.templateId = builder.templateId;
+        if (builder.active != null) this.active = builder.active;
     }
 
     public static Builder builder() {
@@ -127,13 +129,21 @@ public class CustomerPackage extends BaseEntity {
     }
 
     public static class Builder {
+        private Long id;
         private Long customerId;
         private Long serviceId;
         private Long businessId;
         private String name;
         private int totalSessions;
+        private Integer remainingSessions;
+        private Boolean active;
         private LocalDateTime expiresAt;
         private Long templateId;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
 
         public Builder customerId(Long customerId) {
             this.customerId = customerId;
@@ -160,6 +170,21 @@ public class CustomerPackage extends BaseEntity {
             return this;
         }
 
+        public Builder totalSessions(int totalSessions) {
+            this.totalSessions = totalSessions;
+            return this;
+        }
+
+        public Builder remainingSessions(int remainingSessions) {
+            this.remainingSessions = remainingSessions;
+            return this;
+        }
+
+        public Builder active(boolean active) {
+            this.active = active;
+            return this;
+        }
+
         public Builder expiresAt(LocalDateTime date) {
             this.expiresAt = date;
             return this;
@@ -171,14 +196,16 @@ public class CustomerPackage extends BaseEntity {
         }
 
         public CustomerPackage build() {
-            if (customerId == null) {
-                throw new IllegalArgumentException("Müşteri ID zorunludur");
-            }
-            if (serviceId == null) {
-                throw new IllegalArgumentException("Hizmet ID zorunludur");
-            }
-            if (totalSessions <= 0) {
-                throw new IllegalArgumentException("Seans sayısı pozitif olmalıdır");
+            if (id == null) {
+                if (customerId == null) {
+                    throw new IllegalArgumentException("Müşteri ID zorunludur");
+                }
+                if (serviceId == null) {
+                    throw new IllegalArgumentException("Hizmet ID zorunludur");
+                }
+                if (totalSessions <= 0) {
+                    throw new IllegalArgumentException("Seans sayısı pozitif olmalıdır");
+                }
             }
             return new CustomerPackage(this);
         }

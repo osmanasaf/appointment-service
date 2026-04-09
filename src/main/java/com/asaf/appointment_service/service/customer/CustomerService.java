@@ -1,5 +1,6 @@
 package com.asaf.appointment_service.service.customer;
 
+import com.asaf.appointment_service.common.constants.PackageErrorMessages;
 import com.asaf.appointment_service.common.service.BusinessAwareService;
 import com.asaf.appointment_service.common.util.PhoneNumberUtil;
 import com.asaf.appointment_service.dto.customer.CreateCustomerRequest;
@@ -14,11 +15,15 @@ import com.asaf.appointment_service.service.business.BusinessService;
 import com.asaf.appointment_service.service.encryption.EncryptionService;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CustomerService extends BusinessAwareService<Customer, Long, CustomerRepository> {
+
+    private static final int MIN_NO_SHOW_RISK_THRESHOLD = 2;
 
     private final CustomerPackageRepository packageRepository;
     private final EncryptionService encryptionService;
@@ -33,9 +38,9 @@ public class CustomerService extends BusinessAwareService<Customer, Long, Custom
     }
 
     @Transactional
-    public Customer createCustomer(CreateCustomerRequest request) {
-        validateBusinessExists(request.businessId());
-        Customer customer = CustomerMapper.toEntity(request);
+    public Customer createCustomer(Long businessId, CreateCustomerRequest request) {
+        validateBusinessExists(businessId);
+        Customer customer = CustomerMapper.toEntity(businessId, request);
         if (request.nationalId() != null && !request.nationalId().isBlank()) {
             customer.setTcEncrypted(encryptionService.encrypt(request.nationalId()));
         }
@@ -94,9 +99,15 @@ public class CustomerService extends BusinessAwareService<Customer, Long, Custom
     }
 
     @Transactional(readOnly = true)
+    public Page<Customer> findByBusinessIdPaged(Long businessId, Pageable pageable) {
+        validateBusinessExists(businessId);
+        return repository.findByBusinessIdOrderByNameAsc(businessId, pageable);
+    }
+
+    @Transactional(readOnly = true)
     public List<Customer> findRiskyCustomers(Long businessId) {
         validateBusinessExists(businessId);
-        return repository.findByBusinessIdAndNoShowCountGreaterThanEqual(businessId, 2);
+        return repository.findByBusinessIdAndNoShowCountGreaterThanEqual(businessId, MIN_NO_SHOW_RISK_THRESHOLD);
     }
 
     @Transactional(readOnly = true)

@@ -1,6 +1,8 @@
 package com.asaf.appointment_service.controller.customer;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
+import com.asaf.appointment_service.common.dto.PageResponse;
+import com.asaf.appointment_service.common.service.AuthenticatedBusinessService;
 import com.asaf.appointment_service.dto.customer.CreateCustomerRequest;
 import com.asaf.appointment_service.dto.customer.CustomerResponse;
 import com.asaf.appointment_service.dto.customer.PackageResponse;
@@ -12,6 +14,8 @@ import com.asaf.appointment_service.service.customer.CustomerService;
 import com.asaf.appointment_service.service.encryption.EncryptionService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -30,16 +34,21 @@ public class CustomerController {
 
     private final CustomerService customerService;
     private final EncryptionService encryptionService;
+    private final AuthenticatedBusinessService authenticatedBusinessService;
 
-    public CustomerController(CustomerService customerService, EncryptionService encryptionService) {
+    public CustomerController(CustomerService customerService,
+                               EncryptionService encryptionService,
+                               AuthenticatedBusinessService authenticatedBusinessService) {
         this.customerService = customerService;
         this.encryptionService = encryptionService;
+        this.authenticatedBusinessService = authenticatedBusinessService;
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<CustomerResponse>> createCustomer(
             @Valid @RequestBody CreateCustomerRequest request) {
-        Customer customer = customerService.createCustomer(request);
+        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Customer customer = customerService.createCustomer(businessId, request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(ApiResponse.success(CustomerMapper.toResponse(customer, encryptionService), "Müşteri oluşturuldu"));
@@ -59,11 +68,19 @@ public class CustomerController {
         return ResponseEntity.ok(ApiResponse.success(CustomerMapper.toResponse(customer, encryptionService), "Müşteri güncellendi"));
     }
 
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int MAX_PAGE_SIZE = 100;
+
     @GetMapping
-    public ResponseEntity<ApiResponse<List<CustomerResponse>>> getCustomersByBusiness(
-            @RequestParam Long businessId) {
-        List<Customer> customers = customerService.findByBusinessId(businessId);
-        return ResponseEntity.ok(ApiResponse.success(CustomerMapper.toResponseList(customers, encryptionService)));
+    public ResponseEntity<ApiResponse<PageResponse<CustomerResponse>>> getCustomersByBusiness(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        int safeSize = Math.min(size, MAX_PAGE_SIZE);
+        var pageable = PageRequest.of(page, safeSize, Sort.by("name").ascending());
+        return ResponseEntity.ok(ApiResponse.success(
+            PageResponse.from(customerService.findByBusinessIdPaged(businessId, pageable),
+                c -> CustomerMapper.toResponse(c, encryptionService))));
     }
 
     @GetMapping("/{id}/packages")

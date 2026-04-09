@@ -7,9 +7,6 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record CreateCustomerRequest(
-    @NotNull(message = "İşletme ID zorunludur")
-    Long businessId,
-
     @NotBlank(message = "Müşteri adı zorunludur")
     @Size(min = 2, max = 100, message = "Ad 2-100 karakter arasında olmalıdır")
     String name,

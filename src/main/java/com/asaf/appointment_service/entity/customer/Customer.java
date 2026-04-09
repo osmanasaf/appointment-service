@@ -48,6 +48,7 @@ public class Customer extends BaseEntity {
     protected Customer() {}
 
     private Customer(Builder builder) {
+        if (builder.id != null) this.setId(builder.id);
         this.businessId = builder.businessId;
         this.name = builder.name;
         this.phoneCountryCode = builder.phoneCountryCode;
@@ -154,6 +155,7 @@ public class Customer extends BaseEntity {
     }
 
     public static class Builder {
+        private Long id;
         private Long businessId;
         private String name;
         private String phoneCountryCode = "+90";
@@ -161,6 +163,11 @@ public class Customer extends BaseEntity {
         private String email;
         private String notes;
         private String address;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
 
         public Builder businessId(Long businessId) {
             this.businessId = businessId;
@@ -194,14 +201,16 @@ public class Customer extends BaseEntity {
         }
 
         public Customer build() {
-            if (businessId == null) {
-                throw new IllegalArgumentException("İşletme ID zorunludur");
-            }
-            if (name == null || name.isBlank()) {
-                throw new IllegalArgumentException("Müşteri adı zorunludur");
-            }
-            if (phoneNumber == null || phoneNumber.isBlank()) {
-                throw new IllegalArgumentException("Telefon numarası zorunludur");
+            if (id == null) {
+                if (businessId == null) {
+                    throw new IllegalArgumentException("İşletme ID zorunludur");
+                }
+                if (name == null || name.isBlank()) {
+                    throw new IllegalArgumentException("Müşteri adı zorunludur");
+                }
+                if (phoneNumber == null || phoneNumber.isBlank()) {
+                    throw new IllegalArgumentException("Telefon numarası zorunludur");
+                }
             }
             return new Customer(this);
         }

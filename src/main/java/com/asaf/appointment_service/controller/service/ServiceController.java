@@ -1,18 +1,19 @@
 package com.asaf.appointment_service.controller.service;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
+import com.asaf.appointment_service.common.service.AuthenticatedBusinessService;
+import com.asaf.appointment_service.dto.employee.EmployeeResponse;
 import com.asaf.appointment_service.dto.service.CreateServiceRequest;
 import com.asaf.appointment_service.dto.service.ServiceResponse;
 import com.asaf.appointment_service.dto.service.UpdateServiceRequest;
-import com.asaf.appointment_service.entity.service.ServiceDefinition;
-import com.asaf.appointment_service.mapper.service.ServiceMapper;
-import com.asaf.appointment_service.service.service.ServiceDefinitionService;
-import com.asaf.appointment_service.dto.employee.EmployeeResponse;
 import com.asaf.appointment_service.entity.employee.Employee;
 import com.asaf.appointment_service.entity.employee.EmployeeServiceCapability;
+import com.asaf.appointment_service.entity.service.ServiceDefinition;
 import com.asaf.appointment_service.mapper.employee.EmployeeMapper;
+import com.asaf.appointment_service.mapper.service.ServiceMapper;
 import com.asaf.appointment_service.service.employee.EmployeeCapabilityService;
 import com.asaf.appointment_service.service.employee.EmployeeService;
+import com.asaf.appointment_service.service.service.ServiceDefinitionService;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -27,13 +28,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.asaf.appointment_service.dto.employee.EmployeeResponse;
-import com.asaf.appointment_service.entity.employee.Employee;
-import com.asaf.appointment_service.entity.employee.EmployeeServiceCapability;
-import com.asaf.appointment_service.mapper.employee.EmployeeMapper;
-import com.asaf.appointment_service.service.employee.EmployeeCapabilityService;
-import com.asaf.appointment_service.service.employee.EmployeeService;
-
 @RestController
 @RequestMapping("/api/v1/services")
 public class ServiceController {
@@ -41,19 +35,23 @@ public class ServiceController {
     private final ServiceDefinitionService serviceDefinitionService;
     private final EmployeeCapabilityService capabilityService;
     private final EmployeeService employeeService;
+    private final AuthenticatedBusinessService authenticatedBusinessService;
 
     public ServiceController(ServiceDefinitionService serviceDefinitionService,
                               EmployeeCapabilityService capabilityService,
-                              EmployeeService employeeService) {
+                              EmployeeService employeeService,
+                              AuthenticatedBusinessService authenticatedBusinessService) {
         this.serviceDefinitionService = serviceDefinitionService;
         this.capabilityService = capabilityService;
         this.employeeService = employeeService;
+        this.authenticatedBusinessService = authenticatedBusinessService;
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<ServiceResponse>> createService(
             @Valid @RequestBody CreateServiceRequest request) {
-        ServiceDefinition service = serviceDefinitionService.createService(request);
+        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        ServiceDefinition service = serviceDefinitionService.createService(businessId, request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(ApiResponse.success(ServiceMapper.toResponse(service), "Hizmet oluşturuldu"));
@@ -75,9 +73,9 @@ public class ServiceController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<ServiceResponse>>> getServicesByBusiness(
-            @RequestParam Long businessId,
             @RequestParam(defaultValue = "false") boolean activeOnly,
             @RequestParam(required = false) Boolean packageEligible) {
+        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
         List<ServiceDefinition> services;
         if (Boolean.TRUE.equals(packageEligible)) {
             services = serviceDefinitionService.findPackageEligibleByBusinessId(businessId);

@@ -1,10 +1,10 @@
 package com.asaf.appointment_service.service.appointment;
 
 import com.asaf.appointment_service.dto.appointment.AvailableSlotResponse;
+import com.asaf.appointment_service.entity.appointment.Appointment;
 import com.asaf.appointment_service.entity.business.Business;
 import com.asaf.appointment_service.entity.business.BusinessWorkingHours;
 import com.asaf.appointment_service.entity.employee.EmployeeServiceCapability;
-import com.asaf.appointment_service.entity.employee.EmployeeWorkingSchedule;
 import com.asaf.appointment_service.entity.service.ServiceDefinition;
 import com.asaf.appointment_service.repository.appointment.AppointmentRepository;
 import com.asaf.appointment_service.repository.business.BusinessWorkingHoursRepository;
@@ -60,11 +60,16 @@ public class AvailabilityService {
 
         validateBookingAllowed(business, date, service);
 
+        LocalDateTime dayStart = date.atStartOfDay();
+        LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
+
         if (employeeId != null) {
             employeeService.findByIdOrThrow(employeeId);
             capabilityService.validateCapability(employeeId, serviceId);
             int duration = capabilityService.effectiveDuration(employeeId, serviceId, service.totalDurationMinutes());
-            return buildSlotsForEmployee(businessId, employeeId, date, duration, business, service);
+            List<Appointment> existing = appointmentRepository
+                .findActiveByEmployeeAndDateRange(employeeId, dayStart, dayEnd);
+            return buildSlotsForEmployee(businessId, employeeId, date, duration, business, service, existing);
         }
 
         return buildSlotsForAnyCapableEmployee(businessId, serviceId, date, business, service);
@@ -75,23 +80,55 @@ public class AvailabilityService {
         Business business = businessService.findByIdOrThrow(businessId);
         ServiceDefinition service = serviceDefinitionService.findByIdOrThrow(serviceId);
 
-        List<LocalDate> availableDates = new ArrayList<>();
         LocalDate today = LocalDate.now();
         LocalDate maxDate = today.plusDays(Math.min(daysAhead, business.getMaxAdvanceBookingDays()));
 
+        LocalDateTime rangeStart = today.atStartOfDay();
+        LocalDateTime rangeEnd = maxDate.plusDays(1).atStartOfDay();
+
+        List<Appointment> existingInRange = employeeId != null
+            ? appointmentRepository.findActiveByEmployeeAndDateRange(employeeId, rangeStart, rangeEnd)
+            : List.of();
+
+        List<LocalDate> availableDates = new ArrayList<>();
         for (LocalDate date = today; !date.isAfter(maxDate); date = date.plusDays(1)) {
-            if (date.equals(today) && !business.isSameDayBookingAllowed()) {
+            if (isSameDayBlocked(business, service, date, today)) {
                 continue;
             }
-            if (!service.isSameDayBookingAllowed() && date.equals(today)) {
-                continue;
-            }
-            if (!getAvailableSlots(businessId, employeeId, serviceId, date).isEmpty()) {
+            LocalDateTime dayStart = date.atStartOfDay();
+            LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
+            List<Appointment> dayAppointments = filterByDay(existingInRange, dayStart, dayEnd);
+            if (hasAvailableSlot(businessId, employeeId, serviceId, date, business, service, dayAppointments)) {
                 availableDates.add(date);
             }
         }
-
         return availableDates;
+    }
+
+    private boolean isSameDayBlocked(Business business, ServiceDefinition service,
+                                      LocalDate date, LocalDate today) {
+        if (!date.equals(today)) {
+            return false;
+        }
+        return !business.isSameDayBookingAllowed() || !service.isSameDayBookingAllowed();
+    }
+
+    private List<Appointment> filterByDay(List<Appointment> appointments,
+                                           LocalDateTime dayStart, LocalDateTime dayEnd) {
+        return appointments.stream()
+            .filter(a -> !a.getScheduledAt().isBefore(dayStart) && a.getScheduledAt().isBefore(dayEnd))
+            .toList();
+    }
+
+    private boolean hasAvailableSlot(Long businessId, Long employeeId, Long serviceId,
+                                      LocalDate date, Business business, ServiceDefinition service,
+                                      List<Appointment> dayAppointments) {
+        if (employeeId != null) {
+            int duration = capabilityService.effectiveDuration(employeeId, serviceId, service.totalDurationMinutes());
+            return !buildSlotsForEmployee(businessId, employeeId, date, duration, business, service,
+                dayAppointments).isEmpty();
+        }
+        return !buildSlotsForAnyCapableEmployee(businessId, serviceId, date, business, service).isEmpty();
     }
 
     private List<AvailableSlotResponse> buildSlotsForAnyCapableEmployee(Long businessId, Long serviceId,
@@ -109,8 +146,12 @@ public class AvailabilityService {
 
         for (EmployeeServiceCapability cap : capabilities) {
             int duration = cap.effectiveDuration(service.totalDurationMinutes());
+            LocalDateTime dayStart = date.atStartOfDay();
+            LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
+            List<Appointment> existing = appointmentRepository
+                .findActiveByEmployeeAndDateRange(cap.getEmployeeId(), dayStart, dayEnd);
             List<AvailableSlotResponse> employeeSlots =
-                buildSlotsForEmployee(businessId, cap.getEmployeeId(), date, duration, business, service);
+                buildSlotsForEmployee(businessId, cap.getEmployeeId(), date, duration, business, service, existing);
             for (AvailableSlotResponse slot : employeeSlots) {
                 if (seenStarts.add(slot.startTime())) {
                     merged.add(slot);
@@ -123,7 +164,8 @@ public class AvailabilityService {
 
     private List<AvailableSlotResponse> buildSlotsForEmployee(Long businessId, Long employeeId, LocalDate date,
                                                                int totalDuration, Business business,
-                                                               ServiceDefinition service) {
+                                                               ServiceDefinition service,
+                                                               List<Appointment> existingAppointments) {
         BusinessWorkingHours workingHours = workingHoursRepository
             .findByBusinessIdAndDayOfWeek(businessId, date.getDayOfWeek())
             .orElse(null);
@@ -141,6 +183,7 @@ public class AvailabilityService {
 
         List<AvailableSlotResponse> slots = new ArrayList<>();
         LocalTime currentTime = slotStart;
+        LocalDateTime now = LocalDateTime.now();
 
         while (currentTime.plusMinutes(totalDuration).isBefore(slotEnd) ||
                currentTime.plusMinutes(totalDuration).equals(slotEnd)) {
@@ -148,8 +191,9 @@ public class AvailabilityService {
             LocalDateTime start = LocalDateTime.of(date, currentTime);
             LocalDateTime end = start.plusMinutes(totalDuration);
 
-            if (!isSlotInBreakTime(currentTime, currentTime.plusMinutes(totalDuration), workingHours)
-                    && isSlotAvailable(employeeId, start, end)) {
+            if (!start.isBefore(now)
+                    && !isSlotInBreakTime(currentTime, currentTime.plusMinutes(totalDuration), workingHours)
+                    && isSlotFree(start, end, existingAppointments)) {
                 boolean instantConfirm = business.isAutoConfirm() && !service.isRequiresConfirmation();
                 slots.add(instantConfirm
                     ? AvailableSlotResponse.instant(start, end, totalDuration)
@@ -160,6 +204,11 @@ public class AvailabilityService {
         }
 
         return slots;
+    }
+
+    private boolean isSlotFree(LocalDateTime start, LocalDateTime end, List<Appointment> existing) {
+        return existing.stream().noneMatch(a ->
+            a.getScheduledAt().isBefore(end) && a.getEndAt().isAfter(start));
     }
 
     private LocalTime resolveEmployeeStartTime(Long employeeId, LocalDate date,
@@ -190,15 +239,12 @@ public class AvailabilityService {
         if (date.isBefore(today)) {
             throw new IllegalArgumentException("Geçmiş tarihe randevu alınamaz");
         }
-
         if (date.equals(today) && !business.isSameDayBookingAllowed()) {
             throw new IllegalArgumentException("Aynı gün randevu alınamaz");
         }
-
         if (date.equals(today) && !service.isSameDayBookingAllowed()) {
             throw new IllegalArgumentException("Bu hizmet için aynı gün randevu alınamaz");
         }
-
         LocalDate maxDate = today.plusDays(business.getMaxAdvanceBookingDays());
         if (date.isAfter(maxDate)) {
             throw new IllegalArgumentException(
@@ -211,12 +257,5 @@ public class AvailabilityService {
             return false;
         }
         return slotStart.isBefore(workingHours.getBreakEnd()) && slotEnd.isAfter(workingHours.getBreakStart());
-    }
-
-    private boolean isSlotAvailable(Long employeeId, LocalDateTime start, LocalDateTime end) {
-        if (start.isBefore(LocalDateTime.now())) {
-            return false;
-        }
-        return appointmentRepository.findConflictingAppointments(employeeId, start, end).isEmpty();
     }
 }

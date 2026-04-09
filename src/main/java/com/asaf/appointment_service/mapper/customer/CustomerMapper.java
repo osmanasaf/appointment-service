@@ -12,9 +12,9 @@ public class CustomerMapper {
 
     private CustomerMapper() {}
 
-    public static Customer toEntity(CreateCustomerRequest request) {
+    public static Customer toEntity(Long businessId, CreateCustomerRequest request) {
         return Customer.builder()
-            .businessId(request.businessId())
+            .businessId(businessId)
             .name(request.name())
             .phone(request.phoneCountryCode(), request.phoneNumber())
             .email(request.email())

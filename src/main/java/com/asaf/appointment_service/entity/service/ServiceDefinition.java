@@ -52,6 +52,7 @@ public class ServiceDefinition extends BaseEntity {
     protected ServiceDefinition() {}
 
     private ServiceDefinition(Builder builder) {
+        if (builder.id != null) this.setId(builder.id);
         this.businessId = builder.businessId;
         this.name = builder.name;
         this.description = builder.description;
@@ -154,6 +155,7 @@ public class ServiceDefinition extends BaseEntity {
     }
 
     public static class Builder {
+        private Long id;
         private Long businessId;
         private String name;
         private String description;
@@ -167,6 +169,11 @@ public class ServiceDefinition extends BaseEntity {
         private boolean packageEligible = true;
         private boolean active = true;
         private int displayOrder = 0;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
 
         public Builder businessId(Long businessId) {
             this.businessId = businessId;
@@ -230,14 +237,16 @@ public class ServiceDefinition extends BaseEntity {
         }
 
         public ServiceDefinition build() {
-            if (businessId == null) {
-                throw new IllegalArgumentException("İşletme ID zorunludur");
-            }
-            if (name == null || name.isBlank()) {
-                throw new IllegalArgumentException("Hizmet adı zorunludur");
-            }
-            if (durationMinutes < 15 || durationMinutes > 360) {
-                throw new IllegalArgumentException("Hizmet süresi 15-360 dakika arasında olmalıdır");
+            if (id == null) {
+                if (businessId == null) {
+                    throw new IllegalArgumentException("İşletme ID zorunludur");
+                }
+                if (name == null || name.isBlank()) {
+                    throw new IllegalArgumentException("Hizmet adı zorunludur");
+                }
+                if (durationMinutes < 15 || durationMinutes > 360) {
+                    throw new IllegalArgumentException("Hizmet süresi 15-360 dakika arasında olmalıdır");
+                }
             }
             return new ServiceDefinition(this);
         }

@@ -9,9 +9,9 @@ public class AppointmentMapper {
 
     private AppointmentMapper() {}
 
-    public static Appointment toEntity(CreateAppointmentRequest request, int durationMinutes) {
+    public static Appointment toEntity(Long businessId, CreateAppointmentRequest request, int durationMinutes) {
         return Appointment.builder()
-            .businessId(request.businessId())
+            .businessId(businessId)
             .customerId(request.customerId())
             .employeeId(request.employeeId())
             .serviceId(request.serviceId())

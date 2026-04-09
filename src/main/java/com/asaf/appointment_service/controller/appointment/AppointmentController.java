@@ -1,6 +1,8 @@
 package com.asaf.appointment_service.controller.appointment;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
+import com.asaf.appointment_service.common.dto.PageResponse;
+import com.asaf.appointment_service.common.service.AuthenticatedBusinessService;
 import com.asaf.appointment_service.dto.appointment.AppointmentResponse;
 import com.asaf.appointment_service.dto.appointment.CreateAppointmentRequest;
 import com.asaf.appointment_service.dto.appointment.StaffAppointmentRequest;
@@ -10,6 +12,10 @@ import com.asaf.appointment_service.service.appointment.AppointmentService;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,15 +33,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
+    private final AuthenticatedBusinessService authenticatedBusinessService;
 
-    public AppointmentController(AppointmentService appointmentService) {
+    public AppointmentController(AppointmentService appointmentService,
+                                  AuthenticatedBusinessService authenticatedBusinessService) {
         this.appointmentService = appointmentService;
+        this.authenticatedBusinessService = authenticatedBusinessService;
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<AppointmentResponse>> createAppointment(
             @Valid @RequestBody CreateAppointmentRequest request) {
-        Appointment appointment = appointmentService.createAppointment(request);
+        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Appointment appointment = appointmentService.createAppointment(businessId, request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(ApiResponse.success(AppointmentMapper.toResponse(appointment), "Randevu oluşturuldu"));
@@ -49,7 +59,8 @@ public class AppointmentController {
     @PostMapping("/staff")
     public ResponseEntity<ApiResponse<AppointmentResponse>> createStaffAppointment(
             @Valid @RequestBody StaffAppointmentRequest request) {
-        Appointment appointment = appointmentService.createStaffAppointment(request);
+        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Appointment appointment = appointmentService.createStaffAppointment(businessId, request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(ApiResponse.success(AppointmentMapper.toResponse(appointment), "Randevu kaydedildi"));
@@ -61,28 +72,30 @@ public class AppointmentController {
         return ResponseEntity.ok(ApiResponse.success(AppointmentMapper.toResponse(appointment)));
     }
 
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int MAX_PAGE_SIZE = 100;
+
     @GetMapping
-    public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getAppointmentsByBusiness(
-            @RequestParam Long businessId,
+    public ResponseEntity<ApiResponse<PageResponse<AppointmentResponse>>> getAppointmentsByBusiness(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        
-        List<Appointment> appointments;
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        int safeSize = Math.min(size, MAX_PAGE_SIZE);
+        var pageable = PageRequest.of(page, safeSize, Sort.by("scheduledAt").descending());
+        Page<Appointment> appointments;
         if (startDate != null && endDate != null) {
-            appointments = appointmentService.findByDateRange(businessId, startDate, endDate);
+            appointments = appointmentService.findByDateRangePaged(businessId, startDate, endDate, pageable);
         } else {
-            appointments = appointmentService.findByBusinessId(businessId);
+            appointments = appointmentService.findByBusinessIdPaged(businessId, pageable);
         }
-        
-        List<AppointmentResponse> responses = appointments.stream()
-            .map(AppointmentMapper::toResponse)
-            .toList();
-        return ResponseEntity.ok(ApiResponse.success(responses));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.from(appointments, AppointmentMapper::toResponse)));
     }
 
     @GetMapping("/risky")
-    public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getRiskyAppointments(
-            @RequestParam Long businessId) {
+    public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getRiskyAppointments() {
+        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
         List<Appointment> appointments = appointmentService.findRiskyAppointments(businessId);
         List<AppointmentResponse> responses = appointments.stream()
             .map(AppointmentMapper::toResponse)

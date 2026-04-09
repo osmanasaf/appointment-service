@@ -31,6 +31,7 @@ public class PackageTemplate extends BaseEntity {
     protected PackageTemplate() {}
 
     private PackageTemplate(Builder builder) {
+        if (builder.id != null) this.setId(builder.id);
         this.businessId = builder.businessId;
         this.serviceId = builder.serviceId;
         this.name = builder.name;
@@ -81,11 +82,17 @@ public class PackageTemplate extends BaseEntity {
     }
 
     public static class Builder {
+        private Long id;
         private Long businessId;
         private Long serviceId;
         private String name;
         private int totalSessions;
         private BigDecimal price;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
 
         public Builder businessId(Long businessId) {
             this.businessId = businessId;
@@ -113,17 +120,19 @@ public class PackageTemplate extends BaseEntity {
         }
 
         public PackageTemplate build() {
-            if (businessId == null) {
-                throw new IllegalArgumentException("İşletme ID zorunludur");
-            }
-            if (serviceId == null) {
-                throw new IllegalArgumentException("Hizmet ID zorunludur");
-            }
-            if (name == null || name.isBlank()) {
-                throw new IllegalArgumentException("Paket adı zorunludur");
-            }
-            if (totalSessions <= 0) {
-                throw new IllegalArgumentException("Seans sayısı pozitif olmalıdır");
+            if (id == null) {
+                if (businessId == null) {
+                    throw new IllegalArgumentException("İşletme ID zorunludur");
+                }
+                if (serviceId == null) {
+                    throw new IllegalArgumentException("Hizmet ID zorunludur");
+                }
+                if (name == null || name.isBlank()) {
+                    throw new IllegalArgumentException("Paket adı zorunludur");
+                }
+                if (totalSessions <= 0) {
+                    throw new IllegalArgumentException("Seans sayısı pozitif olmalıdır");
+                }
             }
             return new PackageTemplate(this);
         }

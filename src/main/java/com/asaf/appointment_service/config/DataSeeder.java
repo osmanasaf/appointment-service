@@ -93,8 +93,7 @@ public class DataSeeder implements ApplicationRunner {
                 .build();
         userRepository.save(user);
 
-        employeeService.createEmployee(new CreateEmployeeRequest(
-                business.getId(),
+        employeeService.createEmployee(business.getId(), new CreateEmployeeRequest(
                 "Ayşe Çalışan",
                 "5559876543",
                 "+90",
@@ -103,8 +102,7 @@ public class DataSeeder implements ApplicationRunner {
                 true
         ));
 
-        serviceDefinitionService.createService(new CreateServiceRequest(
-                business.getId(),
+        serviceDefinitionService.createService(business.getId(), new CreateServiceRequest(
                 "Saç Kesimi",
                 "Klasik saç kesimi",
                 30,
@@ -116,8 +114,7 @@ public class DataSeeder implements ApplicationRunner {
                 true
         ));
 
-        customerService.createCustomer(new CreateCustomerRequest(
-                business.getId(),
+        customerService.createCustomer(business.getId(), new CreateCustomerRequest(
                 "Demo Müşteri",
                 "5551112233",
                 "+90",

@@ -9,9 +9,9 @@ public class PackageTemplateMapper {
 
     private PackageTemplateMapper() {}
 
-    public static PackageTemplate toEntity(CreatePackageTemplateRequest request) {
+    public static PackageTemplate toEntity(Long businessId, CreatePackageTemplateRequest request) {
         return PackageTemplate.builder()
-            .businessId(request.businessId())
+            .businessId(businessId)
             .serviceId(request.serviceId())
             .name(request.name())
             .totalSessions(request.totalSessions())

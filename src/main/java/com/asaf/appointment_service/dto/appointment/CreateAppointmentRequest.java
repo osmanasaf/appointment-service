@@ -7,9 +7,6 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 public record CreateAppointmentRequest(
-    @NotNull(message = "İşletme ID zorunludur")
-    Long businessId,
-
     @NotNull(message = "Müşteri ID zorunludur")
     Long customerId,
 

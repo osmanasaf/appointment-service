@@ -27,7 +27,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -74,7 +73,8 @@ class AvailabilityServiceTest {
         when(capabilityService.effectiveDuration(employeeId, serviceId, 60)).thenReturn(60);
         when(workingHoursRepository.findByBusinessIdAndDayOfWeek(businessId, date.getDayOfWeek()))
             .thenReturn(Optional.of(hours));
-        when(appointmentRepository.findConflictingAppointments(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
+        when(appointmentRepository.findActiveByEmployeeAndDateRange(
+                eq(employeeId), any(LocalDateTime.class), any(LocalDateTime.class)))
             .thenReturn(List.of());
 
         // Act
@@ -113,11 +113,9 @@ class AvailabilityServiceTest {
         when(capabilityService.effectiveDuration(employeeId, serviceId, 60)).thenReturn(60);
         when(workingHoursRepository.findByBusinessIdAndDayOfWeek(businessId, date.getDayOfWeek()))
             .thenReturn(Optional.of(hours));
-        when(appointmentRepository.findConflictingAppointments(eq(employeeId), any(LocalDateTime.class), any(LocalDateTime.class)))
-            .thenAnswer(inv -> {
-                LocalDateTime start = inv.getArgument(1);
-                return start.equals(conflictStart) ? List.of(conflicting) : List.of();
-            });
+        when(appointmentRepository.findActiveByEmployeeAndDateRange(
+                eq(employeeId), any(LocalDateTime.class), any(LocalDateTime.class)))
+            .thenReturn(List.of(conflicting));
 
         // Act
         List<AvailableSlotResponse> slots = availabilityService.getAvailableSlots(businessId, employeeId, serviceId, date);

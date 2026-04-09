@@ -3,6 +3,8 @@ package com.asaf.appointment_service.repository.employee;
 import com.asaf.appointment_service.entity.employee.Employee;
 import com.asaf.appointment_service.entity.employee.EmployeeStatus;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,6 +12,8 @@ import org.springframework.stereotype.Repository;
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     List<Employee> findByBusinessIdOrderByNameAsc(Long businessId);
+
+    Page<Employee> findByBusinessIdOrderByNameAsc(Long businessId, Pageable pageable);
 
     List<Employee> findByBusinessIdAndStatus(Long businessId, EmployeeStatus status);
 

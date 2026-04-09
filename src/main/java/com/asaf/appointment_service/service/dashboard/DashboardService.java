@@ -3,7 +3,6 @@ package com.asaf.appointment_service.service.dashboard;
 import com.asaf.appointment_service.dto.dashboard.DashboardPeriod;
 import com.asaf.appointment_service.dto.dashboard.DashboardStatsResponse;
 import com.asaf.appointment_service.entity.appointment.Appointment;
-import com.asaf.appointment_service.entity.appointment.AppointmentStatus;
 import com.asaf.appointment_service.repository.appointment.AppointmentRepository;
 import com.asaf.appointment_service.service.business.BusinessService;
 import java.time.DayOfWeek;
@@ -54,54 +53,65 @@ public class DashboardService {
     }
 
     private DashboardStatsResponse buildStats(List<Appointment> appointments, LocalDate start, LocalDate end) {
-        int pending = 0;
-        int confirmed = 0;
-        int completed = 0;
-        int cancelled = 0;
-        int noShow = 0;
+        int[] statusCounts = countByStatus(appointments);
+        int total = appointments.size();
+        double noShowRate = total > 0 ? Math.round((double) statusCounts[4] / total * 100.0) : 0.0;
 
+        return new DashboardStatsResponse(
+            total,
+            statusCounts[0], statusCounts[1], statusCounts[2], statusCounts[3], statusCounts[4],
+            noShowRate,
+            buildTrendData(appointments, start, end),
+            buildServiceDistribution(appointments),
+            buildHourDistribution(appointments)
+        );
+    }
+
+    private int[] countByStatus(List<Appointment> appointments) {
+        int pending = 0, confirmed = 0, completed = 0, cancelled = 0, noShow = 0;
+        for (Appointment a : appointments) {
+            switch (a.getStatus()) {
+                case PENDING -> pending++;
+                case CONFIRMED -> confirmed++;
+                case COMPLETED -> completed++;
+                case CANCELLED -> cancelled++;
+                case NO_SHOW -> noShow++;
+                default -> { }
+            }
+        }
+        return new int[]{pending, confirmed, completed, cancelled, noShow};
+    }
+
+    private List<DashboardStatsResponse.TrendPoint> buildTrendData(List<Appointment> appointments,
+                                                                     LocalDate start, LocalDate end) {
         Map<String, Integer> trendMap = new TreeMap<>();
         for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
             trendMap.put(d.toString(), 0);
         }
-
-        Map<Long, Integer> serviceMap = new HashMap<>();
-        int[] hours = new int[24];
-
         for (Appointment a : appointments) {
-            AppointmentStatus status = a.getStatus();
-            if (status == AppointmentStatus.PENDING) pending++;
-            else if (status == AppointmentStatus.CONFIRMED) confirmed++;
-            else if (status == AppointmentStatus.COMPLETED) completed++;
-            else if (status == AppointmentStatus.CANCELLED) cancelled++;
-            else if (status == AppointmentStatus.NO_SHOW) noShow++;
-
-            String dayKey = a.getScheduledAt().toLocalDate().toString();
-            trendMap.merge(dayKey, 1, Integer::sum);
-
-            serviceMap.merge(a.getServiceId(), 1, Integer::sum);
-
-            int hour = a.getScheduledAt().getHour();
-            hours[hour]++;
+            trendMap.merge(a.getScheduledAt().toLocalDate().toString(), 1, Integer::sum);
         }
-
-        int total = appointments.size();
-        double noShowRate = total > 0 ? Math.round((double) noShow / total * 100.0) : 0.0;
-
-        List<DashboardStatsResponse.TrendPoint> trendData = trendMap.entrySet().stream()
+        return trendMap.entrySet().stream()
             .map(e -> new DashboardStatsResponse.TrendPoint(e.getKey(), e.getValue()))
             .toList();
+    }
 
-        List<DashboardStatsResponse.ServiceCount> serviceDist = serviceMap.entrySet().stream()
+    private List<DashboardStatsResponse.ServiceCount> buildServiceDistribution(List<Appointment> appointments) {
+        Map<Long, Integer> serviceMap = new HashMap<>();
+        for (Appointment a : appointments) {
+            serviceMap.merge(a.getServiceId(), 1, Integer::sum);
+        }
+        return serviceMap.entrySet().stream()
             .sorted(Map.Entry.<Long, Integer>comparingByValue().reversed())
             .map(e -> new DashboardStatsResponse.ServiceCount(e.getKey(), e.getValue()))
             .toList();
+    }
 
-        List<Integer> hourDist = new ArrayList<>(Arrays.stream(hours).boxed().toList());
-
-        return new DashboardStatsResponse(
-            total, pending, confirmed, completed, cancelled, noShow, noShowRate,
-            trendData, serviceDist, hourDist
-        );
+    private List<Integer> buildHourDistribution(List<Appointment> appointments) {
+        int[] hours = new int[24];
+        for (Appointment a : appointments) {
+            hours[a.getScheduledAt().getHour()]++;
+        }
+        return new ArrayList<>(Arrays.stream(hours).boxed().toList());
     }
 }

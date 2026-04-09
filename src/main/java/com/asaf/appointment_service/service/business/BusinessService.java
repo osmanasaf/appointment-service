@@ -77,6 +77,11 @@ public class BusinessService extends BaseService<Business, Long, BusinessReposit
         return workingHoursRepository.findByBusinessIdOrderByDayOfWeek(businessId);
     }
 
+    @Transactional(readOnly = true)
+    public List<Business> findAllByIds(List<Long> ids) {
+        return repository.findAllById(ids);
+    }
+
     @Override
     public Business findByIdOrThrow(Long id) {
         return repository.findById(id)

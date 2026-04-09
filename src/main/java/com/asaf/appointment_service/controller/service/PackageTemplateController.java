@@ -1,6 +1,7 @@
 package com.asaf.appointment_service.controller.service;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
+import com.asaf.appointment_service.common.service.AuthenticatedBusinessService;
 import com.asaf.appointment_service.dto.service.CreatePackageTemplateRequest;
 import com.asaf.appointment_service.dto.service.PackageTemplateResponse;
 import com.asaf.appointment_service.dto.service.UpdatePackageTemplateRequest;
@@ -18,7 +19,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -26,23 +26,27 @@ import org.springframework.web.bind.annotation.RestController;
 public class PackageTemplateController {
 
     private final PackageTemplateService packageTemplateService;
+    private final AuthenticatedBusinessService authenticatedBusinessService;
 
-    public PackageTemplateController(PackageTemplateService packageTemplateService) {
+    public PackageTemplateController(PackageTemplateService packageTemplateService,
+                                      AuthenticatedBusinessService authenticatedBusinessService) {
         this.packageTemplateService = packageTemplateService;
+        this.authenticatedBusinessService = authenticatedBusinessService;
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<PackageTemplateResponse>> create(
             @Valid @RequestBody CreatePackageTemplateRequest request) {
-        PackageTemplate template = packageTemplateService.create(request);
+        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        PackageTemplate template = packageTemplateService.create(businessId, request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(ApiResponse.success(PackageTemplateMapper.toResponse(template), "Paket şablonu oluşturuldu"));
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PackageTemplateResponse>>> listByBusiness(
-            @RequestParam Long businessId) {
+    public ResponseEntity<ApiResponse<List<PackageTemplateResponse>>> listByBusiness() {
+        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
         List<PackageTemplate> templates = packageTemplateService.listByBusiness(businessId);
         return ResponseEntity.ok(ApiResponse.success(PackageTemplateMapper.toResponseList(templates)));
     }

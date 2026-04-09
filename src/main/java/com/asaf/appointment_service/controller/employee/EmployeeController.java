@@ -1,6 +1,8 @@
 package com.asaf.appointment_service.controller.employee;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
+import com.asaf.appointment_service.common.dto.PageResponse;
+import com.asaf.appointment_service.common.service.AuthenticatedBusinessService;
 import com.asaf.appointment_service.dto.employee.AffectedAppointmentResponse;
 import com.asaf.appointment_service.dto.employee.AssignCapabilityRequest;
 import com.asaf.appointment_service.dto.employee.CreateEmployeeRequest;
@@ -27,6 +29,8 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -48,23 +52,27 @@ public class EmployeeController {
     private final EmployeeScheduleService scheduleService;
     private final EmployeeOffboardingService offboardingService;
     private final ServiceDefinitionService serviceDefinitionService;
+    private final AuthenticatedBusinessService authenticatedBusinessService;
 
     public EmployeeController(EmployeeService employeeService,
                                EmployeeCapabilityService capabilityService,
                                EmployeeScheduleService scheduleService,
                                EmployeeOffboardingService offboardingService,
-                               ServiceDefinitionService serviceDefinitionService) {
+                               ServiceDefinitionService serviceDefinitionService,
+                               AuthenticatedBusinessService authenticatedBusinessService) {
         this.employeeService = employeeService;
         this.capabilityService = capabilityService;
         this.scheduleService = scheduleService;
         this.offboardingService = offboardingService;
         this.serviceDefinitionService = serviceDefinitionService;
+        this.authenticatedBusinessService = authenticatedBusinessService;
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployee(
             @Valid @RequestBody CreateEmployeeRequest request) {
-        Employee employee = employeeService.createEmployee(request);
+        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Employee employee = employeeService.createEmployee(businessId, request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(ApiResponse.success(EmployeeMapper.toResponse(employee), "Çalışan oluşturuldu"));
@@ -76,14 +84,24 @@ public class EmployeeController {
         return ResponseEntity.ok(ApiResponse.success(EmployeeMapper.toDetailResponse(employee)));
     }
 
+    private static final int MAX_PAGE_SIZE = 100;
+
     @GetMapping
-    public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesByBusiness(
-            @RequestParam Long businessId,
-            @RequestParam(defaultValue = "false") boolean activeOnly) {
-        List<Employee> employees = activeOnly
-            ? employeeService.findActiveByBusinessId(businessId)
-            : employeeService.findByBusinessId(businessId);
-        return ResponseEntity.ok(ApiResponse.success(EmployeeMapper.toResponseList(employees)));
+    public ResponseEntity<ApiResponse<PageResponse<EmployeeResponse>>> getEmployeesByBusiness(
+            @RequestParam(defaultValue = "false") boolean activeOnly,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        int safeSize = Math.min(size, MAX_PAGE_SIZE);
+        var pageable = PageRequest.of(page, safeSize, Sort.by("name").ascending());
+        if (activeOnly) {
+            List<Employee> employees = employeeService.findActiveByBusinessId(businessId);
+            return ResponseEntity.ok(ApiResponse.success(
+                new PageResponse<>(employees.stream().map(EmployeeMapper::toResponse).toList(),
+                    0, employees.size(), employees.size(), 1, false, false)));
+        }
+        return ResponseEntity.ok(ApiResponse.success(
+            PageResponse.from(employeeService.findByBusinessIdPaged(businessId, pageable), EmployeeMapper::toResponse)));
     }
 
     @PutMapping("/{id}")
@@ -143,12 +161,12 @@ public class EmployeeController {
     }
 
     private Map<Long, String> resolveServiceNames(List<EmployeeServiceCapability> capabilities) {
-        return capabilities.stream()
-            .collect(Collectors.toMap(
-                EmployeeServiceCapability::getServiceId,
-                c -> serviceDefinitionService.findByIdOrThrow(c.getServiceId()).getName(),
-                (a, b) -> a
-            ));
+        List<Long> serviceIds = capabilities.stream()
+            .map(EmployeeServiceCapability::getServiceId)
+            .distinct()
+            .toList();
+        return serviceDefinitionService.findAllByIds(serviceIds).stream()
+            .collect(Collectors.toMap(ServiceDefinition::getId, ServiceDefinition::getName));
     }
 
     @GetMapping("/{id}/schedule")

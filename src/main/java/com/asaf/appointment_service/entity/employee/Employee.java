@@ -51,6 +51,7 @@ public class Employee extends BaseEntity {
     protected Employee() {}
 
     private Employee(Builder builder) {
+        if (builder.id != null) this.setId(builder.id);
         this.businessId = builder.businessId;
         this.name = builder.name;
         this.phoneCountryCode = builder.phoneCountryCode;
@@ -155,6 +156,7 @@ public class Employee extends BaseEntity {
     }
 
     public static class Builder {
+        private Long id;
         private Long businessId;
         private String name;
         private String phoneCountryCode = "+90";
@@ -167,6 +169,11 @@ public class Employee extends BaseEntity {
         private String title;
         private Integer experienceYears;
         private boolean acceptsOnlineBooking = true;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
 
         public Builder businessId(Long businessId) {
             this.businessId = businessId;
@@ -225,11 +232,13 @@ public class Employee extends BaseEntity {
         }
 
         public Employee build() {
-            if (businessId == null) {
-                throw new IllegalArgumentException("İşletme ID zorunludur");
-            }
-            if (name == null || name.isBlank()) {
-                throw new IllegalArgumentException("Çalışan adı zorunludur");
+            if (id == null) {
+                if (businessId == null) {
+                    throw new IllegalArgumentException("İşletme ID zorunludur");
+                }
+                if (name == null || name.isBlank()) {
+                    throw new IllegalArgumentException("Çalışan adı zorunludur");
+                }
             }
             return new Employee(this);
         }

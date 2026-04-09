@@ -78,8 +78,8 @@ public class AuthService {
             .build();
 
         User savedUser = userRepository.save(user);
-        log.info("Yeni kullanıcı kaydedildi: email={}, businessId={}", 
-            savedUser.getEmail(), business.getId());
+        log.info("Yeni kullanıcı kaydedildi: userId={}, businessId={}",
+            savedUser.getId(), business.getId());
 
         return generateAuthResponse(savedUser);
     }
@@ -97,7 +97,7 @@ public class AuthService {
             throw new IllegalArgumentException("Hesabınız aktif değil");
         }
 
-        log.info("Kullanıcı giriş yaptı: email={}", request.email());
+        log.info("Kullanıcı giriş yaptı: userId={}", user.getId());
         return generateAuthResponse(user);
     }
 

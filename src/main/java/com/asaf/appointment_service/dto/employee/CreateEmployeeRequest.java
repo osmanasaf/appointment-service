@@ -6,9 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record CreateEmployeeRequest(
-    @NotNull(message = "İşletme ID zorunludur")
-    Long businessId,
-
     @NotBlank(message = "Çalışan adı zorunludur")
     @Size(min = 2, max = 100, message = "Çalışan adı 2-100 karakter arasında olmalıdır")
     String name,

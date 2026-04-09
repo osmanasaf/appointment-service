@@ -19,33 +19,33 @@ public class PlanLimitAspect {
         this.subscriptionService = subscriptionService;
     }
 
-    @Before("execution(* com.asaf.appointment_service.service.employee.EmployeeService.createEmployee(..)) && args(request)")
-    public void checkEmployeeLimit(CreateEmployeeRequest request) {
-        subscriptionService.checkEmployeeLimit(request.businessId());
+    @Before("execution(* com.asaf.appointment_service.service.employee.EmployeeService.createEmployee(..)) && args(businessId, request)")
+    public void checkEmployeeLimit(Long businessId, CreateEmployeeRequest request) {
+        subscriptionService.checkEmployeeLimit(businessId);
     }
 
-    @Before("execution(* com.asaf.appointment_service.service.service.ServiceDefinitionService.createService(..)) && args(request)")
-    public void checkServiceLimit(CreateServiceRequest request) {
-        subscriptionService.checkServiceLimit(request.businessId());
+    @Before("execution(* com.asaf.appointment_service.service.service.ServiceDefinitionService.createService(..)) && args(businessId, request)")
+    public void checkServiceLimit(Long businessId, CreateServiceRequest request) {
+        subscriptionService.checkServiceLimit(businessId);
     }
 
-    @Before("execution(* com.asaf.appointment_service.service.appointment.AppointmentService.createAppointment(..)) && args(request)")
-    public void checkAppointmentLimit(CreateAppointmentRequest request) {
-        subscriptionService.checkAppointmentLimit(request.businessId());
+    @Before("execution(* com.asaf.appointment_service.service.appointment.AppointmentService.createAppointment(..)) && args(businessId, request)")
+    public void checkAppointmentLimit(Long businessId, CreateAppointmentRequest request) {
+        subscriptionService.checkAppointmentLimit(businessId);
     }
 
-    @Before("execution(* com.asaf.appointment_service.service.appointment.AppointmentService.createStaffAppointment(..)) && args(request)")
-    public void checkStaffAppointmentLimit(StaffAppointmentRequest request) {
-        subscriptionService.checkAppointmentLimit(request.businessId());
+    @Before("execution(* com.asaf.appointment_service.service.appointment.AppointmentService.createStaffAppointment(..)) && args(businessId, request)")
+    public void checkStaffAppointmentLimit(Long businessId, StaffAppointmentRequest request) {
+        subscriptionService.checkAppointmentLimit(businessId);
     }
 
-    @AfterReturning("execution(* com.asaf.appointment_service.service.appointment.AppointmentService.createAppointment(..)) && args(request)")
-    public void increaseAppointmentUsage(CreateAppointmentRequest request) {
-        subscriptionService.incrementAppointmentUsage(request.businessId());
+    @AfterReturning("execution(* com.asaf.appointment_service.service.appointment.AppointmentService.createAppointment(..)) && args(businessId, request)")
+    public void increaseAppointmentUsage(Long businessId, CreateAppointmentRequest request) {
+        subscriptionService.incrementAppointmentUsage(businessId);
     }
 
-    @AfterReturning("execution(* com.asaf.appointment_service.service.appointment.AppointmentService.createStaffAppointment(..)) && args(request)")
-    public void increaseStaffAppointmentUsage(StaffAppointmentRequest request) {
-        subscriptionService.incrementAppointmentUsage(request.businessId());
+    @AfterReturning("execution(* com.asaf.appointment_service.service.appointment.AppointmentService.createStaffAppointment(..)) && args(businessId, request)")
+    public void increaseStaffAppointmentUsage(Long businessId, StaffAppointmentRequest request) {
+        subscriptionService.incrementAppointmentUsage(businessId);
     }
 }

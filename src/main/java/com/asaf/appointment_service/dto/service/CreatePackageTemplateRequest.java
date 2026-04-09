@@ -8,9 +8,6 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
 public record CreatePackageTemplateRequest(
-    @NotNull(message = "İşletme ID zorunludur")
-    Long businessId,
-
     @NotNull(message = "Hizmet ID zorunludur")
     Long serviceId,
 

@@ -9,6 +9,8 @@ import com.asaf.appointment_service.mapper.employee.EmployeeMapper;
 import com.asaf.appointment_service.repository.employee.EmployeeRepository;
 import com.asaf.appointment_service.service.business.BusinessService;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,9 +22,9 @@ public class EmployeeService extends BusinessAwareService<Employee, Long, Employ
     }
 
     @Transactional
-    public Employee createEmployee(CreateEmployeeRequest request) {
-        validateBusinessExists(request.businessId());
-        Employee employee = EmployeeMapper.toEntity(request);
+    public Employee createEmployee(Long businessId, CreateEmployeeRequest request) {
+        validateBusinessExists(businessId);
+        Employee employee = EmployeeMapper.toEntity(businessId, request);
         return repository.save(employee);
     }
 
@@ -45,6 +47,12 @@ public class EmployeeService extends BusinessAwareService<Employee, Long, Employ
     public List<Employee> findByBusinessId(Long businessId) {
         validateBusinessExists(businessId);
         return repository.findByBusinessIdOrderByNameAsc(businessId);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Employee> findByBusinessIdPaged(Long businessId, Pageable pageable) {
+        validateBusinessExists(businessId);
+        return repository.findByBusinessIdOrderByNameAsc(businessId, pageable);
     }
 
     @Transactional(readOnly = true)

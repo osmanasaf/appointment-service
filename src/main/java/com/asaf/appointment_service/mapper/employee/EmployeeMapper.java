@@ -10,9 +10,9 @@ public class EmployeeMapper {
 
     private EmployeeMapper() {}
 
-    public static Employee toEntity(CreateEmployeeRequest request) {
+    public static Employee toEntity(Long businessId, CreateEmployeeRequest request) {
         return Employee.builder()
-            .businessId(request.businessId())
+            .businessId(businessId)
             .name(request.name())
             .phone(request.phoneCountryCode(), request.phoneNumber())
             .email(request.email())

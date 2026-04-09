@@ -128,9 +128,24 @@ public class NotificationService {
         }
     }
 
-    private void sendAndLog(Appointment appointment, Customer customer, 
+    private void sendAndLog(Appointment appointment, Customer customer,
                             NotificationType type, WhatsAppMessageRequest messageRequest) {
-        NotificationLog logEntry = NotificationLog.builder()
+        NotificationLog logEntry = buildLogEntry(appointment, customer, type, messageRequest);
+        WhatsAppMessageResponse response = whatsAppClient.sendMessage(messageRequest);
+        if (response.success()) {
+            logEntry.markAsSent(response.messageId());
+            log.info("Bildirim gönderildi: type={}, appointmentId={}", type, appointment.getId());
+        } else {
+            logEntry.markAsFailed(response.errorMessage());
+            log.error("Bildirim gönderilemedi: type={}, error={}", type, response.errorMessage());
+            trySmsIfFallback(customer, type, messageRequest, appointment);
+        }
+        notificationLogRepository.save(logEntry);
+    }
+
+    private NotificationLog buildLogEntry(Appointment appointment, Customer customer,
+                                          NotificationType type, WhatsAppMessageRequest messageRequest) {
+        return NotificationLog.builder()
             .businessId(appointment.getBusinessId())
             .customerId(customer.getId())
             .appointmentId(appointment.getId())
@@ -138,27 +153,20 @@ public class NotificationService {
             .phoneNumber(PhoneNumberUtil.normalizeDigitsOnly(customer.getFormattedPhoneNumber()))
             .message(messageRequest.templateName() + ": " + messageRequest.parameters())
             .build();
+    }
 
-        WhatsAppMessageResponse response = whatsAppClient.sendMessage(messageRequest);
-
-        if (response.success()) {
-            logEntry.markAsSent(response.messageId());
-            log.info("Bildirim gönderildi: type={}, appointmentId={}", type, appointment.getId());
-        } else {
-            logEntry.markAsFailed(response.errorMessage());
-            log.error("Bildirim gönderilemedi: type={}, error={}", type, response.errorMessage());
-            if (smsFallbackEnabled) {
-                String smsText = buildSmsFallbackText(type, messageRequest);
-                SmsSendResult smsResult = smsClient.send(customer.getFormattedPhoneNumber(), smsText);
-                if (smsResult.success()) {
-                    log.info("SMS fallback gönderildi: type={}, appointmentId={}", type, appointment.getId());
-                } else {
-                    log.warn("SMS fallback başarısız: type={}, error={}", type, smsResult.errorMessage());
-                }
-            }
+    private void trySmsIfFallback(Customer customer, NotificationType type,
+                                   WhatsAppMessageRequest messageRequest, Appointment appointment) {
+        if (!smsFallbackEnabled) {
+            return;
         }
-
-        notificationLogRepository.save(logEntry);
+        String smsText = buildSmsFallbackText(type, messageRequest);
+        SmsSendResult smsResult = smsClient.send(customer.getFormattedPhoneNumber(), smsText);
+        if (smsResult.success()) {
+            log.info("SMS fallback gönderildi: type={}, appointmentId={}", type, appointment.getId());
+        } else {
+            log.warn("SMS fallback başarısız: type={}, error={}", type, smsResult.errorMessage());
+        }
     }
 
     private String buildSmsFallbackText(NotificationType type, WhatsAppMessageRequest messageRequest) {
@@ -177,7 +185,6 @@ public class NotificationService {
 
     private void retryNotification(NotificationLog logEntry) {
         log.info("Bildirim tekrar deneniyor: id={}, attempt={}", logEntry.getId(), logEntry.getRetryCount() + 1);
-        // Retry implementation would go here
     }
 
     private String formatPriceIfEnabled(Long businessId, ServiceDefinition service) {

@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
@@ -81,7 +82,8 @@ class AvailabilityServiceCapabilityTest {
         when(capabilityService.effectiveDuration(EMPLOYEE_ID, SERVICE_ID, 60)).thenReturn(60);
         when(workingHoursRepository.findByBusinessIdAndDayOfWeek(BUSINESS_ID, date.getDayOfWeek()))
             .thenReturn(Optional.of(hours));
-        when(appointmentRepository.findConflictingAppointments(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
+        when(appointmentRepository.findActiveByEmployeeAndDateRange(
+                eq(EMPLOYEE_ID), any(LocalDateTime.class), any(LocalDateTime.class)))
             .thenReturn(List.of());
 
         List<AvailableSlotResponse> slots =
@@ -124,7 +126,8 @@ class AvailabilityServiceCapabilityTest {
             .thenReturn(List.of(cap));
         when(workingHoursRepository.findByBusinessIdAndDayOfWeek(BUSINESS_ID, date.getDayOfWeek()))
             .thenReturn(Optional.of(hours));
-        when(appointmentRepository.findConflictingAppointments(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
+        when(appointmentRepository.findActiveByEmployeeAndDateRange(
+                eq(EMPLOYEE_ID), any(LocalDateTime.class), any(LocalDateTime.class)))
             .thenReturn(List.of());
 
         List<AvailableSlotResponse> slots =
@@ -181,7 +184,8 @@ class AvailabilityServiceCapabilityTest {
             .thenReturn(List.of(cap));
         when(workingHoursRepository.findByBusinessIdAndDayOfWeek(BUSINESS_ID, date.getDayOfWeek()))
             .thenReturn(Optional.of(hours));
-        when(appointmentRepository.findConflictingAppointments(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
+        when(appointmentRepository.findActiveByEmployeeAndDateRange(
+                eq(EMPLOYEE_ID), any(LocalDateTime.class), any(LocalDateTime.class)))
             .thenReturn(List.of());
 
         List<AvailableSlotResponse> slotsWithCustom30 =

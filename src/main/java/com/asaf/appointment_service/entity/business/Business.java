@@ -66,6 +66,7 @@ public class Business extends BaseEntity {
     protected Business() {}
 
     private Business(Builder builder) {
+        if (builder.id != null) this.setId(builder.id);
         this.name = builder.name;
         this.slug = builder.slug;
         this.phoneCountryCode = builder.phoneCountryCode;
@@ -199,6 +200,7 @@ public class Business extends BaseEntity {
     }
 
     public static class Builder {
+        private Long id;
         private String name;
         private String slug;
         private String phoneCountryCode = "+90";
@@ -215,6 +217,11 @@ public class Business extends BaseEntity {
         private boolean whatsappSendPrice = false;
         private BusinessCategory category;
         private BusinessStatus status = BusinessStatus.ACTIVE;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
 
         public Builder name(String name) {
             this.name = name;
@@ -293,14 +300,16 @@ public class Business extends BaseEntity {
         }
 
         public Business build() {
-            if (name == null || name.isBlank()) {
-                throw new IllegalArgumentException("İşletme adı zorunludur");
-            }
-            if (slug == null || slug.isBlank()) {
-                throw new IllegalArgumentException("İşletme slug zorunludur");
-            }
-            if (category == null) {
-                throw new IllegalArgumentException("İşletme kategorisi zorunludur");
+            if (id == null) {
+                if (name == null || name.isBlank()) {
+                    throw new IllegalArgumentException("İşletme adı zorunludur");
+                }
+                if (slug == null || slug.isBlank()) {
+                    throw new IllegalArgumentException("İşletme slug zorunludur");
+                }
+                if (category == null) {
+                    throw new IllegalArgumentException("İşletme kategorisi zorunludur");
+                }
             }
             return new Business(this);
         }

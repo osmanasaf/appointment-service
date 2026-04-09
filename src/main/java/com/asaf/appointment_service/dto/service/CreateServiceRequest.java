@@ -9,9 +9,6 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
 public record CreateServiceRequest(
-    @NotNull(message = "İşletme ID zorunludur")
-    Long businessId,
-
     @NotBlank(message = "Hizmet adı zorunludur")
     @Size(min = 2, max = 100, message = "Hizmet adı 2-100 karakter arasında olmalıdır")
     String name,

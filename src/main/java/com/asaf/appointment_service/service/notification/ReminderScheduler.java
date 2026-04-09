@@ -6,14 +6,13 @@ import com.asaf.appointment_service.repository.appointment.AppointmentRepository
 import com.asaf.appointment_service.service.business.BusinessService;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-/**
- * Scheduler for sending T-24 hour appointment reminders.
- */
 @Service
 public class ReminderScheduler {
 
@@ -38,22 +37,28 @@ public class ReminderScheduler {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime reminderWindowEnd = now.plusHours(25);
 
-        List<Appointment> appointmentsNeedingReminder = appointmentRepository
+        List<Appointment> appointments = appointmentRepository
             .findAppointmentsNeedingReminder(now, reminderWindowEnd);
 
+        if (appointments.isEmpty()) {
+            log.info("Hatırlatma scheduler tamamlandı: 0 hatırlatma gönderildi");
+            return;
+        }
+
+        Map<Long, Business> businessCache = buildBusinessCache(appointments);
         int sentCount = 0;
-        for (Appointment appointment : appointmentsNeedingReminder) {
+
+        for (Appointment appointment : appointments) {
             try {
-                Business business = businessService.findByIdOrThrow(appointment.getBusinessId());
-                
-                if (appointment.needsReminder(business.getReminderHoursBefore())) {
+                Business business = businessCache.get(appointment.getBusinessId());
+                if (business != null && appointment.needsReminder(business.getReminderHoursBefore())) {
                     notificationService.sendAppointmentReminder(appointment);
                     appointment.markReminderSent();
                     appointmentRepository.save(appointment);
                     sentCount++;
                 }
             } catch (Exception e) {
-                log.error("Hatırlatma gönderilemedi: appointmentId={}, error={}", 
+                log.error("Hatırlatma gönderilemedi: appointmentId={}, error={}",
                     appointment.getId(), e.getMessage());
             }
         }
@@ -65,5 +70,14 @@ public class ReminderScheduler {
     public void retryFailedReminders() {
         log.info("Başarısız bildirimler tekrar deneniyor...");
         notificationService.retryFailedNotifications();
+    }
+
+    private Map<Long, Business> buildBusinessCache(List<Appointment> appointments) {
+        List<Long> businessIds = appointments.stream()
+            .map(Appointment::getBusinessId)
+            .distinct()
+            .toList();
+        return businessService.findAllByIds(businessIds).stream()
+            .collect(Collectors.toMap(Business::getId, b -> b));
     }
 }

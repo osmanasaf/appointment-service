@@ -9,9 +9,9 @@ public class ServiceMapper {
 
     private ServiceMapper() {}
 
-    public static ServiceDefinition toEntity(CreateServiceRequest request) {
+    public static ServiceDefinition toEntity(Long businessId, CreateServiceRequest request) {
         return ServiceDefinition.builder()
-            .businessId(request.businessId())
+            .businessId(businessId)
             .name(request.name())
             .description(request.description())
             .durationMinutes(request.durationMinutes())

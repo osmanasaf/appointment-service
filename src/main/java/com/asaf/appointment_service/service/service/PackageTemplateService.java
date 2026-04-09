@@ -27,10 +27,10 @@ public class PackageTemplateService {
     }
 
     @Transactional
-    public PackageTemplate create(CreatePackageTemplateRequest request) {
-        businessService.findByIdOrThrow(request.businessId());
+    public PackageTemplate create(Long businessId, CreatePackageTemplateRequest request) {
+        businessService.findByIdOrThrow(businessId);
         serviceDefinitionService.findByIdOrThrow(request.serviceId());
-        PackageTemplate template = PackageTemplateMapper.toEntity(request);
+        PackageTemplate template = PackageTemplateMapper.toEntity(businessId, request);
         return templateRepository.save(template);
     }
 

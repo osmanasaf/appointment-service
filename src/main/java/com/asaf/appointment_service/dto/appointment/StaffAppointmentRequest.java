@@ -12,9 +12,6 @@ import java.time.LocalDateTime;
  * Müşteri adı ve telefon ile findOrCreate yapılır, randevu kaynağı (PHONE / WALK_IN) ile kaydedilir.
  */
 public record StaffAppointmentRequest(
-    @NotNull(message = "İşletme ID zorunludur")
-    Long businessId,
-
     @NotNull(message = "Çalışan ID zorunludur")
     Long employeeId,
 

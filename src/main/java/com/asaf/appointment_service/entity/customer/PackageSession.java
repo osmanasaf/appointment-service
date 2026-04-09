@@ -34,6 +34,7 @@ public class PackageSession extends BaseEntity {
     protected PackageSession() {}
 
     private PackageSession(Builder builder) {
+        if (builder.id != null) this.setId(builder.id);
         this.customerPackageId = builder.customerPackageId;
         this.sessionNumber = builder.sessionNumber;
         this.status = builder.status != null ? builder.status : PackageSessionStatus.PENDING;
@@ -96,9 +97,15 @@ public class PackageSession extends BaseEntity {
     }
 
     public static class Builder {
+        private Long id;
         private Long customerPackageId;
         private int sessionNumber;
         private PackageSessionStatus status = PackageSessionStatus.PENDING;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
 
         public Builder customerPackageId(Long customerPackageId) {
             this.customerPackageId = customerPackageId;
@@ -116,11 +123,13 @@ public class PackageSession extends BaseEntity {
         }
 
         public PackageSession build() {
-            if (customerPackageId == null) {
-                throw new IllegalArgumentException("Müşteri paketi ID zorunludur");
-            }
-            if (sessionNumber <= 0) {
-                throw new IllegalArgumentException("Seans numarası pozitif olmalıdır");
+            if (id == null) {
+                if (customerPackageId == null) {
+                    throw new IllegalArgumentException("Müşteri paketi ID zorunludur");
+                }
+                if (sessionNumber <= 0) {
+                    throw new IllegalArgumentException("Seans numarası pozitif olmalıdır");
+                }
             }
             return new PackageSession(this);
         }

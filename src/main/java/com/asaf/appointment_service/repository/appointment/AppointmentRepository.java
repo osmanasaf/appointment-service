@@ -4,6 +4,8 @@ import com.asaf.appointment_service.entity.appointment.Appointment;
 import com.asaf.appointment_service.entity.appointment.AppointmentStatus;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +15,8 @@ import org.springframework.stereotype.Repository;
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
     List<Appointment> findByBusinessIdOrderByScheduledAtDesc(Long businessId);
+
+    Page<Appointment> findByBusinessIdOrderByScheduledAtDesc(Long businessId, Pageable pageable);
 
     List<Appointment> findByBusinessIdAndStatus(Long businessId, AppointmentStatus status);
 
@@ -52,6 +56,16 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
         @Param("end") LocalDateTime end
     );
 
+    @Query("SELECT a FROM Appointment a WHERE a.businessId = :businessId " +
+           "AND a.scheduledAt BETWEEN :start AND :end " +
+           "ORDER BY a.scheduledAt")
+    Page<Appointment> findByBusinessIdAndDateRange(
+        @Param("businessId") Long businessId,
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end,
+        Pageable pageable
+    );
+
     @Query("SELECT a FROM Appointment a WHERE a.reminderSent = false " +
            "AND a.status IN ('PENDING', 'CONFIRMED') " +
            "AND a.scheduledAt BETWEEN :start AND :end")
@@ -76,5 +90,14 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
         @Param("customerId") Long customerId,
         @Param("dayStart") LocalDateTime dayStart,
         @Param("dayEnd") LocalDateTime dayEnd
+    );
+
+    @Query("SELECT a FROM Appointment a WHERE a.employeeId = :employeeId " +
+           "AND a.status IN ('PENDING', 'CONFIRMED', 'RISKY') " +
+           "AND a.scheduledAt < :end AND a.endAt > :start")
+    List<Appointment> findActiveByEmployeeAndDateRange(
+        @Param("employeeId") Long employeeId,
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end
     );
 }

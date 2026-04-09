@@ -121,26 +121,6 @@ public class PublicAppointmentController {
             availabilityService.getAvailableDates(business.getId(), employeeId, serviceId, daysAhead);
         return ResponseEntity.ok(ApiResponse.success(dates));
     }
-    @GetMapping("/availability")
-    public ResponseEntity<ApiResponse<List<AvailableSlotResponse>>> getAvailableSlots(
-            @RequestParam Long businessId,
-            @RequestParam(required = false) Long employeeId,
-            @RequestParam Long serviceId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        List<AvailableSlotResponse> slots =
-            availabilityService.getAvailableSlots(businessId, employeeId, serviceId, date);
-        return ResponseEntity.ok(ApiResponse.success(slots));
-    }
-    @GetMapping("/availability/dates")
-    public ResponseEntity<ApiResponse<List<LocalDate>>> getAvailableDates(
-            @RequestParam Long businessId,
-            @RequestParam(required = false) Long employeeId,
-            @RequestParam Long serviceId,
-            @RequestParam(defaultValue = "30") int daysAhead) {
-        List<LocalDate> dates =
-            availabilityService.getAvailableDates(businessId, employeeId, serviceId, daysAhead);
-        return ResponseEntity.ok(ApiResponse.success(dates));
-    }
     @PostMapping("/businesses/{slug}/appointments")
     public ResponseEntity<ApiResponse<AppointmentResponse>> createPublicAppointment(
             @PathVariable String slug,
@@ -173,7 +153,6 @@ public class PublicAppointmentController {
         );
 
         CreateAppointmentRequest appointmentRequest = new CreateAppointmentRequest(
-            business.getId(),
             customer.getId(),
             request.employeeId(),
             request.serviceId(),
@@ -183,7 +162,7 @@ public class PublicAppointmentController {
             AppointmentSource.ONLINE
         );
 
-        Appointment appointment = appointmentService.createAppointment(appointmentRequest);
+        Appointment appointment = appointmentService.createAppointment(business.getId(), appointmentRequest);
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(ApiResponse.success(AppointmentMapper.toResponse(appointment),

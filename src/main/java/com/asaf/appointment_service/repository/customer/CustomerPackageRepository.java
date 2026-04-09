@@ -16,5 +16,7 @@ public interface CustomerPackageRepository extends JpaRepository<CustomerPackage
 
     List<CustomerPackage> findByBusinessIdAndActiveTrue(Long businessId);
 
+    List<CustomerPackage> findByBusinessIdAndTemplateIdOrderByCreatedAtDesc(Long businessId, Long templateId);
+
     List<CustomerPackage> findByActiveTrueAndExpiresAtBefore(java.time.LocalDateTime dateTime);
 }

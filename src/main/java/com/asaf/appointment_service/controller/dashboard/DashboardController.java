@@ -1,6 +1,7 @@
 package com.asaf.appointment_service.controller.dashboard;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
+import com.asaf.appointment_service.common.service.AuthenticatedBusinessService;
 import com.asaf.appointment_service.dto.dashboard.DashboardPeriod;
 import com.asaf.appointment_service.dto.dashboard.DashboardStatsResponse;
 import com.asaf.appointment_service.service.dashboard.DashboardService;
@@ -15,15 +16,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class DashboardController {
 
     private final DashboardService dashboardService;
+    private final AuthenticatedBusinessService authenticatedBusinessService;
 
-    public DashboardController(DashboardService dashboardService) {
+    public DashboardController(DashboardService dashboardService,
+                                AuthenticatedBusinessService authenticatedBusinessService) {
         this.dashboardService = dashboardService;
+        this.authenticatedBusinessService = authenticatedBusinessService;
     }
 
     @GetMapping("/stats")
     public ResponseEntity<ApiResponse<DashboardStatsResponse>> getStats(
-            @RequestParam Long businessId,
             @RequestParam(defaultValue = "DAILY") DashboardPeriod period) {
+        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
         DashboardStatsResponse stats = dashboardService.getStats(businessId, period);
         return ResponseEntity.ok(ApiResponse.success(stats));
     }
