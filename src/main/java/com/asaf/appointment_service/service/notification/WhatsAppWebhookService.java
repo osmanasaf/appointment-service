@@ -3,6 +3,7 @@ package com.asaf.appointment_service.service.notification;
 import com.asaf.appointment_service.common.util.PhoneNumberUtil;
 import com.asaf.appointment_service.entity.notification.NotificationLog;
 import com.asaf.appointment_service.entity.notification.NotificationType;
+import com.asaf.appointment_service.integration.whatsapp.WhatsAppClientInterface;
 import com.asaf.appointment_service.repository.notification.NotificationLogRepository;
 import com.asaf.appointment_service.service.appointment.AppointmentService;
 import java.time.LocalDateTime;
@@ -21,19 +22,65 @@ public class WhatsAppWebhookService {
     private static final int REMINDER_LOOKBACK_HOURS = 48;
 
     private static final List<String> CONFIRM_KEYWORDS = List.of(
-        "geliyorum", "onaylıyorum", "onay", "1", "evet", "ok", "tamam", "kabul"
+        "geliyorum", "onaylıyorum", "onay", "1", "evet", "ok", "tamam", "kabul", "confirm", "yes",
+        "confirm_appointment"
     );
     private static final List<String> CANCEL_KEYWORDS = List.of(
-        "iptal", "iptal ediyorum", "2", "hayır", "gelemeyeceğim", "gelemem"
+        "iptal", "iptal ediyorum", "2", "hayır", "gelemeyeceğim", "gelemem", "cancel", "no",
+        "cancel_appointment"
     );
+    private static final List<String> RESCHEDULE_KEYWORDS = List.of(
+        "ertele", "erteleme", "3", "başka", "değiştir", "reschedule",
+        "reschedule_appointment"
+    );
+
+    private static final String AUTO_REPLY_UNKNOWN = """
+        Mesajınızı anlayamadım.
+        
+        Randevunuzu onaylamak için "Geliyorum" yazın.
+        İptal etmek için "İptal" yazın.
+        Ertelemek için "Ertele" yazın.
+        
+        Ayarla""";
+
+    private static final String AUTO_REPLY_CONFIRMED = """
+        ✅ Randevunuz onaylandı!
+        
+        Görüşmek üzere.
+        
+        Ayarla""";
+
+    private static final String AUTO_REPLY_CANCELLED = """
+        ❌ Randevunuz iptal edildi.
+        
+        Yeni randevu almak için web sitemizi ziyaret edebilirsiniz.
+        
+        Ayarla""";
+
+    private static final String AUTO_REPLY_RESCHEDULE_REQUESTED = """
+        🔄 Erteleme talebiniz alındı!
+        
+        En kısa sürede sizinle iletişime geçeceğiz.
+        
+        Ayarla""";
+
+    private static final String AUTO_REPLY_NO_APPOINTMENT = """
+        Aktif bir randevunuz bulunamadı.
+        
+        Yeni randevu almak için web sitemizi ziyaret edebilirsiniz.
+        
+        Ayarla""";
 
     private final NotificationLogRepository notificationLogRepository;
     private final AppointmentService appointmentService;
+    private final WhatsAppClientInterface whatsAppClient;
 
     public WhatsAppWebhookService(NotificationLogRepository notificationLogRepository,
-                                  AppointmentService appointmentService) {
+                                  AppointmentService appointmentService,
+                                  WhatsAppClientInterface whatsAppClient) {
         this.notificationLogRepository = notificationLogRepository;
         this.appointmentService = appointmentService;
+        this.whatsAppClient = whatsAppClient;
     }
 
     @Transactional
@@ -96,25 +143,39 @@ public class WhatsAppWebhookService {
     }
 
     private void handleIncomingMessage(String normalizedPhone, String text) {
-        String lower = text.toLowerCase();
+        String lower = text.toLowerCase().trim();
+        
         if (CONFIRM_KEYWORDS.stream().anyMatch(lower::contains)) {
             confirmAppointment(normalizedPhone);
             return;
         }
+        
         if (CANCEL_KEYWORDS.stream().anyMatch(lower::contains)) {
             cancelAppointment(normalizedPhone);
+            return;
         }
+        
+        if (RESCHEDULE_KEYWORDS.stream().anyMatch(lower::contains)) {
+            requestReschedule(normalizedPhone);
+            return;
+        }
+        
+        sendAutoReply(normalizedPhone, AUTO_REPLY_UNKNOWN);
+        log.info("Bilinmeyen mesaj alındı, auto-reply gönderildi: telefon={}", 
+            PhoneNumberUtil.maskForLog(normalizedPhone));
     }
 
     private void confirmAppointment(String normalizedPhone) {
         Optional<Long> appointmentId = resolveAppointmentId(normalizedPhone);
         if (appointmentId.isEmpty()) {
             log.warn("WhatsApp onay: randevu bulunamadı, telefon={}", PhoneNumberUtil.maskForLog(normalizedPhone));
+            sendAutoReply(normalizedPhone, AUTO_REPLY_NO_APPOINTMENT);
             return;
         }
         try {
             appointmentService.confirmAppointment(appointmentId.get());
             log.info("WhatsApp ile randevu onaylandı: appointmentId={}", appointmentId.get());
+            sendAutoReply(normalizedPhone, AUTO_REPLY_CONFIRMED);
         } catch (Exception e) {
             log.error("WhatsApp onay işlenemedi: appointmentId={}, error={}", appointmentId.get(), e.getMessage());
         }
@@ -124,13 +185,43 @@ public class WhatsAppWebhookService {
         Optional<Long> appointmentId = resolveAppointmentId(normalizedPhone);
         if (appointmentId.isEmpty()) {
             log.warn("WhatsApp iptal: randevu bulunamadı, telefon={}", PhoneNumberUtil.maskForLog(normalizedPhone));
+            sendAutoReply(normalizedPhone, AUTO_REPLY_NO_APPOINTMENT);
             return;
         }
         try {
             appointmentService.cancelAppointment(appointmentId.get(), "WhatsApp üzerinden iptal");
             log.info("WhatsApp ile randevu iptal edildi: appointmentId={}", appointmentId.get());
+            sendAutoReply(normalizedPhone, AUTO_REPLY_CANCELLED);
         } catch (Exception e) {
             log.error("WhatsApp iptal işlenemedi: appointmentId={}, error={}", appointmentId.get(), e.getMessage());
+        }
+    }
+
+    private void requestReschedule(String normalizedPhone) {
+        Optional<Long> appointmentId = resolveAppointmentId(normalizedPhone);
+        if (appointmentId.isEmpty()) {
+            log.warn("WhatsApp erteleme: randevu bulunamadı, telefon={}", PhoneNumberUtil.maskForLog(normalizedPhone));
+            sendAutoReply(normalizedPhone, AUTO_REPLY_NO_APPOINTMENT);
+            return;
+        }
+        try {
+            appointmentService.requestReschedule(appointmentId.get(), "WhatsApp üzerinden erteleme talebi");
+            log.info("WhatsApp ile erteleme talep edildi: appointmentId={}", appointmentId.get());
+            sendAutoReply(normalizedPhone, AUTO_REPLY_RESCHEDULE_REQUESTED);
+        } catch (Exception e) {
+            log.error("WhatsApp erteleme işlenemedi: appointmentId={}, error={}", appointmentId.get(), e.getMessage());
+        }
+    }
+
+    private void sendAutoReply(String normalizedPhone, String message) {
+        if (!whatsAppClient.isEnabled()) {
+            log.debug("WhatsApp devre dışı, auto-reply gönderilmedi");
+            return;
+        }
+        try {
+            whatsAppClient.sendTextMessage(normalizedPhone, message);
+        } catch (Exception e) {
+            log.warn("Auto-reply gönderilemedi: {}", e.getMessage());
         }
     }
 

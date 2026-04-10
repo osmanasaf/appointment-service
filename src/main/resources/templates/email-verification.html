@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Doğrulama</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f8;font-family:Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f8;padding:48px 16px">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0"
+               style="background:#ffffff;border-radius:12px;padding:48px 40px;
+                      box-shadow:0 4px 16px rgba(0,0,0,0.08);max-width:560px;width:100%">
+
+          <!-- Logo/Header -->
+          <tr>
+            <td style="text-align:center;padding-bottom:32px;border-bottom:1px solid #f0f0f0">
+              <div style="display:inline-block;background:#6366f1;border-radius:10px;
+                          padding:10px 20px;color:#fff;font-size:20px;font-weight:700;letter-spacing:-0.5px">
+                Randevu
+              </div>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding-top:32px">
+              <p style="font-size:16px;color:#1a1a2e;font-weight:600;margin:0 0 8px">
+                Merhaba {{name}},
+              </p>
+              <p style="font-size:15px;color:#555;line-height:1.7;margin:0 0 24px">
+                Hesabınıza hoş geldiniz! Sistemi kullanmaya başlamak için lütfen
+                email adresinizi doğrulayın. Bu link <strong>24 saat</strong> geçerlidir.
+              </p>
+
+              <!-- CTA Button -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:8px 0 32px">
+                    <a href="{{verificationUrl}}"
+                       style="display:inline-block;background:#6366f1;color:#ffffff;
+                              text-decoration:none;padding:14px 40px;border-radius:8px;
+                              font-size:16px;font-weight:600;letter-spacing:0.2px">
+                      Email Adresimi Doğrula
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="font-size:13px;color:#888;line-height:1.6;margin:0">
+                Buton çalışmıyorsa aşağıdaki linki kopyalayıp tarayıcınıza yapıştırın:
+              </p>
+              <p style="font-size:12px;color:#6366f1;word-break:break-all;margin:4px 0 0">
+                {{verificationUrl}}
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding-top:40px;border-top:1px solid #f0f0f0;text-align:center">
+              <p style="font-size:12px;color:#aaa;margin:0;line-height:1.6">
+                Bu emaili beklentiniz dışında aldıysanız güvenle yok sayabilirsiniz.<br>
+                Hesabınız oluşturulmaya devam etmeyecektir.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

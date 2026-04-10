@@ -196,53 +196,10 @@ public class SubscriptionService {
     }
 
     private void ensureDefaultPlansExist() {
-        if (planRepository.count() > 0) {
-            return;
+        // PlanSeeder tarafından oluşturuluyor, burada sadece kontrol yapıyoruz
+        if (planRepository.count() == 0) {
+            throw new IllegalStateException("Planlar henüz oluşturulmamış. PlanSeeder çalışmalı.");
         }
-
-        planRepository.save(Plan.builder()
-            .code(PlanCode.STARTER)
-            .maxEmployees(1)
-            .maxAppointmentsMonthly(150)
-            .maxServices(10)
-            .maxBranches(1)
-            .features(List.of("WHATSAPP", "DASHBOARD", "PACKAGES"))
-            .monthlyPrice(java.math.BigDecimal.valueOf(499.00))
-            .yearlyPrice(java.math.BigDecimal.valueOf(4790.40))
-            .build());
-
-        planRepository.save(Plan.builder()
-            .code(PlanCode.PRO)
-            .maxEmployees(5)
-            .maxAppointmentsMonthly(750)
-            .maxServices(30)
-            .maxBranches(1)
-            .features(List.of("WHATSAPP", "DASHBOARD", "PACKAGES", "REPORTS"))
-            .monthlyPrice(java.math.BigDecimal.valueOf(999.00))
-            .yearlyPrice(java.math.BigDecimal.valueOf(9590.40))
-            .build());
-
-        planRepository.save(Plan.builder()
-            .code(PlanCode.BUSINESS)
-            .maxEmployees(15)
-            .maxAppointmentsMonthly(2500)
-            .maxServices(-1)
-            .maxBranches(3)
-            .features(List.of("WHATSAPP", "DASHBOARD", "PACKAGES", "REPORTS", "MULTI_BRANCH"))
-            .monthlyPrice(java.math.BigDecimal.valueOf(1799.00))
-            .yearlyPrice(java.math.BigDecimal.valueOf(17270.40))
-            .build());
-
-        planRepository.save(Plan.builder()
-            .code(PlanCode.PREMIUM)
-            .maxEmployees(-1)
-            .maxAppointmentsMonthly(-1)
-            .maxServices(-1)
-            .maxBranches(-1)
-            .features(List.of("WHATSAPP", "DASHBOARD", "PACKAGES", "REPORTS", "MULTI_BRANCH", "EFATURA"))
-            .monthlyPrice(java.math.BigDecimal.valueOf(2999.00))
-            .yearlyPrice(java.math.BigDecimal.valueOf(28790.40))
-            .build());
     }
 
     private void validateSubscriptionUsable(Long businessId) {

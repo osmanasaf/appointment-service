@@ -38,6 +38,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/v1/public/**").permitAll()
                 .requestMatchers("/api/v1/webhooks/**").permitAll()
+                .requestMatchers("/api/v1/test/**").permitAll()
+                .requestMatchers("/api/v1/businesses/categories").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .anyRequest().authenticated()
             )

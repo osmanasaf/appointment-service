@@ -139,6 +139,12 @@ public class Appointment extends BaseEntity {
         this.riskReason = reason;
     }
 
+    public void requestReschedule(String reason) {
+        STATE_MACHINE.validateTransition(this.status, AppointmentStatus.RESCHEDULE_REQUESTED);
+        this.status = AppointmentStatus.RESCHEDULE_REQUESTED;
+        this.cancellationReason = reason;
+    }
+
     public void markReminderSent() {
         this.reminderSent = true;
         this.reminderSentAt = LocalDateTime.now();
@@ -343,11 +349,16 @@ public class Appointment extends BaseEntity {
             addTransition(AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED);
             addTransition(AppointmentStatus.PENDING, AppointmentStatus.CANCELLED);
             addTransition(AppointmentStatus.PENDING, AppointmentStatus.RISKY);
+            addTransition(AppointmentStatus.PENDING, AppointmentStatus.RESCHEDULE_REQUESTED);
             addTransition(AppointmentStatus.CONFIRMED, AppointmentStatus.CANCELLED);
             addTransition(AppointmentStatus.CONFIRMED, AppointmentStatus.COMPLETED);
             addTransition(AppointmentStatus.CONFIRMED, AppointmentStatus.NO_SHOW);
+            addTransition(AppointmentStatus.CONFIRMED, AppointmentStatus.RESCHEDULE_REQUESTED);
             addTransition(AppointmentStatus.RISKY, AppointmentStatus.CONFIRMED);
             addTransition(AppointmentStatus.RISKY, AppointmentStatus.CANCELLED);
+            addTransition(AppointmentStatus.RISKY, AppointmentStatus.RESCHEDULE_REQUESTED);
+            addTransition(AppointmentStatus.RESCHEDULE_REQUESTED, AppointmentStatus.CONFIRMED);
+            addTransition(AppointmentStatus.RESCHEDULE_REQUESTED, AppointmentStatus.CANCELLED);
         }
     }
 }

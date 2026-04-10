@@ -15,4 +15,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByBusinessId(Long businessId);
 
     Optional<User> findByEmployeeId(Long employeeId);
+
+    Optional<User> findByVerificationToken(String verificationToken);
 }

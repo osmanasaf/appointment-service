@@ -7,10 +7,14 @@ import com.asaf.appointment_service.dto.business.CreateBusinessRequest;
 import com.asaf.appointment_service.entity.business.Business;
 import com.asaf.appointment_service.entity.user.User;
 import com.asaf.appointment_service.entity.user.UserRole;
+import com.asaf.appointment_service.exception.auth.EmailNotVerifiedException;
+import com.asaf.appointment_service.exception.auth.InvalidVerificationTokenException;
+import com.asaf.appointment_service.integration.email.EmailClient;
 import com.asaf.appointment_service.repository.user.UserRepository;
 import com.asaf.appointment_service.security.JwtTokenProvider;
 import com.asaf.appointment_service.service.business.BusinessService;
 import com.asaf.appointment_service.service.plan.SubscriptionService;
+import com.asaf.appointment_service.service.service.NicheServiceTemplateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -31,23 +35,29 @@ public class AuthService {
     private final JwtTokenProvider tokenProvider;
     private final AuthenticationManager authenticationManager;
     private final SubscriptionService subscriptionService;
+    private final EmailClient emailClient;
+    private final NicheServiceTemplateService nicheServiceTemplateService;
 
     public AuthService(UserRepository userRepository,
                        BusinessService businessService,
                        PasswordEncoder passwordEncoder,
                        JwtTokenProvider tokenProvider,
                        AuthenticationManager authenticationManager,
-                       SubscriptionService subscriptionService) {
+                       SubscriptionService subscriptionService,
+                       EmailClient emailClient,
+                       NicheServiceTemplateService nicheServiceTemplateService) {
         this.userRepository = userRepository;
         this.businessService = businessService;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.authenticationManager = authenticationManager;
         this.subscriptionService = subscriptionService;
+        this.emailClient = emailClient;
+        this.nicheServiceTemplateService = nicheServiceTemplateService;
     }
 
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public void register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new IllegalArgumentException("Bu email zaten kayıtlı");
         }
@@ -67,6 +77,7 @@ public class AuthService {
             request.businessCategory()
         ));
         subscriptionService.initializeTrialSubscription(business.getId());
+        nicheServiceTemplateService.seedServicesForCategory(business.getId(), request.businessCategory());
 
         User user = User.builder()
             .email(request.email())
@@ -77,11 +88,43 @@ public class AuthService {
             .role(UserRole.BUSINESS_OWNER)
             .build();
 
+        String verificationToken = user.initiateEmailVerification();
         User savedUser = userRepository.save(user);
-        log.info("Yeni kullanıcı kaydedildi: userId={}, businessId={}",
-            savedUser.getId(), business.getId());
 
-        return generateAuthResponse(savedUser);
+        log.info("Yeni kullanıcı kaydedildi: userId={}, businessId={}", savedUser.getId(), business.getId());
+
+        emailClient.sendVerificationEmail(savedUser.getEmail(), savedUser.getName(), verificationToken);
+    }
+
+    @Transactional
+    public void verifyEmail(String token) {
+        User user = userRepository.findByVerificationToken(token)
+            .orElseThrow(() -> new InvalidVerificationTokenException("Doğrulama linki geçersiz veya kullanılmış."));
+
+        if (user.isVerificationTokenExpired()) {
+            throw new InvalidVerificationTokenException("Doğrulama linkinin süresi dolmuş. Lütfen yeni link isteyin.");
+        }
+
+        user.confirmEmailVerification();
+        userRepository.save(user);
+
+        log.info("Email doğrulandı: userId={}", user.getId());
+    }
+
+    @Transactional
+    public void resendVerification(String email) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new IllegalArgumentException("Bu email ile kayıtlı kullanıcı bulunamadı"));
+
+        if (user.isEmailVerified()) {
+            return;
+        }
+
+        String newToken = user.initiateEmailVerification();
+        userRepository.save(user);
+
+        emailClient.sendVerificationEmail(user.getEmail(), user.getName(), newToken);
+        log.info("Doğrulama emaili yeniden gönderildi: userId={}", user.getId());
     }
 
     @Transactional(readOnly = true)
@@ -97,15 +140,21 @@ public class AuthService {
             throw new IllegalArgumentException("Hesabınız aktif değil");
         }
 
+        if (!user.isEmailVerified()) {
+            throw new EmailNotVerifiedException();
+        }
+
         log.info("Kullanıcı giriş yaptı: userId={}", user.getId());
         return generateAuthResponse(user);
     }
 
     private AuthResponse generateAuthResponse(User user) {
         String token = tokenProvider.generateToken(
-            user.getId(), 
-            user.getEmail(), 
-            user.getRole().name()
+            user.getId(),
+            user.getEmail(),
+            user.getRole().name(),
+            user.getBusinessId(),
+            user.getEmployeeId()
         );
 
         AuthResponse.UserInfo userInfo = new AuthResponse.UserInfo(
@@ -113,6 +162,7 @@ public class AuthService {
             user.getEmail(),
             user.getName(),
             user.getBusinessId(),
+            user.getEmployeeId(),
             user.getRole()
         );
 

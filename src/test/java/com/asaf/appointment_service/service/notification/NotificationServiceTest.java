@@ -4,7 +4,8 @@ import com.asaf.appointment_service.entity.appointment.Appointment;
 import com.asaf.appointment_service.entity.appointment.AppointmentStatus;
 import com.asaf.appointment_service.entity.customer.Customer;
 import com.asaf.appointment_service.entity.service.ServiceDefinition;
-import com.asaf.appointment_service.integration.whatsapp.WhatsAppClient;
+import com.asaf.appointment_service.integration.sms.SmsClient;
+import com.asaf.appointment_service.integration.whatsapp.WhatsAppClientInterface;
 import com.asaf.appointment_service.integration.whatsapp.WhatsAppMessageRequest;
 import com.asaf.appointment_service.integration.whatsapp.WhatsAppMessageResponse;
 import com.asaf.appointment_service.repository.notification.NotificationLogRepository;
@@ -29,7 +30,7 @@ import static org.mockito.Mockito.when;
 class NotificationServiceTest {
 
     @Mock
-    private WhatsAppClient whatsAppClient;
+    private WhatsAppClientInterface whatsAppClient;
     @Mock
     private NotificationLogRepository notificationLogRepository;
     @Mock
@@ -38,6 +39,8 @@ class NotificationServiceTest {
     private ServiceDefinitionService serviceDefinitionService;
     @Mock
     private BusinessService businessService;
+    @Mock
+    private SmsClient smsClient;
 
     @InjectMocks
     private NotificationService notificationService;

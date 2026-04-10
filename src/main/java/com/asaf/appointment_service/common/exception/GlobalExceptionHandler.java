@@ -2,6 +2,7 @@ package com.asaf.appointment_service.common.exception;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
 import com.asaf.appointment_service.common.dto.ApiResponse.ErrorDetails;
+import com.asaf.appointment_service.exception.auth.EmailNotVerifiedException;
 import com.asaf.appointment_service.exception.employee.EmployeeOnLeaveException;
 import com.asaf.appointment_service.exception.plan.PlanLimitExceededException;
 import java.time.LocalDateTime;
@@ -18,6 +19,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleEmailNotVerified(EmailNotVerifiedException ex) {
+        log.warn("Email not verified: {}", ex.getMessage());
+        return ResponseEntity
+            .status(HttpStatus.FORBIDDEN)
+            .body(ApiResponse.error(new ErrorDetails(ex.getCode(), ex.getMessage(), null, LocalDateTime.now())));
+    }
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleEntityNotFound(EntityNotFoundException ex) {

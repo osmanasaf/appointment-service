@@ -31,6 +31,12 @@ public class Plan extends BaseEntity {
     @Column(name = "max_branches", nullable = false)
     private int maxBranches;
 
+    @Column(name = "max_whatsapp_monthly", nullable = false)
+    private int maxWhatsappMonthly;
+
+    @Column(name = "max_sms_monthly", nullable = false)
+    private int maxSmsMonthly;
+
     @Convert(converter = StringListJsonConverter.class)
     @Column(nullable = false, length = 4000)
     private List<String> features;
@@ -49,6 +55,8 @@ public class Plan extends BaseEntity {
         this.maxAppointmentsMonthly = builder.maxAppointmentsMonthly;
         this.maxServices = builder.maxServices;
         this.maxBranches = builder.maxBranches;
+        this.maxWhatsappMonthly = builder.maxWhatsappMonthly;
+        this.maxSmsMonthly = builder.maxSmsMonthly;
         this.features = builder.features;
         this.monthlyPrice = builder.monthlyPrice;
         this.yearlyPrice = builder.yearlyPrice;
@@ -76,6 +84,22 @@ public class Plan extends BaseEntity {
 
     public int getMaxBranches() {
         return maxBranches;
+    }
+
+    public int getMaxWhatsappMonthly() {
+        return maxWhatsappMonthly;
+    }
+
+    public int getMaxSmsMonthly() {
+        return maxSmsMonthly;
+    }
+
+    public boolean isUnlimitedWhatsapp() {
+        return maxWhatsappMonthly < 0;
+    }
+
+    public boolean isUnlimitedSms() {
+        return maxSmsMonthly < 0;
     }
 
     public List<String> getFeatures() {
@@ -116,6 +140,8 @@ public class Plan extends BaseEntity {
         private int maxAppointmentsMonthly;
         private int maxServices;
         private int maxBranches;
+        private int maxWhatsappMonthly;
+        private int maxSmsMonthly;
         private List<String> features = List.of();
         private BigDecimal monthlyPrice;
         private BigDecimal yearlyPrice;
@@ -142,6 +168,16 @@ public class Plan extends BaseEntity {
 
         public Builder maxBranches(int maxBranches) {
             this.maxBranches = maxBranches;
+            return this;
+        }
+
+        public Builder maxWhatsappMonthly(int maxWhatsappMonthly) {
+            this.maxWhatsappMonthly = maxWhatsappMonthly;
+            return this;
+        }
+
+        public Builder maxSmsMonthly(int maxSmsMonthly) {
+            this.maxSmsMonthly = maxSmsMonthly;
             return this;
         }
 

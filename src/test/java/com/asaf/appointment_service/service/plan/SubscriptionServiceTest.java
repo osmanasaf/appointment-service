@@ -117,6 +117,7 @@ class SubscriptionServiceTest {
             .manual(true)
             .build();
 
+        when(planRepository.count()).thenReturn(4L); // PlanSeeder tarafından oluşturulmuş gibi
         when(planRepository.findByCode(PlanCode.PRO)).thenReturn(Optional.of(proPlan));
         when(subscriptionRepository.findByBusinessId(businessId)).thenReturn(Optional.of(subscription));
         when(subscriptionRepository.save(subscription)).thenReturn(subscription);
@@ -136,7 +137,9 @@ class SubscriptionServiceTest {
             .maxAppointmentsMonthly(maxAppointmentsMonthly)
             .maxServices(maxServices)
             .maxBranches(1)
-            .features(List.of("WHATSAPP"))
+            .maxWhatsappMonthly(500)
+            .maxSmsMonthly(100)
+            .features(List.of("WHATSAPP_NOTIFICATIONS"))
             .monthlyPrice(BigDecimal.valueOf(499))
             .yearlyPrice(BigDecimal.valueOf(4790.40))
             .build();

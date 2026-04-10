@@ -91,6 +91,7 @@ public class DataSeeder implements ApplicationRunner {
                 .businessId(business.getId())
                 .role(UserRole.BUSINESS_OWNER)
                 .build();
+        user.verifyEmail();
         userRepository.save(user);
 
         employeeService.createEmployee(business.getId(), new CreateEmployeeRequest(

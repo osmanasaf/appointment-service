@@ -6,6 +6,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -38,6 +41,12 @@ public class User extends BaseEntity {
 
     @Column(name = "email_verified")
     private boolean emailVerified = false;
+
+    @Column(name = "verification_token", length = 64)
+    private String verificationToken;
+
+    @Column(name = "verification_token_expiry")
+    private Instant verificationTokenExpiry;
 
     protected User() {}
 
@@ -76,6 +85,23 @@ public class User extends BaseEntity {
         this.emailVerified = true;
     }
 
+    public String initiateEmailVerification() {
+        String token = UUID.randomUUID().toString().replace("-", "");
+        this.verificationToken = token;
+        this.verificationTokenExpiry = Instant.now().plus(24, ChronoUnit.HOURS);
+        return token;
+    }
+
+    public void confirmEmailVerification() {
+        this.emailVerified = true;
+        this.verificationToken = null;
+        this.verificationTokenExpiry = null;
+    }
+
+    public boolean isVerificationTokenExpired() {
+        return verificationTokenExpiry == null || Instant.now().isAfter(verificationTokenExpiry);
+    }
+
     public void linkToBusiness(Long businessId) {
         this.businessId = businessId;
     }
@@ -93,6 +119,7 @@ public class User extends BaseEntity {
     public UserRole getRole() { return role; }
     public boolean isActive() { return active; }
     public boolean isEmailVerified() { return emailVerified; }
+    public String getVerificationToken() { return verificationToken; }
 
     public static class Builder {
         private String email;

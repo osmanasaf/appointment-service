@@ -128,6 +128,11 @@ public class AppointmentService extends BaseService<Appointment, Long, Appointme
     }
 
     @Transactional
+    public Appointment requestReschedule(Long appointmentId, String reason) {
+        return stateService.requestReschedule(appointmentId, reason);
+    }
+
+    @Transactional
     public Appointment reassignAppointmentEmployee(Long appointmentId, Long newEmployeeId) {
         return stateService.reassignEmployee(appointmentId, newEmployeeId);
     }

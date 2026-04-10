@@ -111,6 +111,15 @@ public class AppointmentStateService {
         return saved;
     }
 
+    @Transactional
+    public Appointment requestReschedule(Long appointmentId, String reason) {
+        Appointment appointment = findByIdOrThrow(appointmentId);
+        appointment.requestReschedule(reason);
+        Appointment saved = appointmentRepository.save(appointment);
+        log.info("Randevu erteleme talep edildi: appointmentId={}", appointmentId);
+        return saved;
+    }
+
     private void unassignSessionIfPresent(Appointment appointment) {
         if (appointment.getPackageSessionId() != null) {
             packageSessionService.unassignAppointment(appointment.getPackageSessionId());

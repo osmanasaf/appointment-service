@@ -9,7 +9,7 @@ import com.asaf.appointment_service.entity.notification.NotificationType;
 import com.asaf.appointment_service.entity.service.ServiceDefinition;
 import com.asaf.appointment_service.integration.sms.SmsClient;
 import com.asaf.appointment_service.integration.sms.SmsSendResult;
-import com.asaf.appointment_service.integration.whatsapp.WhatsAppClient;
+import com.asaf.appointment_service.integration.whatsapp.WhatsAppClientInterface;
 import com.asaf.appointment_service.integration.whatsapp.WhatsAppMessageRequest;
 import com.asaf.appointment_service.integration.whatsapp.WhatsAppMessageResponse;
 import com.asaf.appointment_service.repository.notification.NotificationLogRepository;
@@ -32,7 +32,7 @@ public class NotificationService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMMM yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
-    private final WhatsAppClient whatsAppClient;
+    private final WhatsAppClientInterface whatsAppClient;
     private final NotificationLogRepository notificationLogRepository;
     private final CustomerService customerService;
     private final ServiceDefinitionService serviceDefinitionService;
@@ -42,7 +42,7 @@ public class NotificationService {
     @Value("${app.sms.enabled:false}")
     private boolean smsFallbackEnabled;
 
-    public NotificationService(WhatsAppClient whatsAppClient,
+    public NotificationService(WhatsAppClientInterface whatsAppClient,
                                NotificationLogRepository notificationLogRepository,
                                CustomerService customerService,
                                ServiceDefinitionService serviceDefinitionService,
