@@ -1,6 +1,7 @@
 package com.asaf.appointment_service.controller.employee;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
+import com.asaf.appointment_service.common.service.CurrentUserService;
 import com.asaf.appointment_service.dto.employee.CreateLeaveRequest;
 import com.asaf.appointment_service.dto.employee.LeaveConflictPreviewResponse;
 import com.asaf.appointment_service.dto.employee.LeaveResponse;
@@ -24,14 +25,19 @@ import org.springframework.web.bind.annotation.RestController;
 public class EmployeeLeaveController {
 
     private final EmployeeLeaveService leaveService;
+    private final CurrentUserService currentUserService;
 
-    public EmployeeLeaveController(EmployeeLeaveService leaveService) {
+    public EmployeeLeaveController(EmployeeLeaveService leaveService,
+                                    CurrentUserService currentUserService) {
         this.leaveService = leaveService;
+        this.currentUserService = currentUserService;
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<LeaveResponse>>> listLeaves(
             @PathVariable Long employeeId) {
+        // İzinleri görüntüleme sadece işletme sahibi/admin için
+        currentUserService.requireBusinessOwnerOrAdmin();
         return ResponseEntity.ok(ApiResponse.success(leaveService.listLeaves(employeeId)));
     }
 
@@ -39,6 +45,8 @@ public class EmployeeLeaveController {
     public ResponseEntity<ApiResponse<LeaveResponse>> createLeave(
             @PathVariable Long employeeId,
             @Valid @RequestBody CreateLeaveRequest request) {
+        // İzin oluşturma sadece işletme sahibi/admin için
+        currentUserService.requireBusinessOwnerOrAdmin();
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(ApiResponse.success(leaveService.createLeave(employeeId, request)));
@@ -48,6 +56,8 @@ public class EmployeeLeaveController {
     public ResponseEntity<ApiResponse<LeaveConflictPreviewResponse>> previewConflicts(
             @PathVariable Long employeeId,
             @Valid @RequestBody CreateLeaveRequest request) {
+        // Çakışma önizleme sadece işletme sahibi/admin için
+        currentUserService.requireBusinessOwnerOrAdmin();
         return ResponseEntity.ok(ApiResponse.success(leaveService.previewConflicts(employeeId, request)));
     }
 
@@ -55,6 +65,8 @@ public class EmployeeLeaveController {
     public ResponseEntity<ApiResponse<LeaveResponse>> resolveAndCreate(
             @PathVariable Long employeeId,
             @Valid @RequestBody ResolveAndCreateLeaveRequest request) {
+        // İzin çakışma çözme sadece işletme sahibi/admin için
+        currentUserService.requireBusinessOwnerOrAdmin();
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(ApiResponse.success(
@@ -65,6 +77,8 @@ public class EmployeeLeaveController {
     public ResponseEntity<ApiResponse<Void>> cancelLeave(
             @PathVariable Long employeeId,
             @PathVariable Long leaveId) {
+        // İzin iptal etme sadece işletme sahibi/admin için
+        currentUserService.requireBusinessOwnerOrAdmin();
         leaveService.cancelLeave(employeeId, leaveId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

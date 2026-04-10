@@ -7,7 +7,8 @@ public record RateLimitProperties(
     boolean enabled,
     AuthLimit auth,
     PublicLimit publicApi,
-    WebhookLimit webhook
+    WebhookLimit webhook,
+    InviteLimit invite
 ) {
     public record AuthLimit(int requestsPerMinute) {
         public int requestsPerMinute() {
@@ -27,6 +28,12 @@ public record RateLimitProperties(
         }
     }
 
+    public record InviteLimit(int requestsPerHour) {
+        public int requestsPerHour() {
+            return requestsPerHour > 0 ? requestsPerHour : 10;
+        }
+    }
+
     public boolean enabled() {
         return enabled;
     }
@@ -41,5 +48,9 @@ public record RateLimitProperties(
 
     public WebhookLimit webhook() {
         return webhook != null ? webhook : new WebhookLimit(100);
+    }
+
+    public InviteLimit invite() {
+        return invite != null ? invite : new InviteLimit(10);
     }
 }

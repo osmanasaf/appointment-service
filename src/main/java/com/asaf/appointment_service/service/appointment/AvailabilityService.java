@@ -259,3 +259,4 @@ public class AvailabilityService {
         return slotStart.isBefore(workingHours.getBreakEnd()) && slotEnd.isAfter(workingHours.getBreakStart());
     }
 }
+

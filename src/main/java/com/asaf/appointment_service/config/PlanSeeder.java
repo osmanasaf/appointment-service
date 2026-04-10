@@ -62,7 +62,7 @@ public class PlanSeeder implements ApplicationRunner {
         Plan pro = Plan.builder()
                 .code(PlanCode.PRO)
                 .maxEmployees(5)
-                .maxAppointmentsMonthly(500)
+                .maxAppointmentsMonthly(400)
                 .maxServices(20)
                 .maxBranches(1)
                 .maxWhatsappMonthly(500)

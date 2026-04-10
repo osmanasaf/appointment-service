@@ -5,13 +5,22 @@ import com.asaf.appointment_service.dto.plan.PlanResponse;
 import com.asaf.appointment_service.dto.plan.PlanUsageResponse;
 import com.asaf.appointment_service.entity.plan.BusinessSubscription;
 import com.asaf.appointment_service.entity.plan.Plan;
+import com.asaf.appointment_service.entity.plan.PlanFeatureNames;
 import com.asaf.appointment_service.entity.plan.PlanLimitUsage;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class PlanMapper {
 
     private PlanMapper() {}
 
     public static PlanResponse toResponse(Plan plan) {
+        Map<String, String> featureNames = plan.getFeatures().stream()
+            .collect(Collectors.toMap(
+                feature -> feature,
+                PlanFeatureNames::getDisplayName
+            ));
+        
         return new PlanResponse(
             plan.getId(),
             plan.getCode(),
@@ -20,6 +29,7 @@ public class PlanMapper {
             plan.getMaxServices(),
             plan.getMaxBranches(),
             plan.getFeatures(),
+            featureNames,
             plan.getMonthlyPrice(),
             plan.getYearlyPrice()
         );

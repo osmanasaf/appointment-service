@@ -22,4 +22,16 @@ public class MockEmailClient implements EmailClient {
         String verificationUrl = emailProperties.baseUrl() + "/auth/verify-email?token=" + verificationToken;
         log.info("[MOCK EMAIL] Doğrulama emaili → to={} name={} url={}", toEmail, toName, verificationUrl);
     }
+
+    @Override
+    public void sendEmployeeInvite(String toEmail, String employeeName, String businessName, String inviteToken) {
+        String inviteUrl = emailProperties.baseUrl() + "/register-employee?token=" + inviteToken;
+        log.info("[MOCK EMAIL] Çalışan daveti → to={} employee={} business={} url={}", 
+            toEmail, employeeName, businessName, inviteUrl);
+    }
+
+    @Override
+    public void sendOtpEmail(String toEmail, String toName, String otpCode, OtpEmailType type) {
+        log.info("[MOCK EMAIL] OTP → to={} name={} code={} type={}", toEmail, toName, otpCode, type);
+    }
 }

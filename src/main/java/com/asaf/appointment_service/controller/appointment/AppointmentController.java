@@ -2,7 +2,9 @@ package com.asaf.appointment_service.controller.appointment;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
 import com.asaf.appointment_service.common.dto.PageResponse;
+import com.asaf.appointment_service.common.exception.UnauthorizedException;
 import com.asaf.appointment_service.common.service.AuthenticatedBusinessService;
+import com.asaf.appointment_service.common.service.CurrentUserService;
 import com.asaf.appointment_service.dto.appointment.AppointmentResponse;
 import com.asaf.appointment_service.dto.appointment.CreateAppointmentRequest;
 import com.asaf.appointment_service.dto.appointment.StaffAppointmentRequest;
@@ -34,17 +36,32 @@ public class AppointmentController {
 
     private final AppointmentService appointmentService;
     private final AuthenticatedBusinessService authenticatedBusinessService;
+    private final CurrentUserService currentUserService;
 
     public AppointmentController(AppointmentService appointmentService,
-                                  AuthenticatedBusinessService authenticatedBusinessService) {
+                                  AuthenticatedBusinessService authenticatedBusinessService,
+                                  CurrentUserService currentUserService) {
         this.appointmentService = appointmentService;
         this.authenticatedBusinessService = authenticatedBusinessService;
+        this.currentUserService = currentUserService;
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<AppointmentResponse>> createAppointment(
             @Valid @RequestBody CreateAppointmentRequest request) {
         Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        
+        // Çalışan sadece kendi employeeId'si ile randevu oluşturabilir
+        if (currentUserService.isEmployee()) {
+            Long currentEmployeeId = currentUserService.getCurrentEmployeeId();
+            if (currentEmployeeId == null) {
+                throw new UnauthorizedException("Çalışan kaydınız bulunamadı");
+            }
+            if (!currentEmployeeId.equals(request.employeeId())) {
+                throw new UnauthorizedException("Sadece kendinize randevu oluşturabilirsiniz");
+            }
+        }
+        
         Appointment appointment = appointmentService.createAppointment(businessId, request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
@@ -60,6 +77,18 @@ public class AppointmentController {
     public ResponseEntity<ApiResponse<AppointmentResponse>> createStaffAppointment(
             @Valid @RequestBody StaffAppointmentRequest request) {
         Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        
+        // Çalışan sadece kendi employeeId'si ile randevu oluşturabilir
+        if (currentUserService.isEmployee()) {
+            Long currentEmployeeId = currentUserService.getCurrentEmployeeId();
+            if (currentEmployeeId == null) {
+                throw new UnauthorizedException("Çalışan kaydınız bulunamadı");
+            }
+            if (!currentEmployeeId.equals(request.employeeId())) {
+                throw new UnauthorizedException("Sadece kendinize randevu oluşturabilirsiniz");
+            }
+        }
+        
         Appointment appointment = appointmentService.createStaffAppointment(businessId, request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
@@ -69,6 +98,15 @@ public class AppointmentController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<AppointmentResponse>> getAppointment(@PathVariable Long id) {
         Appointment appointment = appointmentService.findByIdOrThrow(id);
+        
+        // Çalışan sadece kendi randevusunu görebilir
+        if (currentUserService.isEmployee()) {
+            Long currentEmployeeId = currentUserService.getCurrentEmployeeId();
+            if (currentEmployeeId == null || !currentEmployeeId.equals(appointment.getEmployeeId())) {
+                throw new UnauthorizedException("Bu randevuyu görme yetkiniz yok");
+            }
+        }
+        
         return ResponseEntity.ok(ApiResponse.success(AppointmentMapper.toResponse(appointment)));
     }
 
@@ -85,16 +123,37 @@ public class AppointmentController {
         int safeSize = Math.min(size, MAX_PAGE_SIZE);
         var pageable = PageRequest.of(page, safeSize, Sort.by("scheduledAt").descending());
         Page<Appointment> appointments;
-        if (startDate != null && endDate != null) {
-            appointments = appointmentService.findByDateRangePaged(businessId, startDate, endDate, pageable);
+        
+        // Çalışan sadece kendi randevularını görebilir
+        if (currentUserService.isEmployee()) {
+            Long currentEmployeeId = currentUserService.getCurrentEmployeeId();
+            if (currentEmployeeId == null) {
+                throw new UnauthorizedException("Çalışan kaydınız bulunamadı");
+            }
+            if (startDate != null && endDate != null) {
+                appointments = appointmentService.findByEmployeeIdAndDateRangePaged(
+                    businessId, currentEmployeeId, startDate, endDate, pageable);
+            } else {
+                appointments = appointmentService.findByBusinessIdAndEmployeeIdPaged(
+                    businessId, currentEmployeeId, pageable);
+            }
         } else {
-            appointments = appointmentService.findByBusinessIdPaged(businessId, pageable);
+            // İşletme sahibi veya admin tüm randevuları görebilir
+            if (startDate != null && endDate != null) {
+                appointments = appointmentService.findByDateRangePaged(businessId, startDate, endDate, pageable);
+            } else {
+                appointments = appointmentService.findByBusinessIdPaged(businessId, pageable);
+            }
         }
+        
         return ResponseEntity.ok(ApiResponse.success(PageResponse.from(appointments, AppointmentMapper::toResponse)));
     }
 
     @GetMapping("/risky")
     public ResponseEntity<ApiResponse<List<AppointmentResponse>>> getRiskyAppointments() {
+        // Risky randevular sadece işletme sahibi/admin için
+        currentUserService.requireBusinessOwnerOrAdmin();
+        
         Long businessId = authenticatedBusinessService.getCurrentBusinessId();
         List<Appointment> appointments = appointmentService.findRiskyAppointments(businessId);
         List<AppointmentResponse> responses = appointments.stream()
@@ -105,7 +164,10 @@ public class AppointmentController {
 
     @PostMapping("/{id}/confirm")
     public ResponseEntity<ApiResponse<AppointmentResponse>> confirmAppointment(@PathVariable Long id) {
-        Appointment appointment = appointmentService.confirmAppointment(id);
+        Appointment appointment = appointmentService.findByIdOrThrow(id);
+        validateEmployeeAccess(appointment);
+        
+        appointment = appointmentService.confirmAppointment(id);
         return ResponseEntity.ok(ApiResponse.success(AppointmentMapper.toResponse(appointment), "Randevu onaylandı"));
     }
 
@@ -113,25 +175,49 @@ public class AppointmentController {
     public ResponseEntity<ApiResponse<AppointmentResponse>> cancelAppointment(
             @PathVariable Long id,
             @RequestParam(required = false, defaultValue = "Müşteri tarafından iptal edildi") String reason) {
-        Appointment appointment = appointmentService.cancelAppointment(id, reason);
+        Appointment appointment = appointmentService.findByIdOrThrow(id);
+        validateEmployeeAccess(appointment);
+        
+        appointment = appointmentService.cancelAppointment(id, reason);
         return ResponseEntity.ok(ApiResponse.success(AppointmentMapper.toResponse(appointment), "Randevu iptal edildi"));
     }
 
     @PostMapping("/{id}/complete")
     public ResponseEntity<ApiResponse<AppointmentResponse>> completeAppointment(@PathVariable Long id) {
-        Appointment appointment = appointmentService.completeAppointment(id);
+        Appointment appointment = appointmentService.findByIdOrThrow(id);
+        validateEmployeeAccess(appointment);
+        
+        appointment = appointmentService.completeAppointment(id);
         return ResponseEntity.ok(ApiResponse.success(AppointmentMapper.toResponse(appointment), "Randevu tamamlandı"));
     }
 
     @PostMapping("/{id}/no-show")
     public ResponseEntity<ApiResponse<AppointmentResponse>> markAsNoShow(@PathVariable Long id) {
-        Appointment appointment = appointmentService.markAsNoShow(id);
+        Appointment appointment = appointmentService.findByIdOrThrow(id);
+        validateEmployeeAccess(appointment);
+        
+        appointment = appointmentService.markAsNoShow(id);
         return ResponseEntity.ok(ApiResponse.success(AppointmentMapper.toResponse(appointment), "Randevu no-show olarak işaretlendi"));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteAppointment(@PathVariable Long id) {
+        Appointment appointment = appointmentService.findByIdOrThrow(id);
+        validateEmployeeAccess(appointment);
+        
         appointmentService.deleteById(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Randevu silindi"));
+    }
+    
+    /**
+     * Çalışan sadece kendi randevusuna erişebilir kontrolü
+     */
+    private void validateEmployeeAccess(Appointment appointment) {
+        if (currentUserService.isEmployee()) {
+            Long currentEmployeeId = currentUserService.getCurrentEmployeeId();
+            if (currentEmployeeId == null || !currentEmployeeId.equals(appointment.getEmployeeId())) {
+                throw new UnauthorizedException("Bu randevuya erişim yetkiniz yok");
+            }
+        }
     }
 }

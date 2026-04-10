@@ -100,4 +100,22 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
         @Param("start") LocalDateTime start,
         @Param("end") LocalDateTime end
     );
+
+    Page<Appointment> findByBusinessIdAndEmployeeIdOrderByScheduledAtDesc(
+        Long businessId,
+        Long employeeId,
+        Pageable pageable
+    );
+
+    @Query("SELECT a FROM Appointment a WHERE a.businessId = :businessId " +
+           "AND a.employeeId = :employeeId " +
+           "AND a.scheduledAt BETWEEN :start AND :end " +
+           "ORDER BY a.scheduledAt")
+    Page<Appointment> findByBusinessIdAndEmployeeIdAndDateRange(
+        @Param("businessId") Long businessId,
+        @Param("employeeId") Long employeeId,
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end,
+        Pageable pageable
+    );
 }

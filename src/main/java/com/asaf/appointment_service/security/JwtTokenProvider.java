@@ -25,7 +25,7 @@ public class JwtTokenProvider {
     @Value("${jwt.expiration:86400000}")
     private long jwtExpiration;
 
-    public String generateToken(Long userId, String email, String role) {
+    public String generateToken(Long userId, String email, String role, Long businessId, Long employeeId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpiration);
 
@@ -33,6 +33,8 @@ public class JwtTokenProvider {
             .subject(userId.toString())
             .claim("email", email)
             .claim("role", role)
+            .claim("businessId", businessId)
+            .claim("employeeId", employeeId)
             .issuedAt(now)
             .expiration(expiryDate)
             .signWith(getSigningKey())
@@ -52,6 +54,18 @@ public class JwtTokenProvider {
     public String getRoleFromToken(String token) {
         Claims claims = parseToken(token);
         return claims.get("role", String.class);
+    }
+
+    public Long getBusinessIdFromToken(String token) {
+        Claims claims = parseToken(token);
+        Object businessId = claims.get("businessId");
+        return businessId != null ? Long.parseLong(businessId.toString()) : null;
+    }
+
+    public Long getEmployeeIdFromToken(String token) {
+        Claims claims = parseToken(token);
+        Object employeeId = claims.get("employeeId");
+        return employeeId != null ? Long.parseLong(employeeId.toString()) : null;
     }
 
     public boolean validateToken(String token) {

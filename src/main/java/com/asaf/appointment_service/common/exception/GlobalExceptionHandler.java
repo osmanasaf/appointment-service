@@ -3,6 +3,8 @@ package com.asaf.appointment_service.common.exception;
 import com.asaf.appointment_service.common.dto.ApiResponse;
 import com.asaf.appointment_service.common.dto.ApiResponse.ErrorDetails;
 import com.asaf.appointment_service.exception.auth.EmailNotVerifiedException;
+import com.asaf.appointment_service.exception.auth.InvalidOtpException;
+import com.asaf.appointment_service.exception.auth.OtpBlockedException;
 import com.asaf.appointment_service.exception.employee.EmployeeOnLeaveException;
 import com.asaf.appointment_service.exception.plan.PlanLimitExceededException;
 import java.time.LocalDateTime;
@@ -26,6 +28,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.FORBIDDEN)
             .body(ApiResponse.error(new ErrorDetails(ex.getCode(), ex.getMessage(), null, LocalDateTime.now())));
+    }
+
+    @ExceptionHandler(InvalidOtpException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidOtp(InvalidOtpException ex) {
+        log.warn("Invalid OTP: {}", ex.getMessage());
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse.error(new ErrorDetails("INVALID_OTP", ex.getMessage(), null, LocalDateTime.now())));
+    }
+
+    @ExceptionHandler(OtpBlockedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOtpBlocked(OtpBlockedException ex) {
+        log.warn("OTP blocked: {}", ex.getMessage());
+        return ResponseEntity
+            .status(HttpStatus.TOO_MANY_REQUESTS)
+            .body(ApiResponse.error(new ErrorDetails("OTP_BLOCKED", ex.getMessage(), null, LocalDateTime.now())));
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
