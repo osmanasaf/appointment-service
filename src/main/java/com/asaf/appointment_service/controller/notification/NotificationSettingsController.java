@@ -3,7 +3,7 @@ package com.asaf.appointment_service.controller.notification;
 import com.asaf.appointment_service.common.dto.ApiResponse;
 import com.asaf.appointment_service.entity.notification.NotificationSettings;
 import com.asaf.appointment_service.entity.plan.Plan;
-import com.asaf.appointment_service.common.service.AuthenticatedBusinessService;
+import com.asaf.appointment_service.common.service.CurrentUserService;
 import com.asaf.appointment_service.service.notification.NotificationSettingsService;
 import com.asaf.appointment_service.service.plan.SubscriptionService;
 import org.springframework.http.ResponseEntity;
@@ -15,19 +15,19 @@ public class NotificationSettingsController {
 
     private final NotificationSettingsService settingsService;
     private final SubscriptionService subscriptionService;
-    private final AuthenticatedBusinessService authBusinessService;
+    private final CurrentUserService currentUserService;
 
     public NotificationSettingsController(NotificationSettingsService settingsService,
                                            SubscriptionService subscriptionService,
-                                           AuthenticatedBusinessService authBusinessService) {
+                                           CurrentUserService currentUserService) {
         this.settingsService = settingsService;
         this.subscriptionService = subscriptionService;
-        this.authBusinessService = authBusinessService;
+        this.currentUserService = currentUserService;
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<NotificationSettingsResponse>> getSettings() {
-        Long businessId = authBusinessService.getCurrentBusinessId();
+        Long businessId = currentUserService.getCurrentBusinessId();
         NotificationSettings settings = settingsService.getSettings(businessId);
         Plan plan = subscriptionService.getCurrentPlanByBusinessId(businessId);
         
@@ -38,7 +38,7 @@ public class NotificationSettingsController {
     @PutMapping
     public ResponseEntity<ApiResponse<NotificationSettingsResponse>> updateSettings(
             @RequestBody UpdateNotificationSettingsRequest request) {
-        Long businessId = authBusinessService.getCurrentBusinessId();
+        Long businessId = currentUserService.getCurrentBusinessId();
         
         NotificationSettings settings = settingsService.updateAllSettings(
                 businessId,
@@ -60,7 +60,7 @@ public class NotificationSettingsController {
 
     @GetMapping("/quota")
     public ResponseEntity<ApiResponse<QuotaResponse>> getQuota() {
-        Long businessId = authBusinessService.getCurrentBusinessId();
+        Long businessId = currentUserService.getCurrentBusinessId();
         NotificationSettings settings = settingsService.getSettings(businessId);
         Plan plan = subscriptionService.getCurrentPlanByBusinessId(businessId);
         

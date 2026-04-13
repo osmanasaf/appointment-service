@@ -1,7 +1,7 @@
 package com.asaf.appointment_service.controller.service;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
-import com.asaf.appointment_service.common.service.AuthenticatedBusinessService;
+import com.asaf.appointment_service.common.service.CurrentUserService;
 import com.asaf.appointment_service.dto.employee.EmployeeResponse;
 import com.asaf.appointment_service.dto.service.CreateServiceRequest;
 import com.asaf.appointment_service.dto.service.ServiceResponse;
@@ -35,22 +35,22 @@ public class ServiceController {
     private final ServiceDefinitionService serviceDefinitionService;
     private final EmployeeCapabilityService capabilityService;
     private final EmployeeService employeeService;
-    private final AuthenticatedBusinessService authenticatedBusinessService;
+    private final CurrentUserService currentUserService;
 
     public ServiceController(ServiceDefinitionService serviceDefinitionService,
                               EmployeeCapabilityService capabilityService,
                               EmployeeService employeeService,
-                              AuthenticatedBusinessService authenticatedBusinessService) {
+                              CurrentUserService currentUserService) {
         this.serviceDefinitionService = serviceDefinitionService;
         this.capabilityService = capabilityService;
         this.employeeService = employeeService;
-        this.authenticatedBusinessService = authenticatedBusinessService;
+        this.currentUserService = currentUserService;
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<ServiceResponse>> createService(
             @Valid @RequestBody CreateServiceRequest request) {
-        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Long businessId = currentUserService.getCurrentBusinessId();
         ServiceDefinition service = serviceDefinitionService.createService(businessId, request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
@@ -75,18 +75,8 @@ public class ServiceController {
     public ResponseEntity<ApiResponse<List<ServiceResponse>>> getServicesByBusiness(
             @RequestParam(defaultValue = "false") boolean activeOnly,
             @RequestParam(required = false) Boolean packageEligible) {
-        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
-        List<ServiceDefinition> services;
-        if (Boolean.TRUE.equals(packageEligible)) {
-            services = serviceDefinitionService.findPackageEligibleByBusinessId(businessId);
-            if (activeOnly) {
-                services = services.stream().filter(ServiceDefinition::isActive).toList();
-            }
-        } else if (activeOnly) {
-            services = serviceDefinitionService.findActiveByBusinessId(businessId);
-        } else {
-            services = serviceDefinitionService.findByBusinessId(businessId);
-        }
+        Long businessId = currentUserService.getCurrentBusinessId();
+        List<ServiceDefinition> services = serviceDefinitionService.findByBusinessIdFiltered(businessId, activeOnly, packageEligible);
         List<ServiceResponse> responses = services.stream()
             .map(ServiceMapper::toResponse)
             .toList();

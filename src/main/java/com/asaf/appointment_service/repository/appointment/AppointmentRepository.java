@@ -18,32 +18,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     Page<Appointment> findByBusinessIdOrderByScheduledAtDesc(Long businessId, Pageable pageable);
 
-    List<Appointment> findByBusinessIdAndStatus(Long businessId, AppointmentStatus status);
-
     List<Appointment> findByBusinessIdAndRiskyTrue(Long businessId);
 
-    /**
-     * @deprecated Kullanımı güvenli değil — businessId izolasyonu yok.
-     *             Bunun yerine {@link #findByBusinessIdAndCustomerIdOrderByScheduledAtDesc} kullanın.
-     */
-    @Deprecated(since = "2026-04-10", forRemoval = true)
-    List<Appointment> findByCustomerId(Long customerId);
-
-    /** businessId izolasyonlu müşteri randevusu sorgusu. */
     List<Appointment> findByBusinessIdAndCustomerIdOrderByScheduledAtDesc(Long businessId, Long customerId);
 
-    /**
-     * @deprecated Kullanımı güvenli değil — businessId izolasyonu yok.
-     *             Bunun yerine {@link #findByBusinessIdAndEmployeeIdAndScheduledAtBetween} kullanın.
-     */
-    @Deprecated(since = "2026-04-10", forRemoval = true)
-    List<Appointment> findByEmployeeIdAndScheduledAtBetween(
-        Long employeeId,
-        LocalDateTime start,
-        LocalDateTime end
-    );
-
-    /** businessId izolasyonlu çalışan bazlı tarih aralığı sorgusu. */
     List<Appointment> findByBusinessIdAndEmployeeIdAndScheduledAtBetween(
         Long businessId,
         Long employeeId,
@@ -51,21 +29,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
         LocalDateTime end
     );
 
-    /**
-     * @deprecated Kullanımı güvenli değil — businessId izolasyonu yok.
-     *             Bunun yerine {@link #findConflictingAppointmentsForBusiness} kullanın.
-     */
-    @Deprecated(since = "2026-04-10", forRemoval = true)
-    @Query("SELECT a FROM Appointment a WHERE a.employeeId = :employeeId " +
-           "AND a.status IN ('PENDING', 'CONFIRMED', 'RISKY') " +
-           "AND a.scheduledAt < :end AND a.endAt > :start")
-    List<Appointment> findConflictingAppointments(
-        @Param("employeeId") Long employeeId,
-        @Param("start") LocalDateTime start,
-        @Param("end") LocalDateTime end
-    );
-
-    /** businessId izolasyonlu çakışma sorgusu. */
     @Query("SELECT a FROM Appointment a WHERE a.businessId = :businessId " +
            "AND a.employeeId = :employeeId " +
            "AND a.status IN ('PENDING', 'CONFIRMED', 'RISKY') " +

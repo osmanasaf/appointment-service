@@ -29,11 +29,13 @@ public abstract class BaseService<T, ID, R extends JpaRepository<T, ID>> {
         return repository.findById(id);
     }
 
+    @Deprecated(since = "1.0", forRemoval = true)
     @Transactional(readOnly = true)
     public List<T> findAll() {
         return repository.findAll();
     }
 
+    @Deprecated(since = "1.0", forRemoval = true)
     @Transactional(readOnly = true)
     public Page<T> findAll(Pageable pageable) {
         return repository.findAll(pageable);

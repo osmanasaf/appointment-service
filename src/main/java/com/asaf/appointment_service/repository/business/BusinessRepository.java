@@ -11,6 +11,4 @@ public interface BusinessRepository extends JpaRepository<Business, Long> {
     Optional<Business> findBySlug(String slug);
 
     boolean existsBySlug(String slug);
-
-    boolean existsByPhoneNumber(String phoneNumber);
 }

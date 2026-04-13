@@ -99,8 +99,4 @@ public class PackageSessionService {
         return sessionRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException(PackageErrorMessages.SESSION_NOT_FOUND + id));
     }
-
-    public Optional<PackageSession> findByAppointmentId(Long appointmentId) {
-        return sessionRepository.findByAppointmentId(appointmentId);
-    }
 }

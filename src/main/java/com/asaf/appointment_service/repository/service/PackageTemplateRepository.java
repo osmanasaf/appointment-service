@@ -10,7 +10,5 @@ public interface PackageTemplateRepository extends JpaRepository<PackageTemplate
 
     List<PackageTemplate> findByBusinessIdAndActiveTrue(Long businessId);
 
-    List<PackageTemplate> findByBusinessIdOrderByName(Long businessId);
-
     boolean existsByBusinessIdAndServiceIdAndName(Long businessId, Long serviceId, String name);
 }

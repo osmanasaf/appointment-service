@@ -2,7 +2,7 @@ package com.asaf.appointment_service.controller.customer;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
 import com.asaf.appointment_service.common.dto.PageResponse;
-import com.asaf.appointment_service.common.service.AuthenticatedBusinessService;
+import com.asaf.appointment_service.common.service.CurrentUserService;
 import com.asaf.appointment_service.dto.customer.CreateCustomerRequest;
 import com.asaf.appointment_service.dto.customer.CustomerResponse;
 import com.asaf.appointment_service.dto.customer.PackageResponse;
@@ -34,20 +34,20 @@ public class CustomerController {
 
     private final CustomerService customerService;
     private final EncryptionService encryptionService;
-    private final AuthenticatedBusinessService authenticatedBusinessService;
+    private final CurrentUserService currentUserService;
 
     public CustomerController(CustomerService customerService,
                                EncryptionService encryptionService,
-                               AuthenticatedBusinessService authenticatedBusinessService) {
+                               CurrentUserService currentUserService) {
         this.customerService = customerService;
         this.encryptionService = encryptionService;
-        this.authenticatedBusinessService = authenticatedBusinessService;
+        this.currentUserService = currentUserService;
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<CustomerResponse>> createCustomer(
             @Valid @RequestBody CreateCustomerRequest request) {
-        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Long businessId = currentUserService.getCurrentBusinessId();
         Customer customer = customerService.createCustomer(businessId, request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
@@ -75,7 +75,7 @@ public class CustomerController {
     public ResponseEntity<ApiResponse<PageResponse<CustomerResponse>>> getCustomersByBusiness(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Long businessId = currentUserService.getCurrentBusinessId();
         int safeSize = Math.min(size, MAX_PAGE_SIZE);
         var pageable = PageRequest.of(page, safeSize, Sort.by("name").ascending());
         return ResponseEntity.ok(ApiResponse.success(

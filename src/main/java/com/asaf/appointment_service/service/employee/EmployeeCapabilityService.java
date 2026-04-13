@@ -117,8 +117,4 @@ public class EmployeeCapabilityService {
             .build();
         return capabilityRepository.save(capability);
     }
-
-    private ServiceDefinition resolveService(Long serviceId) {
-        return serviceDefinitionService.findByIdOrThrow(serviceId);
-    }
 }

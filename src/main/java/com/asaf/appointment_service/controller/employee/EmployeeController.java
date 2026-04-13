@@ -2,7 +2,7 @@ package com.asaf.appointment_service.controller.employee;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
 import com.asaf.appointment_service.common.dto.PageResponse;
-import com.asaf.appointment_service.common.service.AuthenticatedBusinessService;
+import com.asaf.appointment_service.common.service.CurrentUserService;
 import com.asaf.appointment_service.dto.employee.AffectedAppointmentResponse;
 import com.asaf.appointment_service.dto.employee.AssignCapabilityRequest;
 import com.asaf.appointment_service.dto.employee.CreateEmployeeRequest;
@@ -52,26 +52,26 @@ public class EmployeeController {
     private final EmployeeScheduleService scheduleService;
     private final EmployeeOffboardingService offboardingService;
     private final ServiceDefinitionService serviceDefinitionService;
-    private final AuthenticatedBusinessService authenticatedBusinessService;
+    private final CurrentUserService currentUserService;
 
     public EmployeeController(EmployeeService employeeService,
                                EmployeeCapabilityService capabilityService,
                                EmployeeScheduleService scheduleService,
                                EmployeeOffboardingService offboardingService,
                                ServiceDefinitionService serviceDefinitionService,
-                               AuthenticatedBusinessService authenticatedBusinessService) {
+                               CurrentUserService currentUserService) {
         this.employeeService = employeeService;
         this.capabilityService = capabilityService;
         this.scheduleService = scheduleService;
         this.offboardingService = offboardingService;
         this.serviceDefinitionService = serviceDefinitionService;
-        this.authenticatedBusinessService = authenticatedBusinessService;
+        this.currentUserService = currentUserService;
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployee(
             @Valid @RequestBody CreateEmployeeRequest request) {
-        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Long businessId = currentUserService.getCurrentBusinessId();
         Employee employee = employeeService.createEmployee(businessId, request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
@@ -91,7 +91,7 @@ public class EmployeeController {
             @RequestParam(defaultValue = "false") boolean activeOnly,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Long businessId = currentUserService.getCurrentBusinessId();
         int safeSize = Math.min(size, MAX_PAGE_SIZE);
         var pageable = PageRequest.of(page, safeSize, Sort.by("name").ascending());
         if (activeOnly) {

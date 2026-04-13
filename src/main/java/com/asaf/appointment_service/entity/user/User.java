@@ -49,7 +49,6 @@ public class User extends BaseEntity {
     @Column(name = "verification_token_expiry")
     private Instant verificationTokenExpiry;
 
-    // OTP alanları (register ve şifre sıfırlama için)
     @Column(name = "otp_code", length = 6)
     private String otpCode;
 
@@ -66,7 +65,6 @@ public class User extends BaseEntity {
     @Column(name = "otp_blocked_until")
     private Instant otpBlockedUntil;
 
-    // Şifre sıfırlama için geçici token
     @Column(name = "password_reset_token", length = 64)
     private String passwordResetToken;
 
@@ -130,7 +128,6 @@ public class User extends BaseEntity {
     private static final int MAX_OTP_ATTEMPTS = 5;
     private static final int OTP_BLOCK_MINUTES = 15;
 
-    // OTP metodları
     public String generateOtp(OtpType type, int validMinutes) {
         if (isOtpBlocked()) {
             throw new IllegalStateException("OTP blocked until " + otpBlockedUntil);
@@ -192,7 +189,6 @@ public class User extends BaseEntity {
         return otpBlockedUntil;
     }
 
-    // Şifre sıfırlama token metodları
     public String generatePasswordResetToken() {
         String token = UUID.randomUUID().toString().replace("-", "");
         this.passwordResetToken = token;

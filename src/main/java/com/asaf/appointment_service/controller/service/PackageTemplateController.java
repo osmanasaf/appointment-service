@@ -1,7 +1,7 @@
 package com.asaf.appointment_service.controller.service;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
-import com.asaf.appointment_service.common.service.AuthenticatedBusinessService;
+import com.asaf.appointment_service.common.service.CurrentUserService;
 import com.asaf.appointment_service.dto.service.CreatePackageTemplateRequest;
 import com.asaf.appointment_service.dto.service.PackageTemplateResponse;
 import com.asaf.appointment_service.dto.service.UpdatePackageTemplateRequest;
@@ -26,18 +26,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class PackageTemplateController {
 
     private final PackageTemplateService packageTemplateService;
-    private final AuthenticatedBusinessService authenticatedBusinessService;
+    private final CurrentUserService currentUserService;
 
     public PackageTemplateController(PackageTemplateService packageTemplateService,
-                                      AuthenticatedBusinessService authenticatedBusinessService) {
+                                      CurrentUserService currentUserService) {
         this.packageTemplateService = packageTemplateService;
-        this.authenticatedBusinessService = authenticatedBusinessService;
+        this.currentUserService = currentUserService;
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<PackageTemplateResponse>> create(
             @Valid @RequestBody CreatePackageTemplateRequest request) {
-        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Long businessId = currentUserService.getCurrentBusinessId();
         PackageTemplate template = packageTemplateService.create(businessId, request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
@@ -46,7 +46,7 @@ public class PackageTemplateController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<PackageTemplateResponse>>> listByBusiness() {
-        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Long businessId = currentUserService.getCurrentBusinessId();
         List<PackageTemplate> templates = packageTemplateService.listByBusiness(businessId);
         return ResponseEntity.ok(ApiResponse.success(PackageTemplateMapper.toResponseList(templates)));
     }

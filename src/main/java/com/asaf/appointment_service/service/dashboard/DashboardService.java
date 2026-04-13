@@ -32,7 +32,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class DashboardService {
 
     private static final int EXPIRING_DAYS_THRESHOLD = 7;
-    private static final int LOW_SESSIONS_THRESHOLD = 2;
 
     private final AppointmentRepository appointmentRepository;
     private final CustomerRepository customerRepository;
@@ -68,6 +67,9 @@ public class DashboardService {
     @Transactional(readOnly = true)
     public TopServicesResponse getTopServices(Long businessId, DashboardPeriod period, int limit) {
         businessService.findByIdOrThrow(businessId);
+        if (limit < 1 || limit > 20) {
+            limit = 5;
+        }
         var range = buildDateRange(period);
 
         List<Object[]> rawCounts = appointmentRepository.countByServiceIdForBusiness(

@@ -65,6 +65,22 @@ public class ServiceDefinitionService extends BaseService<ServiceDefinition, Lon
         return repository.findByBusinessIdAndPackageEligibleTrue(businessId);
     }
 
+    @Transactional(readOnly = true)
+    public List<ServiceDefinition> findByBusinessIdFiltered(Long businessId, boolean activeOnly, Boolean packageEligible) {
+        businessService.findByIdOrThrow(businessId);
+        if (Boolean.TRUE.equals(packageEligible)) {
+            List<ServiceDefinition> services = repository.findByBusinessIdAndPackageEligibleTrue(businessId);
+            if (activeOnly) {
+                return services.stream().filter(ServiceDefinition::isActive).toList();
+            }
+            return services;
+        } else if (activeOnly) {
+            return repository.findByBusinessIdAndActiveTrue(businessId);
+        } else {
+            return repository.findByBusinessIdOrderByDisplayOrderAsc(businessId);
+        }
+    }
+
     @Transactional
     public ServiceDefinition activateService(Long id) {
         ServiceDefinition service = findByIdOrThrow(id);

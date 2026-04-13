@@ -19,7 +19,5 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     boolean existsByBusinessIdAndPhoneNumber(Long businessId, String phoneNumber);
 
-    List<Customer> findByBusinessIdAndBlacklistedTrue(Long businessId);
-
     List<Customer> findByBusinessIdAndNoShowCountGreaterThanEqual(Long businessId, int count);
 }

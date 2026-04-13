@@ -3,7 +3,6 @@ package com.asaf.appointment_service.controller.appointment;
 import com.asaf.appointment_service.common.dto.ApiResponse;
 import com.asaf.appointment_service.common.dto.PageResponse;
 import com.asaf.appointment_service.common.exception.UnauthorizedException;
-import com.asaf.appointment_service.common.service.AuthenticatedBusinessService;
 import com.asaf.appointment_service.common.service.CurrentUserService;
 import com.asaf.appointment_service.dto.appointment.AppointmentResponse;
 import com.asaf.appointment_service.dto.appointment.CreateAppointmentRequest;
@@ -35,21 +34,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class AppointmentController {
 
     private final AppointmentService appointmentService;
-    private final AuthenticatedBusinessService authenticatedBusinessService;
     private final CurrentUserService currentUserService;
 
     public AppointmentController(AppointmentService appointmentService,
-                                  AuthenticatedBusinessService authenticatedBusinessService,
                                   CurrentUserService currentUserService) {
         this.appointmentService = appointmentService;
-        this.authenticatedBusinessService = authenticatedBusinessService;
         this.currentUserService = currentUserService;
     }
 
     @PostMapping
     public ResponseEntity<ApiResponse<AppointmentResponse>> createAppointment(
             @Valid @RequestBody CreateAppointmentRequest request) {
-        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Long businessId = currentUserService.getCurrentBusinessId();
         
         // Çalışan sadece kendi employeeId'si ile randevu oluşturabilir
         if (currentUserService.isEmployee()) {
@@ -76,7 +72,7 @@ public class AppointmentController {
     @PostMapping("/staff")
     public ResponseEntity<ApiResponse<AppointmentResponse>> createStaffAppointment(
             @Valid @RequestBody StaffAppointmentRequest request) {
-        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Long businessId = currentUserService.getCurrentBusinessId();
         
         // Çalışan sadece kendi employeeId'si ile randevu oluşturabilir
         if (currentUserService.isEmployee()) {
@@ -119,7 +115,7 @@ public class AppointmentController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Long businessId = currentUserService.getCurrentBusinessId();
         int safeSize = Math.min(size, MAX_PAGE_SIZE);
         var pageable = PageRequest.of(page, safeSize, Sort.by("scheduledAt").descending());
         Page<Appointment> appointments;
@@ -154,7 +150,7 @@ public class AppointmentController {
         // Risky randevular sadece işletme sahibi/admin için
         currentUserService.requireBusinessOwnerOrAdmin();
         
-        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Long businessId = currentUserService.getCurrentBusinessId();
         List<Appointment> appointments = appointmentService.findRiskyAppointments(businessId);
         List<AppointmentResponse> responses = appointments.stream()
             .map(AppointmentMapper::toResponse)

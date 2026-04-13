@@ -15,6 +15,4 @@ public interface EmployeeInviteRepository extends JpaRepository<EmployeeInvite, 
     List<EmployeeInvite> findByBusinessIdAndStatus(Long businessId, InviteStatus status);
 
     List<EmployeeInvite> findByEmployeeIdAndStatus(Long employeeId, InviteStatus status);
-
-    boolean existsByEmployeeIdAndStatus(Long employeeId, InviteStatus status);
 }

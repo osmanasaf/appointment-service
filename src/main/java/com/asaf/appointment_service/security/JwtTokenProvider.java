@@ -46,40 +46,20 @@ public class JwtTokenProvider {
         return Long.parseLong(claims.getSubject());
     }
 
-    public String getEmailFromToken(String token) {
-        Claims claims = parseToken(token);
-        return claims.get("email", String.class);
-    }
-
-    public String getRoleFromToken(String token) {
-        Claims claims = parseToken(token);
-        return claims.get("role", String.class);
-    }
-
-    public Long getBusinessIdFromToken(String token) {
-        Claims claims = parseToken(token);
-        Object businessId = claims.get("businessId");
-        return businessId != null ? Long.parseLong(businessId.toString()) : null;
-    }
-
-    public Long getEmployeeIdFromToken(String token) {
-        Claims claims = parseToken(token);
-        Object employeeId = claims.get("employeeId");
-        return employeeId != null ? Long.parseLong(employeeId.toString()) : null;
-    }
-
     public boolean validateToken(String token) {
         try {
             parseToken(token);
             return true;
         } catch (MalformedJwtException e) {
-            log.error("Geçersiz JWT token");
+            log.warn("Geçersiz JWT token");
         } catch (ExpiredJwtException e) {
-            log.error("JWT token süresi dolmuş");
+            if (log.isDebugEnabled()) {
+                log.debug("JWT access token süresi dolmuş (yenileme beklenir)");
+            }
         } catch (UnsupportedJwtException e) {
-            log.error("Desteklenmeyen JWT token");
+            log.warn("Desteklenmeyen JWT token");
         } catch (IllegalArgumentException e) {
-            log.error("JWT claims boş");
+            log.warn("JWT claims boş");
         }
         return false;
     }

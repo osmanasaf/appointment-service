@@ -1,7 +1,7 @@
 package com.asaf.appointment_service.controller.customer;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
-import com.asaf.appointment_service.common.service.AuthenticatedBusinessService;
+import com.asaf.appointment_service.common.service.CurrentUserService;
 import com.asaf.appointment_service.dto.customer.CreatePackageFromTemplateRequest;
 import com.asaf.appointment_service.dto.customer.CreatePackageRequest;
 import com.asaf.appointment_service.dto.customer.PackageResponse;
@@ -33,16 +33,16 @@ public class PackageController {
     private final PackageService packageService;
     private final PackageSessionService packageSessionService;
     private final AppointmentService appointmentService;
-    private final AuthenticatedBusinessService authenticatedBusinessService;
+    private final CurrentUserService currentUserService;
 
     public PackageController(PackageService packageService,
                              PackageSessionService packageSessionService,
                              AppointmentService appointmentService,
-                             AuthenticatedBusinessService authenticatedBusinessService) {
+                             CurrentUserService currentUserService) {
         this.packageService = packageService;
         this.packageSessionService = packageSessionService;
         this.appointmentService = appointmentService;
-        this.authenticatedBusinessService = authenticatedBusinessService;
+        this.currentUserService = currentUserService;
     }
 
     @PostMapping
@@ -68,7 +68,7 @@ public class PackageController {
             @RequestParam(required = false) Long customerId,
             @RequestParam(required = false) Long templateId) {
         if (templateId != null) {
-            Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+            Long businessId = currentUserService.getCurrentBusinessId();
             List<CustomerPackage> packages = packageService.findByBusinessIdAndTemplateId(businessId, templateId);
             return ResponseEntity.ok(ApiResponse.success(CustomerMapper.toPackageResponseList(packages)));
         }

@@ -15,7 +15,5 @@ public interface MessageTemplateRepository extends JpaRepository<MessageTemplate
 
     Optional<MessageTemplate> findByBusinessIdAndTypeAndActiveTrue(Long businessId, MessageTemplateType type);
 
-    Optional<MessageTemplate> findByBusinessIdAndType(Long businessId, MessageTemplateType type);
-
     boolean existsByBusinessIdAndType(Long businessId, MessageTemplateType type);
 }

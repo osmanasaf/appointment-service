@@ -50,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception ex) {
-            logger.error("Kullanıcı kimliği doğrulanamadı", ex);
+            logger.warn("Kullanıcı kimliği doğrulanamadı: {}");
         }
 
         filterChain.doFilter(request, response);

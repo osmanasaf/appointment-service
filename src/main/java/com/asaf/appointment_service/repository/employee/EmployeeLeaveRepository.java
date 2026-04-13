@@ -30,13 +30,4 @@ public interface EmployeeLeaveRepository extends JpaRepository<EmployeeLeave, Lo
         @Param("employeeId") Long employeeId,
         @Param("date") LocalDate date
     );
-
-    @Query("SELECT l FROM EmployeeLeave l WHERE l.employeeId = :employeeId " +
-           "AND l.status = :status " +
-           "AND l.startDate >= :from")
-    List<EmployeeLeave> findByEmployeeIdAndStatusFromDate(
-        @Param("employeeId") Long employeeId,
-        @Param("status") LeaveStatus status,
-        @Param("from") LocalDate from
-    );
 }

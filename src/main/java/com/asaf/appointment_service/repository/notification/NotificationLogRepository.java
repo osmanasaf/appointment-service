@@ -15,25 +15,9 @@ public interface NotificationLogRepository extends JpaRepository<NotificationLog
     Optional<NotificationLog> findTopByPhoneNumberAndTypeInAndCreatedAtAfterOrderByCreatedAtDesc(
         String phoneNumber, List<NotificationType> types, LocalDateTime createdAfter);
 
-    List<NotificationLog> findByAppointmentId(Long appointmentId);
-
-    /**
-     * @deprecated businessId izolasyonu yok. {@link #findByBusinessIdAndCustomerId} kullanın.
-     */
-    @Deprecated(since = "2026-04-10", forRemoval = true)
-    List<NotificationLog> findByCustomerId(Long customerId);
-
-    /** businessId izolasyonlu müşteri bildirim geçmişi. */
     List<NotificationLog> findByBusinessIdAndCustomerIdOrderByCreatedAtDesc(Long businessId, Long customerId);
 
-    List<NotificationLog> findByStatus(NotificationStatus status);
-
     List<NotificationLog> findByStatusAndRetryCountLessThan(NotificationStatus status, int maxRetries);
-
-    Optional<NotificationLog> findByExternalId(String externalId);
-
-    List<NotificationLog> findByBusinessIdAndCreatedAtBetween(
-        Long businessId, LocalDateTime start, LocalDateTime end);
 
     boolean existsByAppointmentIdAndType(Long appointmentId, NotificationType type);
 }

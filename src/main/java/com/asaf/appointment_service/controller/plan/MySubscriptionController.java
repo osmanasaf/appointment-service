@@ -1,7 +1,7 @@
 package com.asaf.appointment_service.controller.plan;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
-import com.asaf.appointment_service.common.service.AuthenticatedBusinessService;
+import com.asaf.appointment_service.common.service.CurrentUserService;
 import com.asaf.appointment_service.dto.plan.BusinessSubscriptionResponse;
 import com.asaf.appointment_service.dto.plan.PlanUsageResponse;
 import com.asaf.appointment_service.mapper.plan.PlanMapper;
@@ -16,17 +16,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class MySubscriptionController {
 
     private final SubscriptionService subscriptionService;
-    private final AuthenticatedBusinessService authenticatedBusinessService;
+    private final CurrentUserService currentUserService;
 
     public MySubscriptionController(SubscriptionService subscriptionService,
-                                    AuthenticatedBusinessService authenticatedBusinessService) {
+                                    CurrentUserService currentUserService) {
         this.subscriptionService = subscriptionService;
-        this.authenticatedBusinessService = authenticatedBusinessService;
+        this.currentUserService = currentUserService;
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<BusinessSubscriptionResponse>> getMySubscription() {
-        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Long businessId = currentUserService.getCurrentBusinessId();
         var subscription = subscriptionService.getCurrentSubscriptionByBusinessId(businessId);
         var plan = subscriptionService.getCurrentPlanByBusinessId(businessId);
         return ResponseEntity.ok(ApiResponse.success(PlanMapper.toResponse(subscription, plan)));
@@ -34,7 +34,7 @@ public class MySubscriptionController {
 
     @GetMapping("/usage")
     public ResponseEntity<ApiResponse<PlanUsageResponse>> getMyUsage() {
-        Long businessId = authenticatedBusinessService.getCurrentBusinessId();
+        Long businessId = currentUserService.getCurrentBusinessId();
         var usage = subscriptionService.getCurrentUsage(businessId);
         var plan = subscriptionService.getCurrentPlanByBusinessId(businessId);
         return ResponseEntity.ok(ApiResponse.success(PlanMapper.toUsageResponse(usage, plan)));
