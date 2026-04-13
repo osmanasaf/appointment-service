@@ -17,7 +17,14 @@ public interface NotificationLogRepository extends JpaRepository<NotificationLog
 
     List<NotificationLog> findByAppointmentId(Long appointmentId);
 
+    /**
+     * @deprecated businessId izolasyonu yok. {@link #findByBusinessIdAndCustomerId} kullanın.
+     */
+    @Deprecated(since = "2026-04-10", forRemoval = true)
     List<NotificationLog> findByCustomerId(Long customerId);
+
+    /** businessId izolasyonlu müşteri bildirim geçmişi. */
+    List<NotificationLog> findByBusinessIdAndCustomerIdOrderByCreatedAtDesc(Long businessId, Long customerId);
 
     List<NotificationLog> findByStatus(NotificationStatus status);
 

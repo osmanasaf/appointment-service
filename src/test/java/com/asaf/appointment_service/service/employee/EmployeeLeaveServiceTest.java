@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -38,6 +39,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class EmployeeLeaveServiceTest {
 
+    private static final Long BUSINESS_ID = 10L;
     private static final Long EMPLOYEE_ID = 1L;
     private static final Long NEW_EMPLOYEE_ID = 2L;
     private static final LocalDate TODAY = LocalDate.now();
@@ -51,6 +53,16 @@ class EmployeeLeaveServiceTest {
 
     @InjectMocks
     private EmployeeLeaveService leaveService;
+
+    @BeforeEach
+    void stubPrimaryEmployee() {
+        when(employeeService.findByIdOrThrow(EMPLOYEE_ID)).thenReturn(
+            Employee.builder()
+                .id(EMPLOYEE_ID)
+                .businessId(BUSINESS_ID)
+                .name("Primary")
+                .build());
+    }
 
     @Test
     void should_create_leave_when_no_conflicts() {
@@ -78,7 +90,8 @@ class EmployeeLeaveServiceTest {
     void should_return_conflict_preview_with_appointments() {
         CreateLeaveRequest request = new CreateLeaveRequest(TODAY, NEXT_WEEK, null, null, LeaveType.ANNUAL, null);
         Appointment appointment = buildAppointment();
-        when(appointmentRepository.findConflictingAppointments(eq(EMPLOYEE_ID), any(), any()))
+        when(appointmentRepository.findConflictingAppointmentsForBusiness(
+            eq(BUSINESS_ID), eq(EMPLOYEE_ID), any(LocalDateTime.class), any(LocalDateTime.class)))
             .thenReturn(List.of(appointment));
 
         LeaveConflictPreviewResponse preview = leaveService.previewConflicts(EMPLOYEE_ID, request);
@@ -91,7 +104,8 @@ class EmployeeLeaveServiceTest {
     @Test
     void should_return_empty_conflict_preview_when_no_conflicts() {
         CreateLeaveRequest request = new CreateLeaveRequest(TODAY, NEXT_WEEK, null, null, LeaveType.ANNUAL, null);
-        when(appointmentRepository.findConflictingAppointments(eq(EMPLOYEE_ID), any(), any()))
+        when(appointmentRepository.findConflictingAppointmentsForBusiness(
+            eq(BUSINESS_ID), eq(EMPLOYEE_ID), any(LocalDateTime.class), any(LocalDateTime.class)))
             .thenReturn(Collections.emptyList());
 
         LeaveConflictPreviewResponse preview = leaveService.previewConflicts(EMPLOYEE_ID, request);
@@ -107,7 +121,8 @@ class EmployeeLeaveServiceTest {
         Appointment appointment = buildAppointment();
         EmployeeLeave savedLeave = buildLeave(TODAY, NEXT_WEEK);
 
-        when(appointmentRepository.findConflictingAppointments(eq(EMPLOYEE_ID), any(), any()))
+        when(appointmentRepository.findConflictingAppointmentsForBusiness(
+            eq(BUSINESS_ID), eq(EMPLOYEE_ID), any(LocalDateTime.class), any(LocalDateTime.class)))
             .thenReturn(List.of(appointment));
         when(leaveRepository.save(any())).thenReturn(savedLeave);
 
@@ -124,7 +139,15 @@ class EmployeeLeaveServiceTest {
         Appointment appointment = buildAppointment();
         EmployeeLeave savedLeave = buildLeave(TODAY, NEXT_WEEK);
 
-        when(appointmentRepository.findConflictingAppointments(eq(EMPLOYEE_ID), any(), any()))
+        when(employeeService.findByIdOrThrow(NEW_EMPLOYEE_ID)).thenReturn(
+            Employee.builder()
+                .id(NEW_EMPLOYEE_ID)
+                .businessId(BUSINESS_ID)
+                .name("Replacement")
+                .build());
+
+        when(appointmentRepository.findConflictingAppointmentsForBusiness(
+            eq(BUSINESS_ID), eq(EMPLOYEE_ID), any(LocalDateTime.class), any(LocalDateTime.class)))
             .thenReturn(List.of(appointment));
         when(leaveRepository.save(any())).thenReturn(savedLeave);
 

@@ -44,8 +44,9 @@ public class AppointmentValidationService {
     }
 
     @Transactional(readOnly = true)
-    public void validateSlotAvailability(Long employeeId, LocalDateTime start, LocalDateTime end) {
-        List<Appointment> conflicts = appointmentRepository.findConflictingAppointments(employeeId, start, end);
+    public void validateSlotAvailability(Long businessId, Long employeeId, LocalDateTime start, LocalDateTime end) {
+        List<Appointment> conflicts = appointmentRepository.findConflictingAppointmentsForBusiness(
+            businessId, employeeId, start, end);
         if (!conflicts.isEmpty()) {
             throw new SlotNotAvailableException(AppointmentErrorMessages.SLOT_NOT_AVAILABLE);
         }

@@ -76,7 +76,7 @@ public class AppointmentService extends BaseService<Appointment, Long, Appointme
         validationService.validateCapability(request.employeeId(), request.serviceId());
 
         LocalDateTime endTime = request.scheduledAt().plusMinutes(service.totalDurationMinutes());
-        validationService.validateSlotAvailability(request.employeeId(), request.scheduledAt(), endTime);
+        validationService.validateSlotAvailability(businessId, request.employeeId(), request.scheduledAt(), endTime);
         validationService.validateDayLimit(business, request.customerId(), request.scheduledAt());
 
         Appointment appointment = buildAndPersist(businessId, request, service, business);
@@ -188,9 +188,9 @@ public class AppointmentService extends BaseService<Appointment, Long, Appointme
     }
 
     @Transactional(readOnly = true)
-    public List<Appointment> findByEmployeeAndDateRange(Long employeeId, LocalDate date) {
-        return repository.findByEmployeeIdAndScheduledAtBetween(
-            employeeId, date.atStartOfDay(), date.plusDays(1).atStartOfDay());
+    public List<Appointment> findByEmployeeAndDateRange(Long businessId, Long employeeId, LocalDate date) {
+        return repository.findByBusinessIdAndEmployeeIdAndScheduledAtBetween(
+            businessId, employeeId, date.atStartOfDay(), date.plusDays(1).atStartOfDay());
     }
 
     @Transactional(readOnly = true)

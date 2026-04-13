@@ -22,18 +22,56 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     List<Appointment> findByBusinessIdAndRiskyTrue(Long businessId);
 
+    /**
+     * @deprecated Kullanımı güvenli değil — businessId izolasyonu yok.
+     *             Bunun yerine {@link #findByBusinessIdAndCustomerIdOrderByScheduledAtDesc} kullanın.
+     */
+    @Deprecated(since = "2026-04-10", forRemoval = true)
     List<Appointment> findByCustomerId(Long customerId);
 
+    /** businessId izolasyonlu müşteri randevusu sorgusu. */
+    List<Appointment> findByBusinessIdAndCustomerIdOrderByScheduledAtDesc(Long businessId, Long customerId);
+
+    /**
+     * @deprecated Kullanımı güvenli değil — businessId izolasyonu yok.
+     *             Bunun yerine {@link #findByBusinessIdAndEmployeeIdAndScheduledAtBetween} kullanın.
+     */
+    @Deprecated(since = "2026-04-10", forRemoval = true)
     List<Appointment> findByEmployeeIdAndScheduledAtBetween(
-        Long employeeId, 
-        LocalDateTime start, 
+        Long employeeId,
+        LocalDateTime start,
         LocalDateTime end
     );
 
+    /** businessId izolasyonlu çalışan bazlı tarih aralığı sorgusu. */
+    List<Appointment> findByBusinessIdAndEmployeeIdAndScheduledAtBetween(
+        Long businessId,
+        Long employeeId,
+        LocalDateTime start,
+        LocalDateTime end
+    );
+
+    /**
+     * @deprecated Kullanımı güvenli değil — businessId izolasyonu yok.
+     *             Bunun yerine {@link #findConflictingAppointmentsForBusiness} kullanın.
+     */
+    @Deprecated(since = "2026-04-10", forRemoval = true)
     @Query("SELECT a FROM Appointment a WHERE a.employeeId = :employeeId " +
            "AND a.status IN ('PENDING', 'CONFIRMED', 'RISKY') " +
            "AND a.scheduledAt < :end AND a.endAt > :start")
     List<Appointment> findConflictingAppointments(
+        @Param("employeeId") Long employeeId,
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end
+    );
+
+    /** businessId izolasyonlu çakışma sorgusu. */
+    @Query("SELECT a FROM Appointment a WHERE a.businessId = :businessId " +
+           "AND a.employeeId = :employeeId " +
+           "AND a.status IN ('PENDING', 'CONFIRMED', 'RISKY') " +
+           "AND a.scheduledAt < :end AND a.endAt > :start")
+    List<Appointment> findConflictingAppointmentsForBusiness(
+        @Param("businessId") Long businessId,
         @Param("employeeId") Long employeeId,
         @Param("start") LocalDateTime start,
         @Param("end") LocalDateTime end
@@ -114,6 +152,83 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     Page<Appointment> findByBusinessIdAndEmployeeIdAndDateRange(
         @Param("businessId") Long businessId,
         @Param("employeeId") Long employeeId,
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end,
+        Pageable pageable
+    );
+
+    // ── Dashboard istatistik sorguları (B12) ──────────────────────────────────
+
+    /**
+     * Hizmet bazlı randevu sayımı. Dashboard top-services endpoint'i için.
+     * Dönen dizi: [serviceId (Long), count (Long)]
+     */
+    @Query("SELECT a.serviceId, COUNT(a) as cnt FROM Appointment a " +
+           "WHERE a.businessId = :businessId " +
+           "AND a.scheduledAt BETWEEN :start AND :end " +
+           "GROUP BY a.serviceId ORDER BY cnt DESC")
+    List<Object[]> countByServiceIdForBusiness(
+        @Param("businessId") Long businessId,
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end,
+        Pageable pageable
+    );
+
+    /**
+     * Tamamlanan randevu sayısını hizmet bazlı sayar. Gelir hesabı için.
+     * Dönen dizi: [serviceId (Long), completedCount (Long)]
+     */
+    @Query("SELECT a.serviceId, COUNT(a) as cnt FROM Appointment a " +
+           "WHERE a.businessId = :businessId " +
+           "AND a.status = 'COMPLETED' " +
+           "AND a.scheduledAt BETWEEN :start AND :end " +
+           "GROUP BY a.serviceId")
+    List<Object[]> countCompletedByServiceIdForBusiness(
+        @Param("businessId") Long businessId,
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end
+    );
+
+    /**
+     * Belirli bir dönemde birden fazla randevusu olan (tekrar eden) müşteri sayısı.
+     */
+    @Query("SELECT COUNT(DISTINCT a.customerId) FROM Appointment a " +
+           "WHERE a.businessId = :businessId " +
+           "AND a.scheduledAt BETWEEN :start AND :end " +
+           "AND a.customerId IN (" +
+           "  SELECT a2.customerId FROM Appointment a2 " +
+           "  WHERE a2.businessId = :businessId " +
+           "  AND a2.scheduledAt BETWEEN :start AND :end " +
+           "  GROUP BY a2.customerId HAVING COUNT(a2) >= 2" +
+           ")")
+    long countReturningCustomers(
+        @Param("businessId") Long businessId,
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end
+    );
+
+    /**
+     * Dönemde randevusu olan müşteri sayısı (unique).
+     */
+    @Query("SELECT COUNT(DISTINCT a.customerId) FROM Appointment a " +
+           "WHERE a.businessId = :businessId " +
+           "AND a.scheduledAt BETWEEN :start AND :end")
+    long countUniqueCustomers(
+        @Param("businessId") Long businessId,
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end
+    );
+
+    /**
+     * En çok randevusu olan müşteriler. Dashboard top-customers için.
+     * Dönen dizi: [customerId (Long), count (Long)]
+     */
+    @Query("SELECT a.customerId, COUNT(a) as cnt FROM Appointment a " +
+           "WHERE a.businessId = :businessId " +
+           "AND a.scheduledAt BETWEEN :start AND :end " +
+           "GROUP BY a.customerId ORDER BY cnt DESC")
+    List<Object[]> findTopCustomersByAppointmentCount(
+        @Param("businessId") Long businessId,
         @Param("start") LocalDateTime start,
         @Param("end") LocalDateTime end,
         Pageable pageable

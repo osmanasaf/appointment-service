@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -107,6 +108,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.UNAUTHORIZED)
             .body(ApiResponse.error(new ErrorDetails(ex.getCode(), ex.getMessage(), null, LocalDateTime.now())));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResourceFound(NoResourceFoundException ex) {
+        log.warn("Resource not found: {}", ex.getResourcePath());
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ApiResponse.error(new ErrorDetails("NOT_FOUND", "İstenen kaynak bulunamadı: " + ex.getResourcePath(), null, LocalDateTime.now())));
     }
 
     @ExceptionHandler(Exception.class)

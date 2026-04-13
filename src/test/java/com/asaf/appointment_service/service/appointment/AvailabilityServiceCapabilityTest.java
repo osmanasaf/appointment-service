@@ -68,9 +68,17 @@ class AvailabilityServiceCapabilityTest {
             .thenReturn(Optional.empty());
     }
 
+    private static LocalDate nextOpenBookingDay() {
+        LocalDate d = LocalDate.now().plusDays(1);
+        while (d.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            d = d.plusDays(1);
+        }
+        return d;
+    }
+
     @Test
     void getAvailableSlots_whenEmployeeHasCapability_shouldReturnSlots() {
-        LocalDate date = LocalDate.now().plusDays(1);
+        LocalDate date = nextOpenBookingDay();
         Business business = buildBusiness();
         Employee employee = Employee.builder().businessId(BUSINESS_ID).name("Ali").build();
         ServiceDefinition service = buildService(60);
@@ -94,7 +102,7 @@ class AvailabilityServiceCapabilityTest {
 
     @Test
     void getAvailableSlots_whenEmployeeHasNoCapability_shouldThrow() {
-        LocalDate date = LocalDate.now().plusDays(1);
+        LocalDate date = nextOpenBookingDay();
         Business business = buildBusiness();
         Employee employee = Employee.builder().businessId(BUSINESS_ID).name("Ali").build();
         ServiceDefinition service = buildService(60);
@@ -112,7 +120,7 @@ class AvailabilityServiceCapabilityTest {
 
     @Test
     void getAvailableSlots_whenNoEmployeeId_shouldAggregateCapableEmployees() {
-        LocalDate date = LocalDate.now().plusDays(1);
+        LocalDate date = nextOpenBookingDay();
         Business business = buildBusiness();
         ServiceDefinition service = buildService(60);
         BusinessWorkingHours hours = BusinessWorkingHours.defaultHours(BUSINESS_ID, date.getDayOfWeek());
@@ -138,7 +146,7 @@ class AvailabilityServiceCapabilityTest {
 
     @Test
     void getAvailableSlots_whenNoEmployeeIdAndNoCapableEmployees_shouldReturnEmpty() {
-        LocalDate date = LocalDate.now().plusDays(1);
+        LocalDate date = nextOpenBookingDay();
         Business business = buildBusiness();
         ServiceDefinition service = buildService(60);
 
@@ -170,7 +178,7 @@ class AvailabilityServiceCapabilityTest {
 
     @Test
     void getAvailableSlots_whenCapableEmployeeUsesCustomDuration_shouldRespectCustomDuration() {
-        LocalDate date = LocalDate.now().plusDays(1);
+        LocalDate date = nextOpenBookingDay();
         Business business = buildBusiness();
         ServiceDefinition service = buildService(60);
         BusinessWorkingHours hours = BusinessWorkingHours.defaultHours(BUSINESS_ID, date.getDayOfWeek());

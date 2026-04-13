@@ -209,6 +209,8 @@ public class AuthService {
             throw new IllegalArgumentException("Bu davet kodu bu email için geçerli değil");
         }
 
+        employeeInviteService.assertRegistrationNameMatchesInvite(invite, request.name());
+
         // Kullanıcı oluştur
         User user = User.builder()
             .email(request.email())
@@ -338,7 +340,7 @@ public class AuthService {
     @Transactional
     public String verifyPasswordResetOtp(String email, String otpCode) {
         User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new InvalidOtpException("Geçersiz istek"));
+            .orElseThrow(InvalidOtpException::new);
 
         if (user.isOtpBlocked()) {
             throw new OtpBlockedException(user.getOtpBlockedUntil());

@@ -14,11 +14,13 @@ import com.asaf.appointment_service.service.employee.EmployeeCapabilityService;
 import com.asaf.appointment_service.service.employee.EmployeeScheduleService;
 import com.asaf.appointment_service.service.employee.EmployeeService;
 import com.asaf.appointment_service.service.service.ServiceDefinitionService;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,7 +29,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,10 +55,24 @@ class AvailabilityServiceTest {
     @InjectMocks
     private AvailabilityService availabilityService;
 
+    @BeforeEach
+    void stubScheduleDefaults() {
+        lenient().when(scheduleService.getScheduleForDay(anyLong(), any(DayOfWeek.class)))
+            .thenReturn(Optional.empty());
+    }
+
+    private static LocalDate nextOpenBookingDay() {
+        LocalDate d = LocalDate.now().plusDays(1);
+        while (d.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            d = d.plusDays(1);
+        }
+        return d;
+    }
+
     @Test
     void getAvailableSlots_whenWorkingHoursAndNoAppointments_shouldReturnSlots() {
         // Arrange
-        LocalDate date = LocalDate.now().plusDays(1);
+        LocalDate date = nextOpenBookingDay();
         Long businessId = 1L;
         Long employeeId = 1L;
         Long serviceId = 1L;
@@ -89,7 +107,7 @@ class AvailabilityServiceTest {
     @Test
     void getAvailableSlots_whenSlotHasConflictingAppointment_shouldExcludeSlot() {
         // Arrange
-        LocalDate date = LocalDate.now().plusDays(1);
+        LocalDate date = nextOpenBookingDay();
         Long businessId = 1L;
         Long employeeId = 1L;
         Long serviceId = 1L;

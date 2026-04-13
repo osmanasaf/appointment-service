@@ -1,6 +1,8 @@
 package com.asaf.appointment_service.service.employee;
 
+import com.asaf.appointment_service.common.exception.ValidationException;
 import com.asaf.appointment_service.dto.employee.CreateEmployeeInviteRequest;
+import com.asaf.appointment_service.dto.employee.EmployeeInvitePreviewResponse;
 import com.asaf.appointment_service.dto.employee.EmployeeInviteResponse;
 import com.asaf.appointment_service.entity.business.Business;
 import com.asaf.appointment_service.entity.employee.Employee;
@@ -92,6 +94,42 @@ public class EmployeeInviteService {
     public EmployeeInvite findByTokenOrThrow(String token) {
         return inviteRepository.findByToken(token)
             .orElseThrow(() -> new IllegalArgumentException("Geçersiz davet kodu"));
+    }
+
+    @Transactional(readOnly = true)
+    public EmployeeInvitePreviewResponse getPreviewByToken(String token) {
+        if (token == null || token.isBlank()) {
+            throw new ValidationException("Davet kodu gereklidir");
+        }
+        EmployeeInvite invite = inviteRepository.findByToken(token.trim())
+            .orElseThrow(() -> new ValidationException("Davet geçersiz veya süresi dolmuş"));
+        if (!invite.isValid()) {
+            throw new ValidationException("Davet geçersiz veya süresi dolmuş");
+        }
+        Employee employee = employeeService.findByIdOrThrow(invite.getEmployeeId());
+        if (!employee.getBusinessId().equals(invite.getBusinessId())) {
+            throw new ValidationException("Davet geçersiz veya süresi dolmuş");
+        }
+        Business business = businessService.findByIdOrThrow(invite.getBusinessId());
+        return new EmployeeInvitePreviewResponse(
+            invite.getEmail(),
+            employee.getName(),
+            business.getName()
+        );
+    }
+
+    public void assertRegistrationNameMatchesInvite(EmployeeInvite invite, String requestedName) {
+        Employee employee = employeeService.findByIdOrThrow(invite.getEmployeeId());
+        if (!normalizedName(requestedName).equalsIgnoreCase(normalizedName(employee.getName()))) {
+            throw new ValidationException("Ad soyad davet bilgileri ile eşleşmiyor");
+        }
+    }
+
+    private static String normalizedName(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim().replaceAll("\\s+", " ");
     }
 
     @Transactional

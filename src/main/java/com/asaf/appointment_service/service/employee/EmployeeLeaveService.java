@@ -155,9 +155,11 @@ public class EmployeeLeaveService {
     }
 
     private List<Appointment> findRawConflictingAppointments(Long employeeId, CreateLeaveRequest request) {
+        Long businessId = employeeService.findByIdOrThrow(employeeId).getBusinessId();
         LocalDateTime startDateTime = request.startDate().atStartOfDay();
         LocalDateTime endDateTime = request.endDate().atTime(23, 59, 59);
-        return appointmentRepository.findConflictingAppointments(employeeId, startDateTime, endDateTime);
+        return appointmentRepository.findConflictingAppointmentsForBusiness(
+            businessId, employeeId, startDateTime, endDateTime);
     }
 
     private void resolveConflicts(List<Appointment> appointments, ResolveLeaveConflictRequest request) {
