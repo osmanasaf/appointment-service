@@ -1,0 +1,41 @@
+# .dockerignore for Spring Boot backend
+# Exclude unnecessary files from Docker context
+
+# Maven build output
+target/
+!target/*.jar
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.settings/
+.classpath
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+logs/
+
+# Environment files (handled via env vars in production)
+.env
+.env.local
+.env.production
+
+# Test files
+src/test/
+
+# Documentation
+docs/
+*.md
+!README.md

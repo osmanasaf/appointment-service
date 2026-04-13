@@ -9,11 +9,11 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.asaf</groupId>
-	<artifactId>appointment-service</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
-	<name>appointment-service</name>
-	<description>Demo project for Spring Boot</description>
-	<url/>
+	<artifactId>randevum-api</artifactId>
+	<version>1.0.0</version>
+	<name>Randevum API</name>
+	<description>Randevum - İşletmeler için akıllı randevu yönetim sistemi backend servisi</description>
+	<url>https://randevum.tr</url>
 	<licenses>
 		<license/>
 	</licenses>
@@ -91,6 +91,12 @@
 			<groupId>com.bucket4j</groupId>
 			<artifactId>bucket4j_jdk17-core</artifactId>
 			<version>8.14.0</version>
+		</dependency>
+
+		<!-- Spring Boot Actuator for Health Checks -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 
 		<dependency>
