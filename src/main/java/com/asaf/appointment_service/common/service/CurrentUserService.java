@@ -80,4 +80,16 @@ public class CurrentUserService {
             throw new UnauthorizedException("Bu işlem için işletme sahibi veya admin yetkisi gereklidir");
         }
     }
+
+    @Transactional(readOnly = true)
+    public boolean isSuperAdmin() {
+        return getCurrentUserRole() == UserRole.SUPER_ADMIN;
+    }
+
+    @Transactional(readOnly = true)
+    public void requireSuperAdmin() {
+        if (getCurrentUserRole() != UserRole.SUPER_ADMIN) {
+            throw new UnauthorizedException("Bu işlem için platform yöneticisi yetkisi gereklidir");
+        }
+    }
 }
