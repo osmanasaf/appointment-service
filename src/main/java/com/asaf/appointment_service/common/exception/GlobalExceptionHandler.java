@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -108,6 +110,30 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.UNAUTHORIZED)
             .body(ApiResponse.error(new ErrorDetails(ex.getCode(), ex.getMessage(), null, LocalDateTime.now())));
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
+        log.warn("Login failed: invalid credentials");
+        return ResponseEntity
+            .status(HttpStatus.UNAUTHORIZED)
+            .body(ApiResponse.error(new ErrorDetails(
+                "INVALID_CREDENTIALS",
+                "E-posta veya şifre hatalı.",
+                null,
+                LocalDateTime.now())));
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDisabledAccount(DisabledException ex) {
+        log.warn("Login failed: account disabled");
+        return ResponseEntity
+            .status(HttpStatus.FORBIDDEN)
+            .body(ApiResponse.error(new ErrorDetails(
+                "ACCOUNT_DISABLED",
+                "Hesabınız aktif değil.",
+                null,
+                LocalDateTime.now())));
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

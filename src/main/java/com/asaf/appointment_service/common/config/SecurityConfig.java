@@ -21,6 +21,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -51,16 +52,33 @@ public class SecurityConfig {
     }
 
     @Bean
+    public AccessDeniedHandler jsonAccessDeniedHandler(ObjectMapper objectMapper) {
+        return (request, response, accessDeniedException) -> {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType("application/json;charset=UTF-8");
+            var body = ApiResponse.error(new ErrorDetails(
+                "FORBIDDEN",
+                "Bu kaynağa erişim yetkiniz bulunmamaktadır",
+                null,
+                LocalDateTime.now()));
+            objectMapper.writeValue(response.getOutputStream(), body);
+        };
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             AuthenticationEntryPoint jsonAuthenticationEntryPoint,
+            AccessDeniedHandler jsonAccessDeniedHandler,
             CorsConfigurationSource corsConfigurationSource) throws Exception {
         return http
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .csrf(AbstractHttpConfigurer::disable)
             .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(ex -> ex.authenticationEntryPoint(jsonAuthenticationEntryPoint))
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(jsonAuthenticationEntryPoint)
+                .accessDeniedHandler(jsonAccessDeniedHandler))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/v1/auth/**").permitAll()
