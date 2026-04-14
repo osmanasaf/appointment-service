@@ -30,22 +30,33 @@ public class WebConfig implements WebMvcConfigurer {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList(getCorsOrigins()));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Content-Type", "Authorization", "X-Requested-With"));
+        
+        String[] origins = getCorsOrigins();
+        if (origins.length > 0) {
+            config.setAllowedOriginPatterns(Arrays.asList(origins));
+        } else {
+            config.setAllowedOriginPatterns(List.of("*"));
+        }
+        
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
+        config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+        
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", config);
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
-            .allowedOrigins(getCorsOrigins())
-            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-            .allowedHeaders("Content-Type", "Authorization", "X-Requested-With")
-            .allowCredentials(true);
+        String[] origins = getCorsOrigins();
+        registry.addMapping("/**")
+            .allowedOriginPatterns(origins.length > 0 ? origins : new String[]{"*"})
+            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH")
+            .allowedHeaders("*")
+            .allowCredentials(true)
+            .maxAge(3600);
     }
 
     @Bean
