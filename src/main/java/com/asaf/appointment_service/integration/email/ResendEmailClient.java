@@ -43,8 +43,8 @@ public class ResendEmailClient implements EmailClient {
     @Override
     public void sendOtpEmail(String toEmail, String toName, String otpCode, OtpEmailType type) {
         String subject = type == OtpEmailType.EMAIL_VERIFICATION 
-            ? "Ayarla - Email Doğrulama Kodu" 
-            : "Ayarla - Şifre Sıfırlama Kodu";
+            ? "Randevum - Email Doğrulama Kodu" 
+            : "Randevum - Şifre Sıfırlama Kodu";
         String html = buildOtpHtml(toName, otpCode, type);
         send(toEmail, subject, html);
     }
@@ -94,8 +94,11 @@ public class ResendEmailClient implements EmailClient {
                       </p>
                     </td></tr>
                     <tr><td style="padding-top:32px;border-top:1px solid #eee;text-align:center">
-                      <p style="font-size:12px;color:#aaa;margin:0">
+                      <p style="font-size:12px;color:#aaa;margin:0 0 10px 0">
                         Bu emaili siz istemediyseniz güvenle yok sayabilirsiniz.
+                      </p>
+                      <p style="font-size:12px;color:#aaa;margin:0">
+                        &copy; 2026 Randevum Pro &bull; <a href="https://randevum.pro" style="color:#0891B2;text-decoration:none;">randevum.pro</a>
                       </p>
                     </td></tr>
                   </table>
@@ -123,14 +126,14 @@ public class ResendEmailClient implements EmailClient {
                   <table width="560" cellpadding="0" cellspacing="0"
                          style="background:#fff;border-radius:8px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
                     <tr><td style="text-align:center;padding-bottom:32px">
-                      <h2 style="color:#0d9488;margin:0">Ayarla</h2>
+                      <h2 style="color:#0891B2;margin:0">Randevum</h2>
                     </td></tr>
                     <tr><td>
                       <p style="font-size:16px;color:#333">Merhaba <strong>%s</strong>,</p>
                       <p style="font-size:15px;color:#555;line-height:1.6">%s</p>
                       <div style="text-align:center;margin:32px 0">
-                        <div style="background:#f0fdfa;border:2px dashed #0d9488;border-radius:8px;padding:24px;display:inline-block">
-                          <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#0d9488">%s</span>
+                        <div style="background:#ECFEFF;border:2px dashed #0891B2;border-radius:8px;padding:24px;display:inline-block">
+                          <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#0891B2">%s</span>
                         </div>
                       </div>
                       <p style="font-size:14px;color:#666;text-align:center">
@@ -138,8 +141,11 @@ public class ResendEmailClient implements EmailClient {
                       </p>
                     </td></tr>
                     <tr><td style="padding-top:32px;border-top:1px solid #eee;text-align:center">
-                      <p style="font-size:12px;color:#aaa;margin:0">
+                      <p style="font-size:12px;color:#aaa;margin:0 0 10px 0">
                         Bu kodu siz istemediyseniz güvenle yok sayabilirsiniz.
+                      </p>
+                      <p style="font-size:12px;color:#aaa;margin:0">
+                        &copy; 2026 Randevum Pro &bull; <a href="https://randevum.pro" style="color:#0891B2;text-decoration:none;">randevum.pro</a>
                       </p>
                     </td></tr>
                   </table>
@@ -160,7 +166,7 @@ public class ResendEmailClient implements EmailClient {
                   <table width="560" cellpadding="0" cellspacing="0"
                          style="background:#fff;border-radius:8px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
                     <tr><td style="text-align:center;padding-bottom:32px">
-                      <h2 style="color:#0d9488;margin:0">Ayarla</h2>
+                      <h2 style="color:#0891B2;margin:0">Randevum</h2>
                     </td></tr>
                     <tr><td>
                       <p style="font-size:16px;color:#333">Merhaba <strong>%s</strong>,</p>
@@ -177,8 +183,11 @@ public class ResendEmailClient implements EmailClient {
                       </div>
                     </td></tr>
                     <tr><td style="padding-top:32px;border-top:1px solid #eee;text-align:center">
-                      <p style="font-size:12px;color:#aaa;margin:0">
+                      <p style="font-size:12px;color:#aaa;margin:0 0 10px 0">
                         Bu daveti siz almadıysanız güvenle yok sayabilirsiniz.
+                      </p>
+                      <p style="font-size:12px;color:#aaa;margin:0">
+                        &copy; 2026 Randevum Pro &bull; <a href="https://randevum.pro" style="color:#0891B2;text-decoration:none;">randevum.pro</a>
                       </p>
                     </td></tr>
                   </table>

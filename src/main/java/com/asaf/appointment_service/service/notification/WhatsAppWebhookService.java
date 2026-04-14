@@ -41,35 +41,35 @@ public class WhatsAppWebhookService {
         İptal etmek için "İptal" yazın.
         Ertelemek için "Ertele" yazın.
         
-        Ayarla""";
+        Randevum Pro""";
 
     private static final String AUTO_REPLY_CONFIRMED = """
         ✅ Randevunuz onaylandı!
         
         Görüşmek üzere.
         
-        Ayarla""";
+        Randevum Pro""";
 
     private static final String AUTO_REPLY_CANCELLED = """
         ❌ Randevunuz iptal edildi.
         
         Yeni randevu almak için web sitemizi ziyaret edebilirsiniz.
         
-        Ayarla""";
+        Randevum Pro""";
 
     private static final String AUTO_REPLY_RESCHEDULE_REQUESTED = """
         🔄 Erteleme talebiniz alındı!
         
         En kısa sürede sizinle iletişime geçeceğiz.
         
-        Ayarla""";
+        Randevum Pro""";
 
     private static final String AUTO_REPLY_NO_APPOINTMENT = """
         Aktif bir randevunuz bulunamadı.
         
         Yeni randevu almak için web sitemizi ziyaret edebilirsiniz.
         
-        Ayarla""";
+        Randevum Pro""";
 
     private final NotificationLogRepository notificationLogRepository;
     private final AppointmentService appointmentService;

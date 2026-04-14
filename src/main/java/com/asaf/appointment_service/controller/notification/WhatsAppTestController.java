@@ -36,7 +36,7 @@ public class WhatsAppTestController {
             @RequestParam String serviceName,
             @RequestParam String date,
             @RequestParam String time,
-            @RequestParam(defaultValue = "Ayarla") String businessName) {
+            @RequestParam(defaultValue = "Randevum Pro") String businessName) {
         
         String header = "📅 Randevu Hatırlatma";
         String body = String.format("""

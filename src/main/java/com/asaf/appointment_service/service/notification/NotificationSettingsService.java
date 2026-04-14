@@ -26,7 +26,7 @@ public class NotificationSettingsService {
         this.subscriptionService = subscriptionService;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public NotificationSettings getSettings(Long businessId) {
         return repository.findByBusinessId(businessId)
                 .orElseGet(() -> initializeSettings(businessId));
@@ -165,7 +165,7 @@ public class NotificationSettingsService {
      * Kalan WhatsApp mesaj hakkını döner.
      * -1 = sınırsız
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public int getRemainingWhatsappQuota(Long businessId) {
         NotificationSettings settings = getSettings(businessId);
         Plan plan = subscriptionService.getCurrentPlanByBusinessId(businessId);
@@ -180,7 +180,7 @@ public class NotificationSettingsService {
      * Kalan SMS hakkını döner.
      * -1 = sınırsız
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public int getRemainingSmsQuota(Long businessId) {
         NotificationSettings settings = getSettings(businessId);
         Plan plan = subscriptionService.getCurrentPlanByBusinessId(businessId);
