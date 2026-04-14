@@ -14,6 +14,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -22,9 +23,13 @@ public class WebConfig implements WebMvcConfigurer {
     private String corsAllowedOrigins;
 
     private String[] getCorsOrigins() {
-        return corsAllowedOrigins == null || corsAllowedOrigins.isBlank()
-            ? new String[0]
-            : corsAllowedOrigins.split("\\s*,\\s*");
+        if (corsAllowedOrigins == null || corsAllowedOrigins.isBlank()) {
+            return new String[0];
+        }
+        return Stream.of(corsAllowedOrigins.split("\\s*,\\s*"))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .toArray(String[]::new);
     }
 
     @Bean
