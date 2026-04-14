@@ -19,6 +19,7 @@ public record AuthResponse(
         String name,
         Long businessId,
         Long employeeId,
-        UserRole role
+        UserRole role,
+        String businessSlug
     ) {}
 }

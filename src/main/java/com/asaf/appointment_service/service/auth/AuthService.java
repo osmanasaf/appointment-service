@@ -289,14 +289,7 @@ public class AuthService {
             user.getEmployeeId()
         );
 
-        AuthResponse.UserInfo userInfo = new AuthResponse.UserInfo(
-            user.getId(),
-            user.getEmail(),
-            user.getName(),
-            user.getBusinessId(),
-            user.getEmployeeId(),
-            user.getRole()
-        );
+        AuthResponse.UserInfo userInfo = buildUserInfo(user);
 
         return AuthResponse.of(accessToken, refreshToken.getToken(), tokenProvider.getExpirationInSeconds(), userInfo);
     }
@@ -391,15 +384,28 @@ public class AuthService {
 
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user, deviceInfo);
 
-        AuthResponse.UserInfo userInfo = new AuthResponse.UserInfo(
+        AuthResponse.UserInfo userInfo = buildUserInfo(user);
+
+        return AuthResponse.of(accessToken, refreshToken.getToken(), tokenProvider.getExpirationInSeconds(), userInfo);
+    }
+
+    private AuthResponse.UserInfo buildUserInfo(User user) {
+        String businessSlug = resolveBusinessSlug(user.getBusinessId());
+        return new AuthResponse.UserInfo(
             user.getId(),
             user.getEmail(),
             user.getName(),
             user.getBusinessId(),
             user.getEmployeeId(),
-            user.getRole()
+            user.getRole(),
+            businessSlug
         );
+    }
 
-        return AuthResponse.of(accessToken, refreshToken.getToken(), tokenProvider.getExpirationInSeconds(), userInfo);
+    private String resolveBusinessSlug(Long businessId) {
+        if (businessId == null) {
+            return null;
+        }
+        return businessService.findByIdOrThrow(businessId).getSlug();
     }
 }
