@@ -42,8 +42,8 @@ public class ResendEmailClient implements EmailClient {
 
     @Override
     public void sendOtpEmail(String toEmail, String toName, String otpCode, OtpEmailType type) {
-        String subject = type == OtpEmailType.EMAIL_VERIFICATION 
-            ? "Randevum - Email Doğrulama Kodu" 
+        String subject = type == OtpEmailType.EMAIL_VERIFICATION
+            ? "Randevum - Email Doğrulama Kodu"
             : "Randevum - Şifre Sıfırlama Kodu";
         String html = buildOtpHtml(toName, otpCode, type);
         send(toEmail, subject, html);
@@ -65,137 +65,83 @@ public class ResendEmailClient implements EmailClient {
     }
 
     private String buildVerificationHtml(String name, String verificationUrl) {
-        return """
-            <!DOCTYPE html>
-            <html lang="tr">
-            <body style="font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0">
-              <table width="100%%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:40px 0">
-                <tr><td align="center">
-                  <table width="560" cellpadding="0" cellspacing="0"
-                         style="background:#fff;border-radius:8px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
-                    <tr><td style="text-align:center;padding-bottom:32px">
-                      <h2 style="color:#1a1a1a;margin:0">Randevu Sistemi</h2>
-                    </td></tr>
-                    <tr><td>
-                      <p style="font-size:16px;color:#333">Merhaba <strong>%s</strong>,</p>
-                      <p style="font-size:15px;color:#555;line-height:1.6">
-                        Hesabınızı aktifleştirmek için aşağıdaki butona tıklayın.
-                        Bu link <strong>24 saat</strong> geçerlidir.
-                      </p>
-                      <div style="text-align:center;margin:32px 0">
-                        <a href="%s"
-                           style="background:#6366f1;color:#fff;text-decoration:none;
-                                  padding:14px 32px;border-radius:6px;font-size:16px;font-weight:600">
-                          Email Adresimi Doğrula
-                        </a>
-                      </div>
-                      <p style="font-size:13px;color:#999;word-break:break-all">
-                        Buton çalışmıyorsa bu linki kopyalayıp tarayıcınıza yapıştırın:<br>%s
-                      </p>
-                    </td></tr>
-                    <tr><td style="padding-top:32px;border-top:1px solid #eee;text-align:center">
-                      <p style="font-size:12px;color:#aaa;margin:0 0 10px 0">
-                        Bu emaili siz istemediyseniz güvenle yok sayabilirsiniz.
-                      </p>
-                      <p style="font-size:12px;color:#aaa;margin:0">
-                        &copy; 2026 Randevum Pro &bull; <a href="https://randevum.pro" style="color:#0891B2;text-decoration:none;">randevum.pro</a>
-                      </p>
-                    </td></tr>
-                  </table>
-                </td></tr>
-              </table>
-            </body>
-            </html>
-            """.formatted(name, verificationUrl, verificationUrl);
+        String safeName = HtmlEmailLayout.escape(name);
+        String inner = """
+            <p style="margin:0 0 16px;">Merhaba <strong style="color:#0f172a;">%s</strong>,</p>
+            <p style="margin:0 0 4px;color:#475569;">
+              Randevum hesabınızı kullanmaya başlamak için e-posta adresinizi doğrulayın.
+            </p>
+            <p style="margin:0 0 24px;color:#475569;">
+              Bu bağlantı <strong style="color:#0f172a;">24 saat</strong> boyunca geçerlidir.
+            </p>
+            %s
+            %s
+            """.formatted(
+            safeName,
+            HtmlEmailLayout.primaryButton(verificationUrl, "E-postamı doğrula"),
+            HtmlEmailLayout.mutedLinkFallback(verificationUrl));
+        return HtmlEmailLayout.document(
+            "E-postanızı doğrulayın — Randevum",
+            "Hesap doğrulama",
+            "E-postanızı onaylayın",
+            inner,
+            "Bu e-postayı siz istemediyseniz güvenle yok sayabilirsiniz.");
     }
 
     private String buildOtpHtml(String name, String otpCode, OtpEmailType type) {
-        String title = type == OtpEmailType.EMAIL_VERIFICATION 
-            ? "Email Doğrulama Kodu" 
-            : "Şifre Sıfırlama Kodu";
+        String headline = type == OtpEmailType.EMAIL_VERIFICATION
+            ? "Email doğrulama kodu"
+            : "Şifre sıfırlama kodu";
         String message = type == OtpEmailType.EMAIL_VERIFICATION
-            ? "Hesabınızı doğrulamak için aşağıdaki kodu kullanın."
-            : "Şifrenizi sıfırlamak için aşağıdaki kodu kullanın.";
-        
-        return """
-            <!DOCTYPE html>
-            <html lang="tr">
-            <body style="font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0">
-              <table width="100%%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:40px 0">
-                <tr><td align="center">
-                  <table width="560" cellpadding="0" cellspacing="0"
-                         style="background:#fff;border-radius:8px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
-                    <tr><td style="text-align:center;padding-bottom:32px">
-                      <h2 style="color:#0891B2;margin:0">Randevum</h2>
-                    </td></tr>
-                    <tr><td>
-                      <p style="font-size:16px;color:#333">Merhaba <strong>%s</strong>,</p>
-                      <p style="font-size:15px;color:#555;line-height:1.6">%s</p>
-                      <div style="text-align:center;margin:32px 0">
-                        <div style="background:#ECFEFF;border:2px dashed #0891B2;border-radius:8px;padding:24px;display:inline-block">
-                          <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#0891B2">%s</span>
-                        </div>
-                      </div>
-                      <p style="font-size:14px;color:#666;text-align:center">
-                        Bu kod <strong>5 dakika</strong> içinde geçerliliğini yitirecektir.
-                      </p>
-                    </td></tr>
-                    <tr><td style="padding-top:32px;border-top:1px solid #eee;text-align:center">
-                      <p style="font-size:12px;color:#aaa;margin:0 0 10px 0">
-                        Bu kodu siz istemediyseniz güvenle yok sayabilirsiniz.
-                      </p>
-                      <p style="font-size:12px;color:#aaa;margin:0">
-                        &copy; 2026 Randevum Pro &bull; <a href="https://randevum.pro" style="color:#0891B2;text-decoration:none;">randevum.pro</a>
-                      </p>
-                    </td></tr>
-                  </table>
-                </td></tr>
-              </table>
-            </body>
-            </html>
-            """.formatted(name, message, otpCode);
+            ? "Hesabınızı doğrulamak için aşağıdaki tek kullanımlık kodu girin."
+            : "Şifrenizi yenilemek için aşağıdaki tek kullanımlık kodu girin.";
+        String kicker = type == OtpEmailType.EMAIL_VERIFICATION ? "Güvenlik kodu" : "Şifre sıfırlama";
+        String safeName = HtmlEmailLayout.escape(name);
+        String safeCode = HtmlEmailLayout.escape(otpCode);
+        String inner = """
+            <p style="margin:0 0 16px;">Merhaba <strong style="color:#0f172a;">%s</strong>,</p>
+            <p style="margin:0 0 22px;color:#475569;">%s</p>
+            <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;">
+              <tr>
+                <td align="center" style="padding:24px 18px;background-color:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;">
+                  <span style="font-family:Consolas,'Courier New',monospace;font-size:28px;font-weight:800;letter-spacing:0.2em;color:#4338ca;">%s</span>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:0;text-align:center;font-size:13px;color:#64748b;">
+              Bu kod <strong style="color:#0f172a;">5 dakika</strong> içinde geçerliliğini yitirecektir.
+            </p>
+            """.formatted(safeName, message, safeCode);
+        return HtmlEmailLayout.document(
+            headline + " — Randevum",
+            kicker,
+            headline,
+            inner,
+            "Bu kodu siz talep etmediyseniz bu e-postayı yok sayabilirsiniz.");
     }
 
     private String buildInviteHtml(String employeeName, String businessName, String inviteUrl) {
-        return """
-            <!DOCTYPE html>
-            <html lang="tr">
-            <body style="font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:0">
-              <table width="100%%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:40px 0">
-                <tr><td align="center">
-                  <table width="560" cellpadding="0" cellspacing="0"
-                         style="background:#fff;border-radius:8px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
-                    <tr><td style="text-align:center;padding-bottom:32px">
-                      <h2 style="color:#0891B2;margin:0">Randevum</h2>
-                    </td></tr>
-                    <tr><td>
-                      <p style="font-size:16px;color:#333">Merhaba <strong>%s</strong>,</p>
-                      <p style="font-size:15px;color:#555;line-height:1.6">
-                        <strong>%s</strong> sizi ekibine davet etti.
-                        Daveti kabul etmek için aşağıdaki butona tıklayın.
-                      </p>
-                      <div style="text-align:center;margin:32px 0">
-                        <a href="%s"
-                           style="background:#0d9488;color:#fff;text-decoration:none;
-                                  padding:14px 32px;border-radius:6px;font-size:16px;font-weight:600">
-                          Daveti Kabul Et
-                        </a>
-                      </div>
-                    </td></tr>
-                    <tr><td style="padding-top:32px;border-top:1px solid #eee;text-align:center">
-                      <p style="font-size:12px;color:#aaa;margin:0 0 10px 0">
-                        Bu daveti siz almadıysanız güvenle yok sayabilirsiniz.
-                      </p>
-                      <p style="font-size:12px;color:#aaa;margin:0">
-                        &copy; 2026 Randevum Pro &bull; <a href="https://randevum.pro" style="color:#0891B2;text-decoration:none;">randevum.pro</a>
-                      </p>
-                    </td></tr>
-                  </table>
-                </td></tr>
-              </table>
-            </body>
-            </html>
-            """.formatted(employeeName, businessName, inviteUrl);
+        String en = HtmlEmailLayout.escape(employeeName);
+        String bn = HtmlEmailLayout.escape(businessName);
+        String inner = """
+            <p style="margin:0 0 16px;">Merhaba <strong style="color:#0f172a;">%s</strong>,</p>
+            <p style="margin:0 0 6px;color:#475569;">
+              <strong style="color:#0f172a;">%s</strong> sizi Randevum ekibine davet ediyor.
+            </p>
+            <p style="margin:0 0 24px;color:#475569;">Daveti kabul etmek için aşağıdaki düğmeyi kullanın.</p>
+            %s
+            %s
+            """.formatted(
+            en,
+            bn,
+            HtmlEmailLayout.primaryButton(inviteUrl, "Daveti kabul et"),
+            HtmlEmailLayout.mutedLinkFallback(inviteUrl));
+        return HtmlEmailLayout.document(
+            businessName + " sizi ekibine davet ediyor",
+            "Çalışan daveti",
+            "Yeni bir davet",
+            inner,
+            "Bu daveti siz beklemediyseniz bu e-postayı yok sayabilirsiniz.");
     }
 
     private record ResendRequest(String from, List<String> to, String subject, String html) {}
