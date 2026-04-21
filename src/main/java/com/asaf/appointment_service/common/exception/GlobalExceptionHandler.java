@@ -7,17 +7,25 @@ import com.asaf.appointment_service.exception.auth.InvalidOtpException;
 import com.asaf.appointment_service.exception.auth.OtpBlockedException;
 import com.asaf.appointment_service.exception.employee.EmployeeOnLeaveException;
 import com.asaf.appointment_service.exception.plan.PlanLimitExceededException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
@@ -160,9 +168,82 @@ public class GlobalExceptionHandler {
             .body(ApiResponse.error(new ErrorDetails("CONFLICT", ex.getMessage(), null, LocalDateTime.now())));
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        log.warn("Request body not readable: {}", ex.getMessage());
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse.error(new ErrorDetails("INVALID_REQUEST_BODY", "İstek gövdesi okunamadı.", null, LocalDateTime.now())));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingParameter(MissingServletRequestParameterException ex) {
+        log.warn("Missing parameter: {}", ex.getParameterName());
+        String message = String.format("Zorunlu parametre eksik: %s", ex.getParameterName());
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse.error(new ErrorDetails("MISSING_PARAMETER", message, null, LocalDateTime.now())));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        log.warn("Parameter type mismatch: {} for parameter {}", ex.getValue(), ex.getName());
+        String message = String.format("Parametre tipi hatalı: %s", ex.getName());
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse.error(new ErrorDetails("INVALID_PARAMETER", message, null, LocalDateTime.now())));
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException ex) {
+        List<ValidationException.FieldError> fieldErrors = ex.getConstraintViolations()
+            .stream()
+            .map(violation -> new ValidationException.FieldError(
+                getFieldName(violation),
+                violation.getMessage()
+            ))
+            .toList();
+
+        log.warn("Constraint violation: {} field(s) failed", fieldErrors.size());
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse.error(new ErrorDetails("VALIDATION_ERROR", "Girilen veriler geçersiz", fieldErrors, LocalDateTime.now())));
+    }
+
+    private String getFieldName(ConstraintViolation<?> violation) {
+        String path = violation.getPropertyPath().toString();
+        int lastDot = path.lastIndexOf('.');
+        return lastDot >= 0 ? path.substring(lastDot + 1) : path;
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
+        log.warn("Access denied: {}", ex.getMessage());
+        return ResponseEntity
+            .status(HttpStatus.FORBIDDEN)
+            .body(ApiResponse.error(new ErrorDetails("ACCESS_DENIED", "Bu işlem için yetkiniz yok.", null, LocalDateTime.now())));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        log.error("Data integrity violation", ex);
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ApiResponse.error(new ErrorDetails("DATA_CONFLICT", "Bu kayıt başka bir kayıtla çakışıyor.", null, LocalDateTime.now())));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException ex) {
+        log.warn("File too large: {}", ex.getMessage());
+        return ResponseEntity
+            .status(HttpStatus.PAYLOAD_TOO_LARGE)
+            .body(ApiResponse.error(new ErrorDetails("FILE_TOO_LARGE", "Dosya boyutu çok büyük.", null, LocalDateTime.now())));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
-        log.error("Unexpected error occurred", ex);
+        String correlationId = java.util.UUID.randomUUID().toString();
+        log.error("Unexpected error occurred. Correlation ID: {}", correlationId, ex);
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(ApiResponse.error(new ErrorDetails("INTERNAL_ERROR", "Beklenmeyen bir hata oluştu", null, LocalDateTime.now())));

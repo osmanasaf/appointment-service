@@ -1,5 +1,6 @@
 package com.asaf.appointment_service.service.appointment;
 
+import com.asaf.appointment_service.common.exception.ValidationException;
 import com.asaf.appointment_service.dto.appointment.AvailableSlotResponse;
 import com.asaf.appointment_service.entity.appointment.Appointment;
 import com.asaf.appointment_service.entity.business.Business;
@@ -237,17 +238,17 @@ public class AvailabilityService {
         LocalDate today = LocalDate.now();
 
         if (date.isBefore(today)) {
-            throw new IllegalArgumentException("Geçmiş tarihe randevu alınamaz");
+            throw new ValidationException("PAST_DATE_BOOKING", "Geçmiş tarihe randevu alınamaz");
         }
         if (date.equals(today) && !business.isSameDayBookingAllowed()) {
-            throw new IllegalArgumentException("Aynı gün randevu alınamaz");
+            throw new ValidationException("SAME_DAY_BOOKING_NOT_ALLOWED", "Aynı gün randevu alınamaz");
         }
         if (date.equals(today) && !service.isSameDayBookingAllowed()) {
-            throw new IllegalArgumentException("Bu hizmet için aynı gün randevu alınamaz");
+            throw new ValidationException("SERVICE_SAME_DAY_NOT_ALLOWED", "Bu hizmet için aynı gün randevu alınamaz");
         }
         LocalDate maxDate = today.plusDays(business.getMaxAdvanceBookingDays());
         if (date.isAfter(maxDate)) {
-            throw new IllegalArgumentException(
+            throw new ValidationException("MAX_ADVANCE_BOOKING_EXCEEDED",
                 "En fazla %d gün sonrasına randevu alınabilir".formatted(business.getMaxAdvanceBookingDays()));
         }
     }

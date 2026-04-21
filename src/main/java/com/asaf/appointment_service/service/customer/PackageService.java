@@ -1,6 +1,8 @@
 package com.asaf.appointment_service.service.customer;
 
 import com.asaf.appointment_service.common.constants.PackageErrorMessages;
+import com.asaf.appointment_service.common.exception.BusinessException;
+import com.asaf.appointment_service.common.exception.ValidationException;
 import com.asaf.appointment_service.dto.customer.CreatePackageRequest;
 import com.asaf.appointment_service.entity.customer.Customer;
 import com.asaf.appointment_service.entity.customer.CustomerPackage;
@@ -45,7 +47,7 @@ public class PackageService {
         ServiceDefinition service = serviceDefinitionService.findByIdOrThrow(request.serviceId());
 
         if (!service.isPackageEligible()) {
-            throw new IllegalArgumentException(PackageErrorMessages.PACKAGE_NOT_ELIGIBLE);
+            throw new ValidationException("PACKAGE_NOT_ELIGIBLE", PackageErrorMessages.PACKAGE_NOT_ELIGIBLE);
         }
 
         CustomerPackage customerPackage = CustomerPackage.builder()
@@ -68,11 +70,11 @@ public class PackageService {
         Customer customer = customerService.findByIdOrThrow(customerId);
         PackageTemplate template = packageTemplateService.findByIdOrThrow(templateId);
         if (!template.getBusinessId().equals(customer.getBusinessId())) {
-            throw new IllegalArgumentException(PackageErrorMessages.TEMPLATE_WRONG_BUSINESS);
+            throw new ValidationException("TEMPLATE_WRONG_BUSINESS", PackageErrorMessages.TEMPLATE_WRONG_BUSINESS);
         }
         ServiceDefinition service = serviceDefinitionService.findByIdOrThrow(template.getServiceId());
         if (!service.isPackageEligible()) {
-            throw new IllegalArgumentException(PackageErrorMessages.PACKAGE_NOT_ELIGIBLE);
+            throw new ValidationException("PACKAGE_NOT_ELIGIBLE", PackageErrorMessages.PACKAGE_NOT_ELIGIBLE);
         }
         CustomerPackage customerPackage = CustomerPackage.builder()
             .customerId(customer.getId())
@@ -94,11 +96,11 @@ public class PackageService {
         CustomerPackage customerPackage = findByIdOrThrow(packageId);
         
         if (customerPackage.isExpired()) {
-            throw new IllegalStateException(PackageErrorMessages.PACKAGE_EXPIRED);
+            throw new BusinessException("PACKAGE_EXPIRED", PackageErrorMessages.PACKAGE_EXPIRED);
         }
         
         if (!customerPackage.hasRemainingSessions()) {
-            throw new IllegalStateException(PackageErrorMessages.NO_REMAINING_SESSIONS);
+            throw new BusinessException("NO_REMAINING_SESSIONS", PackageErrorMessages.NO_REMAINING_SESSIONS);
         }
 
         customerPackage.deductSession();
@@ -142,7 +144,7 @@ public class PackageService {
     public List<CustomerPackage> findByBusinessIdAndTemplateId(Long businessId, Long templateId) {
         PackageTemplate template = packageTemplateService.findByIdOrThrow(templateId);
         if (!template.getBusinessId().equals(businessId)) {
-            throw new IllegalArgumentException(PackageErrorMessages.TEMPLATE_WRONG_BUSINESS);
+            throw new ValidationException("TEMPLATE_WRONG_BUSINESS", PackageErrorMessages.TEMPLATE_WRONG_BUSINESS);
         }
         return packageRepository.findByBusinessIdAndTemplateIdOrderByCreatedAtDesc(businessId, templateId);
     }

@@ -1,5 +1,6 @@
 package com.asaf.appointment_service.service.appointment;
 
+import com.asaf.appointment_service.common.exception.ValidationException;
 import com.asaf.appointment_service.dto.appointment.AvailableSlotResponse;
 import com.asaf.appointment_service.entity.business.Business;
 import com.asaf.appointment_service.entity.business.BusinessCategory;
@@ -172,7 +173,7 @@ class AvailabilityServiceCapabilityTest {
 
         assertThatThrownBy(() ->
             availabilityService.getAvailableSlots(BUSINESS_ID, EMPLOYEE_ID, SERVICE_ID, yesterday))
-            .isInstanceOf(IllegalArgumentException.class)
+            .isInstanceOf(ValidationException.class)
             .hasMessageContaining("Geçmiş");
     }
 

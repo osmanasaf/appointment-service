@@ -11,6 +11,11 @@ public class ValidationException extends BusinessException {
         this.fieldErrors = List.of();
     }
 
+    public ValidationException(String code, String message) {
+        super(code, message);
+        this.fieldErrors = List.of();
+    }
+
     public ValidationException(List<FieldError> fieldErrors) {
         super("VALIDATION_ERROR", "Girilen veriler geçersiz");
         this.fieldErrors = fieldErrors;

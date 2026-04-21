@@ -3,6 +3,7 @@ package com.asaf.appointment_service.service.notification;
 import com.asaf.appointment_service.entity.notification.NotificationSettings;
 import com.asaf.appointment_service.entity.plan.Plan;
 import com.asaf.appointment_service.entity.plan.PlanFeature;
+import com.asaf.appointment_service.exception.plan.PlanLimitExceededException;
 import com.asaf.appointment_service.repository.notification.NotificationSettingsRepository;
 import com.asaf.appointment_service.service.plan.SubscriptionService;
 import org.slf4j.Logger;
@@ -52,8 +53,8 @@ public class NotificationSettingsService {
         // Plan kontrolü - WhatsApp özelliği var mı?
         Plan plan = subscriptionService.getCurrentPlanByBusinessId(businessId);
         if (!plan.hasFeature(PlanFeature.WHATSAPP_NOTIFICATIONS) && enabled) {
-            throw new IllegalStateException("Mevcut planınız WhatsApp bildirimlerini desteklemiyor. " +
-                    "Lütfen planınızı yükseltin.");
+            throw new PlanLimitExceededException("WHATSAPP_NOT_SUPPORTED", 
+                "Mevcut planınız WhatsApp bildirimlerini desteklemiyor. Lütfen planınızı yükseltin.");
         }
         
         settings.updateWhatsAppSettings(enabled, reminderEnabled, confirmationEnabled, cancellationEnabled);
@@ -67,8 +68,8 @@ public class NotificationSettingsService {
         // Plan kontrolü - SMS özelliği var mı?
         Plan plan = subscriptionService.getCurrentPlanByBusinessId(businessId);
         if (!plan.hasFeature(PlanFeature.SMS_NOTIFICATIONS) && enabled) {
-            throw new IllegalStateException("Mevcut planınız SMS bildirimlerini desteklemiyor. " +
-                    "Lütfen planınızı yükseltin.");
+            throw new PlanLimitExceededException("SMS_NOT_SUPPORTED", 
+                "Mevcut planınız SMS bildirimlerini desteklemiyor. Lütfen planınızı yükseltin.");
         }
         
         settings.updateSmsSettings(enabled, fallbackEnabled);
@@ -99,12 +100,12 @@ public class NotificationSettingsService {
         
         // WhatsApp kontrolü
         if (!plan.hasFeature(PlanFeature.WHATSAPP_NOTIFICATIONS) && whatsappEnabled) {
-            throw new IllegalStateException("Mevcut planınız WhatsApp bildirimlerini desteklemiyor.");
+            throw new PlanLimitExceededException("WHATSAPP_NOT_SUPPORTED", "Mevcut planınız WhatsApp bildirimlerini desteklemiyor.");
         }
         
         // SMS kontrolü
         if (!plan.hasFeature(PlanFeature.SMS_NOTIFICATIONS) && smsEnabled) {
-            throw new IllegalStateException("Mevcut planınız SMS bildirimlerini desteklemiyor.");
+            throw new PlanLimitExceededException("SMS_NOT_SUPPORTED", "Mevcut planınız SMS bildirimlerini desteklemiyor.");
         }
         
         settings.updateWhatsAppSettings(whatsappEnabled, whatsappReminderEnabled, 

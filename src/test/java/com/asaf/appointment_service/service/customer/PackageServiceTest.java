@@ -1,5 +1,7 @@
 package com.asaf.appointment_service.service.customer;
 
+import com.asaf.appointment_service.common.exception.BusinessException;
+import com.asaf.appointment_service.common.exception.ValidationException;
 import com.asaf.appointment_service.entity.customer.Customer;
 import com.asaf.appointment_service.entity.customer.CustomerPackage;
 import com.asaf.appointment_service.entity.service.PackageTemplate;
@@ -45,25 +47,25 @@ class PackageServiceTest {
     }
 
     @Test
-    void deductSession_whenExpired_shouldThrowIllegalStateException() {
+    void deductSession_whenExpired_shouldThrowBusinessException() {
         CustomerPackage pkg = buildExpiredPackage();
         when(packageRepository.findById(1L)).thenReturn(Optional.of(pkg));
 
         assertThatThrownBy(() -> packageService.deductSession(1L))
-            .isInstanceOf(IllegalStateException.class);
+            .isInstanceOf(BusinessException.class);
     }
 
     @Test
-    void deductSession_whenNoRemainingSessions_shouldThrowIllegalStateException() {
+    void deductSession_whenNoRemainingSessions_shouldThrowBusinessException() {
         CustomerPackage pkg = buildActivePackage(0);
         when(packageRepository.findById(1L)).thenReturn(Optional.of(pkg));
 
         assertThatThrownBy(() -> packageService.deductSession(1L))
-            .isInstanceOf(IllegalStateException.class);
+            .isInstanceOf(BusinessException.class);
     }
 
     @Test
-    void createFromTemplate_whenTemplateWrongBusiness_shouldThrowIllegalArgumentException() {
+    void createFromTemplate_whenTemplateWrongBusiness_shouldThrowValidationException() {
         Customer customer = Customer.builder().id(1L).businessId(10L).build();
         PackageTemplate template = PackageTemplate.builder().id(5L).businessId(99L).serviceId(3L).build();
 
@@ -71,7 +73,7 @@ class PackageServiceTest {
         when(packageTemplateService.findByIdOrThrow(5L)).thenReturn(template);
 
         assertThatThrownBy(() -> packageService.createFromTemplate(1L, 5L))
-            .isInstanceOf(IllegalArgumentException.class);
+            .isInstanceOf(ValidationException.class);
     }
 
     @Test

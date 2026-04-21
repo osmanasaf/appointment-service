@@ -1,5 +1,7 @@
 package com.asaf.appointment_service.service.auth;
 
+import com.asaf.appointment_service.common.exception.BusinessException;
+import com.asaf.appointment_service.common.exception.ValidationException;
 import com.asaf.appointment_service.dto.auth.AuthResponse;
 import com.asaf.appointment_service.dto.auth.LoginRequest;
 import com.asaf.appointment_service.dto.auth.RegisterEmployeeRequest;
@@ -86,7 +88,7 @@ public class AuthService {
                 log.info("Mevcut doğrulanmamış kullanıcıya yeni OTP gönderildi: email={}", request.email());
                 return;
             }
-            throw new IllegalArgumentException("Bu email zaten kayıtlı");
+            throw new ValidationException("EMAIL_DUPLICATE", "Bu email zaten kayıtlı");
         }
 
         String phone = request.phoneNumber() != null ? request.phoneNumber().trim() : "";
@@ -131,10 +133,10 @@ public class AuthService {
     @Transactional
     public AuthResponse verifyRegistrationOtp(String email, String otpCode, String deviceInfo) {
         User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı"));
+            .orElseThrow(() -> new ValidationException("USER_NOT_FOUND", "Kullanıcı bulunamadı"));
 
         if (user.isEmailVerified()) {
-            throw new IllegalArgumentException("Email zaten doğrulanmış");
+            throw new ValidationException("EMAIL_ALREADY_VERIFIED", "Email zaten doğrulanmış");
         }
 
         if (user.isOtpBlocked()) {
@@ -163,10 +165,10 @@ public class AuthService {
     @Transactional
     public void resendRegistrationOtp(String email) {
         User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new IllegalArgumentException("Bu email ile kayıtlı kullanıcı bulunamadı"));
+            .orElseThrow(() -> new ValidationException("USER_NOT_FOUND", "Bu email ile kayıtlı kullanıcı bulunamadı"));
 
         if (user.isEmailVerified()) {
-            throw new IllegalArgumentException("Email zaten doğrulanmış");
+            throw new ValidationException("EMAIL_ALREADY_VERIFIED", "Email zaten doğrulanmış");
         }
 
         String otp = user.generateOtp(OtpType.EMAIL_VERIFICATION, 5);
@@ -195,18 +197,18 @@ public class AuthService {
     @Transactional
     public void registerEmployee(RegisterEmployeeRequest request) {
         if (userRepository.existsByEmail(request.email())) {
-            throw new IllegalArgumentException("Bu email zaten kayıtlı");
+            throw new ValidationException("EMAIL_DUPLICATE", "Bu email zaten kayıtlı");
         }
 
         // Davet kodunu kontrol et
         EmployeeInvite invite = employeeInviteService.findByTokenOrThrow(request.inviteToken());
         
         if (!invite.isValid()) {
-            throw new IllegalArgumentException("Davet kodu geçersiz veya süresi dolmuş");
+            throw new ValidationException("INVALID_INVITE", "Davet kodu geçersiz veya süresi dolmuş");
         }
 
         if (!invite.getEmail().equalsIgnoreCase(request.email())) {
-            throw new IllegalArgumentException("Bu davet kodu bu email için geçerli değil");
+            throw new ValidationException("INVITE_EMAIL_MISMATCH", "Bu davet kodu bu email için geçerli değil");
         }
 
         employeeInviteService.assertRegistrationNameMatchesInvite(invite, request.name());
@@ -236,7 +238,7 @@ public class AuthService {
     @Transactional
     public void resendVerification(String email) {
         User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new IllegalArgumentException("Bu email ile kayıtlı kullanıcı bulunamadı"));
+            .orElseThrow(() -> new ValidationException("USER_NOT_FOUND", "Bu email ile kayıtlı kullanıcı bulunamadı"));
 
         if (user.isEmailVerified()) {
             return;
@@ -256,10 +258,10 @@ public class AuthService {
         );
 
         User user = userRepository.findByEmail(request.email())
-            .orElseThrow(() -> new IllegalArgumentException("Kullanıcı bulunamadı"));
+            .orElseThrow(() -> new ValidationException("USER_NOT_FOUND", "Kullanıcı bulunamadı"));
 
         if (!user.isActive()) {
-            throw new IllegalArgumentException("Hesabınız aktif değil");
+            throw new BusinessException("ACCOUNT_DISABLED", "Hesabınız aktif değil");
         }
 
         if (!user.isEmailVerified()) {
@@ -276,7 +278,7 @@ public class AuthService {
         User user = refreshToken.getUser();
 
         if (!user.isActive()) {
-            throw new IllegalArgumentException("Hesabınız aktif değil");
+            throw new BusinessException("ACCOUNT_DISABLED", "Hesabınız aktif değil");
         }
 
         log.info("Token yenilendi: userId={}", user.getId());
@@ -360,10 +362,10 @@ public class AuthService {
     @Transactional
     public void resetPassword(String resetToken, String newPassword) {
         User user = userRepository.findByPasswordResetToken(resetToken)
-            .orElseThrow(() -> new IllegalArgumentException("Geçersiz veya süresi dolmuş token"));
+            .orElseThrow(() -> new ValidationException("INVALID_RESET_TOKEN", "Geçersiz veya süresi dolmuş token"));
 
         if (!user.verifyPasswordResetToken(resetToken)) {
-            throw new IllegalArgumentException("Geçersiz veya süresi dolmuş token");
+            throw new ValidationException("INVALID_RESET_TOKEN", "Geçersiz veya süresi dolmuş token");
         }
 
         user.changePassword(passwordEncoder.encode(newPassword));

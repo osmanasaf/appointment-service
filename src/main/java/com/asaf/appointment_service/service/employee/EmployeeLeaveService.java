@@ -1,5 +1,6 @@
 package com.asaf.appointment_service.service.employee;
 
+import com.asaf.appointment_service.common.exception.ValidationException;
 import com.asaf.appointment_service.domain.valueobject.LeavePeriod;
 import com.asaf.appointment_service.dto.employee.ConflictingAppointmentDTO;
 import com.asaf.appointment_service.dto.employee.CreateLeaveRequest;
@@ -109,7 +110,7 @@ public class EmployeeLeaveService {
             .filter(l -> l.getEmployeeId().equals(employeeId))
             .orElseThrow(() -> new EmployeeLeaveNotFoundException(leaveId));
         if (leave.getEndDate().isBefore(LocalDate.now())) {
-            throw new IllegalArgumentException("Geçmiş izinler iptal edilemez");
+            throw new ValidationException("PAST_LEAVE_CANNOT_CANCEL", "Geçmiş izinler iptal edilemez");
         }
         leave.cancel();
         leaveRepository.save(leave);
@@ -118,18 +119,18 @@ public class EmployeeLeaveService {
 
     private void validateLeaveRequest(CreateLeaveRequest request) {
         if (request.startDate().isBefore(LocalDate.now())) {
-            throw new IllegalArgumentException("İzin başlangıç tarihi geçmişte olamaz");
+            throw new ValidationException("PAST_START_DATE", "İzin başlangıç tarihi geçmişte olamaz");
         }
         if (request.endDate().isBefore(request.startDate())) {
-            throw new IllegalArgumentException("İzin bitiş tarihi başlangıç tarihinden önce olamaz");
+            throw new ValidationException("END_BEFORE_START", "İzin bitiş tarihi başlangıç tarihinden önce olamaz");
         }
         boolean hasStartTime = request.startTime() != null;
         boolean hasEndTime = request.endTime() != null;
         if (hasStartTime != hasEndTime) {
-            throw new IllegalArgumentException("Kısmi gün izninde başlangıç ve bitiş saati birlikte belirtilmelidir");
+            throw new ValidationException("PARTIAL_TIME_MISMATCH", "Kısmi gün izninde başlangıç ve bitiş saati birlikte belirtilmelidir");
         }
         if (hasStartTime && !request.startTime().isBefore(request.endTime())) {
-            throw new IllegalArgumentException("İzin başlangıç saati bitiş saatinden önce olmalıdır");
+            throw new ValidationException("START_TIME_AFTER_END", "İzin başlangıç saati bitiş saatinden önce olmalıdır");
         }
     }
 

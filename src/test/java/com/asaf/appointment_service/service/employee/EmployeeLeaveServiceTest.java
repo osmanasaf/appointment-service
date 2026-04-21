@@ -1,5 +1,6 @@
 package com.asaf.appointment_service.service.employee;
 
+import com.asaf.appointment_service.common.exception.ValidationException;
 import com.asaf.appointment_service.domain.valueobject.LeavePeriod;
 import com.asaf.appointment_service.dto.employee.CreateLeaveRequest;
 import com.asaf.appointment_service.dto.employee.LeaveConflictAction;
@@ -82,7 +83,7 @@ class EmployeeLeaveServiceTest {
             TODAY.minusDays(1), NEXT_WEEK, null, null, LeaveType.ANNUAL, null);
 
         assertThatThrownBy(() -> leaveService.createLeave(EMPLOYEE_ID, request))
-            .isInstanceOf(IllegalArgumentException.class)
+            .isInstanceOf(ValidationException.class)
             .hasMessageContaining("geçmişte olamaz");
     }
 
