@@ -3,6 +3,7 @@ package com.asaf.appointment_service.mapper.plan;
 import com.asaf.appointment_service.dto.plan.BusinessSubscriptionResponse;
 import com.asaf.appointment_service.dto.plan.PlanResponse;
 import com.asaf.appointment_service.dto.plan.PlanUsageResponse;
+import com.asaf.appointment_service.dto.plan.PublicPlanResponse;
 import com.asaf.appointment_service.entity.plan.BusinessSubscription;
 import com.asaf.appointment_service.entity.plan.Plan;
 import com.asaf.appointment_service.entity.plan.PlanFeatureNames;
@@ -44,6 +45,34 @@ public class PlanMapper {
             subscription.getCurrentPeriodStart(),
             subscription.getCurrentPeriodEnd(),
             subscription.isManual()
+        );
+    }
+
+    public static PublicPlanResponse toPublicResponse(Plan plan) {
+        Map<String, String> featureNames = plan.getFeatures().stream()
+            .collect(Collectors.toMap(
+                feature -> feature,
+                PlanFeatureNames::getDisplayName
+            ));
+
+        return new PublicPlanResponse(
+            plan.getCode(),
+            plan.getMonthlyPrice(),
+            plan.getYearlyPrice(),
+            plan.getMaxEmployees(),
+            plan.getMaxAppointmentsMonthly(),
+            plan.getMaxServices(),
+            plan.getMaxBranches(),
+            plan.getMaxWhatsappMonthly(),
+            plan.getMaxSmsMonthly(),
+            plan.isUnlimitedEmployees(),
+            plan.isUnlimitedAppointments(),
+            plan.isUnlimitedServices(),
+            plan.isUnlimitedBranches(),
+            plan.isUnlimitedWhatsapp(),
+            plan.isUnlimitedSms(),
+            plan.getFeatures(),
+            featureNames
         );
     }
 
