@@ -1,6 +1,7 @@
 package com.asaf.appointment_service.controller.auth;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
+import com.asaf.appointment_service.common.util.ValidationPatterns;
 import com.asaf.appointment_service.dto.auth.AuthResponse;
 import com.asaf.appointment_service.dto.auth.LoginRequest;
 import com.asaf.appointment_service.dto.auth.RegisterEmployeeRequest;
@@ -12,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -173,23 +175,35 @@ public class AuthController {
     // ==================== DTO'lar ====================
 
     record EmailRequest(
-        @NotBlank @Email String email
+        @NotBlank(message = "E-posta zorunludur")
+        @Email(message = "Geçerli bir e-posta giriniz")
+        @Size(max = ValidationPatterns.EMAIL_MAX_LENGTH, message = "E-posta en fazla 254 karakter olabilir")
+        String email
     ) {}
 
     record VerifyOtpRequest(
-        @NotBlank @Email String email,
-        @NotBlank @Size(min = 6, max = 6) String otp
+        @NotBlank(message = "E-posta zorunludur")
+        @Email(message = "Geçerli bir e-posta giriniz")
+        @Size(max = ValidationPatterns.EMAIL_MAX_LENGTH, message = "E-posta en fazla 254 karakter olabilir")
+        String email,
+        @NotBlank(message = "Doğrulama kodu zorunludur")
+        @Pattern(regexp = ValidationPatterns.OTP_REGEX, message = "Doğrulama kodu 6 haneli olmalıdır")
+        String otp
     ) {}
 
     record ResetTokenResponse(String resetToken) {}
 
     record ResetPasswordRequest(
-        @NotBlank String resetToken,
-        @NotBlank @Size(min = 6) String newPassword
+        @NotBlank(message = "Sıfırlama tokenı zorunludur")
+        String resetToken,
+        @NotBlank(message = "Yeni şifre zorunludur")
+        @Pattern(regexp = ValidationPatterns.PASSWORD_REGEX, message = ValidationPatterns.PASSWORD_MESSAGE)
+        String newPassword
     ) {}
 
     record RefreshTokenRequest(
-        @NotBlank String refreshToken
+        @NotBlank(message = "Refresh token zorunludur")
+        String refreshToken
     ) {}
 
     // ==================== YARDIMCI METODLAR ====================

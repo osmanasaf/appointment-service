@@ -6,6 +6,7 @@ import com.asaf.appointment_service.dto.superadmin.SuperAdminBusinessDetailRespo
 import com.asaf.appointment_service.dto.superadmin.SuperAdminBusinessListResponse;
 import com.asaf.appointment_service.dto.superadmin.SuperAdminOverviewResponse;
 import com.asaf.appointment_service.dto.superadmin.SuperAdminRevenueResponse;
+import com.asaf.appointment_service.dto.superadmin.WhatsAppAnalyticsResponse;
 import com.asaf.appointment_service.service.superadmin.SuperAdminBusinessService;
 import com.asaf.appointment_service.service.superadmin.SuperAdminDashboardService;
 import jakarta.validation.Valid;
@@ -48,6 +49,12 @@ public class SuperAdminController {
     public ResponseEntity<ApiResponse<SuperAdminRevenueResponse>> getRevenue() {
         SuperAdminRevenueResponse revenue = dashboardService.getRevenue();
         return ResponseEntity.ok(ApiResponse.success(revenue));
+    }
+
+    @GetMapping("/whatsapp-analytics")
+    public ResponseEntity<ApiResponse<WhatsAppAnalyticsResponse>> getWhatsAppAnalytics() {
+        WhatsAppAnalyticsResponse analytics = dashboardService.getWhatsAppAnalytics();
+        return ResponseEntity.ok(ApiResponse.success(analytics));
     }
 
     @GetMapping("/businesses")

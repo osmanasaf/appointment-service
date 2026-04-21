@@ -3,13 +3,16 @@ package com.asaf.appointment_service.controller.customer;
 import com.asaf.appointment_service.common.dto.ApiResponse;
 import com.asaf.appointment_service.common.dto.PageResponse;
 import com.asaf.appointment_service.common.service.CurrentUserService;
+import com.asaf.appointment_service.dto.appointment.AppointmentResponse;
 import com.asaf.appointment_service.dto.customer.CreateCustomerRequest;
 import com.asaf.appointment_service.dto.customer.CustomerResponse;
 import com.asaf.appointment_service.dto.customer.PackageResponse;
 import com.asaf.appointment_service.dto.customer.UpdateCustomerRequest;
 import com.asaf.appointment_service.entity.customer.Customer;
 import com.asaf.appointment_service.entity.customer.CustomerPackage;
+import com.asaf.appointment_service.mapper.appointment.AppointmentMapper;
 import com.asaf.appointment_service.mapper.customer.CustomerMapper;
+import com.asaf.appointment_service.service.appointment.AppointmentService;
 import com.asaf.appointment_service.service.customer.CustomerService;
 import com.asaf.appointment_service.service.encryption.EncryptionService;
 import jakarta.validation.Valid;
@@ -32,14 +35,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/customers")
 public class CustomerController {
 
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final CustomerService customerService;
+    private final AppointmentService appointmentService;
     private final EncryptionService encryptionService;
     private final CurrentUserService currentUserService;
 
     public CustomerController(CustomerService customerService,
+                               AppointmentService appointmentService,
                                EncryptionService encryptionService,
                                CurrentUserService currentUserService) {
         this.customerService = customerService;
+        this.appointmentService = appointmentService;
         this.encryptionService = encryptionService;
         this.currentUserService = currentUserService;
     }
@@ -68,9 +76,6 @@ public class CustomerController {
         return ResponseEntity.ok(ApiResponse.success(CustomerMapper.toResponse(customer, encryptionService), "Müşteri güncellendi"));
     }
 
-    private static final int DEFAULT_PAGE_SIZE = 20;
-    private static final int MAX_PAGE_SIZE = 100;
-
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<CustomerResponse>>> getCustomersByBusiness(
             @RequestParam(defaultValue = "0") int page,
@@ -87,6 +92,20 @@ public class CustomerController {
     public ResponseEntity<ApiResponse<List<PackageResponse>>> getCustomerPackages(@PathVariable Long id) {
         List<CustomerPackage> packages = customerService.findActivePackages(id);
         return ResponseEntity.ok(ApiResponse.success(CustomerMapper.toPackageResponseList(packages)));
+    }
+
+    @GetMapping("/{id}/appointments")
+    public ResponseEntity<ApiResponse<PageResponse<AppointmentResponse>>> getCustomerAppointments(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Long businessId = currentUserService.getCurrentBusinessId();
+        int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+        PageRequest pageable = PageRequest.of(Math.max(page, 0), safeSize);
+        return ResponseEntity.ok(ApiResponse.success(
+            PageResponse.from(
+                appointmentService.findByBusinessIdAndCustomerIdPaged(businessId, id, pageable),
+                AppointmentMapper::toResponse)));
     }
 
     @PostMapping("/{id}/blacklist")

@@ -7,17 +7,20 @@ import com.asaf.appointment_service.entity.business.Business;
 import com.asaf.appointment_service.entity.plan.BusinessSubscription;
 import com.asaf.appointment_service.entity.plan.Plan;
 import com.asaf.appointment_service.entity.plan.PlanCode;
+import com.asaf.appointment_service.entity.notification.NotificationStatus;
 import com.asaf.appointment_service.entity.plan.PlanLimitUsage;
 import com.asaf.appointment_service.entity.user.User;
 import com.asaf.appointment_service.entity.user.UserRole;
 import com.asaf.appointment_service.repository.business.BusinessRepository;
 import com.asaf.appointment_service.repository.employee.EmployeeRepository;
+import com.asaf.appointment_service.repository.notification.NotificationLogRepository;
 import com.asaf.appointment_service.repository.plan.BusinessSubscriptionRepository;
 import com.asaf.appointment_service.repository.plan.PlanLimitUsageRepository;
 import com.asaf.appointment_service.repository.plan.PlanRepository;
 import com.asaf.appointment_service.repository.service.ServiceRepository;
 import com.asaf.appointment_service.repository.user.UserRepository;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -29,6 +32,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SuperAdminBusinessService {
 
+    private static final List<NotificationStatus> SUCCESS_STATUSES = List.of(
+        NotificationStatus.SENT, NotificationStatus.DELIVERED, NotificationStatus.READ);
+
     private final BusinessRepository businessRepository;
     private final UserRepository userRepository;
     private final EmployeeRepository employeeRepository;
@@ -36,6 +42,7 @@ public class SuperAdminBusinessService {
     private final BusinessSubscriptionRepository subscriptionRepository;
     private final PlanRepository planRepository;
     private final PlanLimitUsageRepository usageRepository;
+    private final NotificationLogRepository notificationLogRepository;
 
     public SuperAdminBusinessService(
             BusinessRepository businessRepository,
@@ -44,7 +51,8 @@ public class SuperAdminBusinessService {
             ServiceRepository serviceRepository,
             BusinessSubscriptionRepository subscriptionRepository,
             PlanRepository planRepository,
-            PlanLimitUsageRepository usageRepository) {
+            PlanLimitUsageRepository usageRepository,
+            NotificationLogRepository notificationLogRepository) {
         this.businessRepository = businessRepository;
         this.userRepository = userRepository;
         this.employeeRepository = employeeRepository;
@@ -52,6 +60,7 @@ public class SuperAdminBusinessService {
         this.subscriptionRepository = subscriptionRepository;
         this.planRepository = planRepository;
         this.usageRepository = usageRepository;
+        this.notificationLogRepository = notificationLogRepository;
     }
 
     @Transactional(readOnly = true)
@@ -85,13 +94,17 @@ public class SuperAdminBusinessService {
         int serviceCount = (int) serviceRepository.countByBusinessId(businessId);
 
         YearMonth now = YearMonth.now();
+        LocalDateTime monthStart = now.atDay(1).atStartOfDay();
+        LocalDateTime monthEnd = now.atEndOfMonth().plusDays(1).atStartOfDay();
+
         PlanLimitUsage usage = usageRepository
             .findByBusinessIdAndYearAndMonth(businessId, now.getYear(), now.getMonthValue())
             .orElse(null);
 
         int monthAppointments = usage != null ? usage.getAppointmentsCount() : 0;
         int monthSms = usage != null ? usage.getSmsSent() : 0;
-        int monthWhatsapp = usage != null ? usage.getWhatsappSent() : 0;
+        int monthWhatsapp = (int) notificationLogRepository.countByBusinessIdAndStatusInAndCreatedAtBetween(
+            businessId, SUCCESS_STATUSES, monthStart, monthEnd);
 
         int maxEmployees = plan != null ? plan.getMaxEmployees() : 0;
         int maxAppointments = plan != null ? plan.getMaxAppointmentsMonthly() : 0;

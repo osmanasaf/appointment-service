@@ -90,7 +90,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(PlanLimitExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handlePlanLimitExceeded(PlanLimitExceededException ex) {
-        log.warn("Plan limit exceeded: {}", ex.getMessage());
+        log.warn("Plan limit exceeded. code={}", ex.getCode());
         return ResponseEntity
             .status(HttpStatus.PAYMENT_REQUIRED)
             .body(ApiResponse.error(new ErrorDetails(ex.getCode(), ex.getMessage(), null, LocalDateTime.now())));

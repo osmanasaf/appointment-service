@@ -52,7 +52,7 @@ class SubscriptionServiceTest {
     @Test
     void should_throwPlanLimitExceeded_when_monthlyAppointmentLimitReached() {
         Long businessId = 10L;
-        Plan plan = createPlan(PlanCode.STARTER, 1L, 1, 1, 1);
+        Plan plan = createPlan(PlanCode.SOLO, 1L, 1, 1, 1);
         BusinessSubscription subscription = BusinessSubscription.builder()
             .businessId(businessId)
             .planId(plan.getId())
@@ -117,7 +117,7 @@ class SubscriptionServiceTest {
             .manual(true)
             .build();
 
-        when(planRepository.count()).thenReturn(4L); // PlanSeeder tarafından oluşturulmuş gibi
+        when(planRepository.count()).thenReturn(3L);
         when(planRepository.findByCode(PlanCode.PRO)).thenReturn(Optional.of(proPlan));
         when(subscriptionRepository.findByBusinessId(businessId)).thenReturn(Optional.of(subscription));
         when(subscriptionRepository.save(subscription)).thenReturn(subscription);

@@ -5,6 +5,7 @@ import com.asaf.appointment_service.entity.business.BusinessCategory;
 import com.asaf.appointment_service.dto.customer.CreateCustomerRequest;
 import com.asaf.appointment_service.dto.employee.CreateEmployeeRequest;
 import com.asaf.appointment_service.dto.service.CreateServiceRequest;
+import com.asaf.appointment_service.entity.plan.PlanCode;
 import com.asaf.appointment_service.entity.user.User;
 import com.asaf.appointment_service.entity.user.UserRole;
 import com.asaf.appointment_service.repository.user.UserRepository;
@@ -25,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Seeds initial data when the database is empty (e.g. H2 in-memory on first run).
- * Only runs when no users exist. Creates one business, one admin user, one employee, one service, one customer.
+ * Only runs when no users exist. Creates one business, one admin user, two employees, one service, one customer.
  */
 @Component
 @Order(1)
@@ -82,6 +83,7 @@ public class DataSeeder implements ApplicationRunner {
                 BusinessCategory.HAIR_SALON
         ));
         subscriptionService.initializeTrialSubscription(business.getId());
+        subscriptionService.assignPlanToBusiness(business.getId(), PlanCode.PRO, true);
 
         User user = User.builder()
                 .email(SEED_EMAIL)
@@ -101,6 +103,14 @@ public class DataSeeder implements ApplicationRunner {
                 "ayse@test.com",
                 "Kuaför",
                 true
+        ));
+        employeeService.createEmployee(business.getId(), new CreateEmployeeRequest(
+                "Fatma Çalışan",
+                "5559876500",
+                "+90",
+                "fatma@test.com",
+                "Saç Tasarım Uzmanı",
+                false
         ));
 
         serviceDefinitionService.createService(business.getId(), new CreateServiceRequest(

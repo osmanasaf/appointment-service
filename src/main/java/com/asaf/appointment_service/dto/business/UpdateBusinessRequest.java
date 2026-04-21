@@ -1,5 +1,6 @@
 package com.asaf.appointment_service.dto.business;
 
+import com.asaf.appointment_service.common.util.ValidationPatterns;
 import com.asaf.appointment_service.entity.business.BusinessCategory;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
@@ -13,6 +14,7 @@ public record UpdateBusinessRequest(
     BusinessCategory category,
 
     @Email(message = "Geçerli bir e-posta adresi giriniz")
+    @Size(max = ValidationPatterns.EMAIL_MAX_LENGTH, message = "E-posta en fazla 254 karakter olabilir")
     String email,
 
     @Size(max = 500, message = "Adres en fazla 500 karakter olabilir")
@@ -21,6 +23,7 @@ public record UpdateBusinessRequest(
     @Size(max = 1000, message = "Açıklama en fazla 1000 karakter olabilir")
     String description,
 
+    @Size(max = 2048, message = "Logo URL'si çok uzun")
     String logoUrl,
 
     Boolean autoConfirm,

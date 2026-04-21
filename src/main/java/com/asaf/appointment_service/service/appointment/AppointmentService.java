@@ -151,6 +151,12 @@ public class AppointmentService extends BaseService<Appointment, Long, Appointme
     }
 
     @Transactional(readOnly = true)
+    public Page<Appointment> findByBusinessIdAndCustomerIdPaged(Long businessId, Long customerId, Pageable pageable) {
+        businessService.findByIdOrThrow(businessId);
+        return repository.findByBusinessIdAndCustomerIdOrderByScheduledAtDesc(businessId, customerId, pageable);
+    }
+
+    @Transactional(readOnly = true)
     public Page<Appointment> findByDateRangePaged(Long businessId, LocalDate startDate,
                                                    LocalDate endDate, Pageable pageable) {
         businessService.findByIdOrThrow(businessId);

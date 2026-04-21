@@ -66,14 +66,17 @@ public class PackageController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<PackageResponse>>> listPackages(
             @RequestParam(required = false) Long customerId,
-            @RequestParam(required = false) Long templateId) {
+            @RequestParam(required = false) Long templateId,
+            @RequestParam(required = false, defaultValue = "false") boolean includeInactive) {
         if (templateId != null) {
             Long businessId = currentUserService.getCurrentBusinessId();
             List<CustomerPackage> packages = packageService.findByBusinessIdAndTemplateId(businessId, templateId);
             return ResponseEntity.ok(ApiResponse.success(CustomerMapper.toPackageResponseList(packages)));
         }
         if (customerId != null) {
-            List<CustomerPackage> packages = packageService.findActiveByCustomerId(customerId);
+            List<CustomerPackage> packages = includeInactive
+                ? packageService.findAllByCustomerId(customerId)
+                : packageService.findActiveByCustomerId(customerId);
             return ResponseEntity.ok(ApiResponse.success(CustomerMapper.toPackageResponseList(packages)));
         }
         return ResponseEntity.badRequest()

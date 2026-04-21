@@ -59,12 +59,12 @@ public class SubscriptionService {
         return subscriptionRepository.findByBusinessId(businessId)
             .map(this::refreshTrialStatusIfNeeded)
             .orElseGet(() -> {
-                Plan starterPlan = findPlanByCode(PlanCode.STARTER);
+                Plan trialPlan = findPlanByCode(PlanCode.SOLO);
                 LocalDate today = utcToday();
                 LocalDate trialEnd = today.plusDays(TRIAL_DAYS);
                 BusinessSubscription subscription = BusinessSubscription.builder()
                     .businessId(businessId)
-                    .planId(starterPlan.getId())
+                    .planId(trialPlan.getId())
                     .status(SubscriptionStatus.TRIAL)
                     .trialEndDate(trialEnd)
                     .currentPeriodStart(today)

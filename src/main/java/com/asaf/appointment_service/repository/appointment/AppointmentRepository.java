@@ -22,6 +22,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
     List<Appointment> findByBusinessIdAndCustomerIdOrderByScheduledAtDesc(Long businessId, Long customerId);
 
+    Page<Appointment> findByBusinessIdAndCustomerIdOrderByScheduledAtDesc(
+        Long businessId, Long customerId, Pageable pageable);
+
     List<Appointment> findByBusinessIdAndEmployeeIdAndScheduledAtBetween(
         Long businessId,
         Long employeeId,

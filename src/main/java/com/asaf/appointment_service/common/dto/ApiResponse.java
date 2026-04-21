@@ -18,11 +18,11 @@ public record ApiResponse<T>(
     }
 
     public static <T> ApiResponse<T> error(String code, String message) {
-        return new ApiResponse<>(false, null, new ErrorDetails(code, message, null, LocalDateTime.now()), null);
+        return new ApiResponse<>(false, null, new ErrorDetails(code, message, null, LocalDateTime.now()), message);
     }
 
     public static <T> ApiResponse<T> error(ErrorDetails error) {
-        return new ApiResponse<>(false, null, error, null);
+        return new ApiResponse<>(false, null, error, error != null ? error.message() : null);
     }
 
     public record ErrorDetails(

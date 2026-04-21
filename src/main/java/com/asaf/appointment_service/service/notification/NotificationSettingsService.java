@@ -115,27 +115,12 @@ public class NotificationSettingsService {
         return repository.save(settings);
     }
 
-    /**
-     * WhatsApp mesaj gönderildiğinde kullanımı artır.
-     * @return true eğer limit aşılmadıysa, false eğer limit aşıldıysa
-     */
     @Transactional
-    public boolean incrementWhatsappUsage(Long businessId) {
+    public void incrementWhatsappUsage(Long businessId) {
         NotificationSettings settings = getSettings(businessId);
         checkAndResetMonthlyUsage(settings);
-        
-        Plan plan = subscriptionService.getCurrentPlanByBusinessId(businessId);
-        int limit = plan.getMaxWhatsappMonthly();
-        
-        if (limit >= 0 && settings.getWhatsappUsedThisMonth() >= limit) {
-            log.warn("Business {} WhatsApp limit aşıldı: {}/{}", businessId, 
-                    settings.getWhatsappUsedThisMonth(), limit);
-            return false;
-        }
-        
         settings.incrementWhatsappUsage();
         repository.save(settings);
-        return true;
     }
 
     /**

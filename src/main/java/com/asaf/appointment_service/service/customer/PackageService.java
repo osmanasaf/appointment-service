@@ -129,6 +129,12 @@ public class PackageService {
         return packageRepository.findByCustomerIdAndActiveTrue(customerId);
     }
 
+    @Transactional(readOnly = true)
+    public List<CustomerPackage> findAllByCustomerId(Long customerId) {
+        customerService.findByIdOrThrow(customerId);
+        return packageRepository.findByCustomerIdOrderByCreatedAtDesc(customerId);
+    }
+
     /**
      * İşletmeye ait şablon için tüm müşteri paketleri (aktif/pasif, istatistik ve filtreler için).
      */

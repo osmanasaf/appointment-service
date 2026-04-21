@@ -1,5 +1,6 @@
 package com.asaf.appointment_service.dto.customer;
 
+import com.asaf.appointment_service.common.util.ValidationPatterns;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -11,6 +12,7 @@ public record UpdateCustomerRequest(
     String name,
 
     @Email(message = "Geçerli bir e-posta adresi giriniz")
+    @Size(max = ValidationPatterns.EMAIL_MAX_LENGTH, message = "E-posta en fazla 254 karakter olabilir")
     String email,
 
     @Size(max = 500, message = "Notlar en fazla 500 karakter olabilir")
@@ -19,7 +21,16 @@ public record UpdateCustomerRequest(
     @Size(max = 500, message = "Adres en fazla 500 karakter olabilir")
     String address,
 
-    @Size(max = 11, message = "TC kimlik numarası en fazla 11 haneli olmalıdır")
-    @Pattern(regexp = "|\\d{11}", message = "TC kimlik numarası boş veya 11 rakam olmalıdır")
+    @Pattern(regexp = "|" + ValidationPatterns.NATIONAL_ID_REGEX,
+        message = "TC kimlik numarası boş veya 11 rakam olmalıdır")
     String nationalId
-) {}
+) {
+    public UpdateCustomerRequest {
+        if (email != null && email.isBlank()) {
+            email = null;
+        }
+        if (nationalId != null && nationalId.isBlank()) {
+            nationalId = null;
+        }
+    }
+}

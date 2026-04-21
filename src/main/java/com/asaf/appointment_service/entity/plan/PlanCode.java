@@ -1,8 +1,7 @@
 package com.asaf.appointment_service.entity.plan;
 
 public enum PlanCode {
-    STARTER,    // Ücretsiz - 1 çalışan, 50 randevu/ay
-    PRO,        // 299 TL/ay - 3 çalışan, 200 randevu/ay
-    BUSINESS,   // 599 TL/ay - 7 çalışan, 500 randevu/ay
-    PREMIUM     // 999 TL/ay - Sınırsız
+    SOLO,       // 690 TL/ay - Solo profesyonel (sadece owner), 14 gun TRIAL ile baslar
+    PRO,        // 1.190 TL/ay - 3-5 kisilik kucuk isletme
+    ENTERPRISE  // 1.990 TL/ay - 5+ buyuk isletme / zincir
 }

@@ -1,9 +1,11 @@
 package com.asaf.appointment_service.dto.appointment;
 
+import com.asaf.appointment_service.common.util.ValidationPatterns;
 import com.asaf.appointment_service.entity.appointment.AppointmentSource;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
@@ -23,10 +25,12 @@ public record StaffAppointmentRequest(
     LocalDateTime scheduledAt,
 
     @NotBlank(message = "Müşteri adı zorunludur")
-    @Size(max = 100, message = "İsim en fazla 100 karakter olabilir")
+    @Size(min = 2, max = 100, message = "İsim 2-100 karakter olmalıdır")
     String customerName,
 
     @NotBlank(message = "Telefon numarası zorunludur")
+    @Pattern(regexp = ValidationPatterns.PHONE_FLEXIBLE_REGEX,
+        message = ValidationPatterns.PHONE_MESSAGE)
     String phoneNumber,
 
     String phoneCountryCode,

@@ -34,6 +34,7 @@ public class NotificationService {
 
     private final WhatsAppClientInterface whatsAppClient;
     private final NotificationLogRepository notificationLogRepository;
+    private final NotificationSettingsService notificationSettingsService;
     private final CustomerService customerService;
     private final ServiceDefinitionService serviceDefinitionService;
     private final BusinessService businessService;
@@ -44,12 +45,14 @@ public class NotificationService {
 
     public NotificationService(WhatsAppClientInterface whatsAppClient,
                                NotificationLogRepository notificationLogRepository,
+                               NotificationSettingsService notificationSettingsService,
                                CustomerService customerService,
                                ServiceDefinitionService serviceDefinitionService,
                                BusinessService businessService,
                                SmsClient smsClient) {
         this.whatsAppClient = whatsAppClient;
         this.notificationLogRepository = notificationLogRepository;
+        this.notificationSettingsService = notificationSettingsService;
         this.customerService = customerService;
         this.serviceDefinitionService = serviceDefinitionService;
         this.businessService = businessService;
@@ -134,6 +137,7 @@ public class NotificationService {
         WhatsAppMessageResponse response = whatsAppClient.sendMessage(messageRequest);
         if (response.success()) {
             logEntry.markAsSent(response.messageId());
+            notificationSettingsService.incrementWhatsappUsage(appointment.getBusinessId());
             log.info("Bildirim gönderildi: type={}, appointmentId={}", type, appointment.getId());
         } else {
             logEntry.markAsFailed(response.errorMessage());

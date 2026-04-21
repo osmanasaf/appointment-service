@@ -34,6 +34,8 @@ class NotificationServiceTest {
     @Mock
     private NotificationLogRepository notificationLogRepository;
     @Mock
+    private NotificationSettingsService notificationSettingsService;
+    @Mock
     private CustomerService customerService;
     @Mock
     private ServiceDefinitionService serviceDefinitionService;
