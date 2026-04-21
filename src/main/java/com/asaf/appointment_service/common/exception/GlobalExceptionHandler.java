@@ -144,6 +144,22 @@ public class GlobalExceptionHandler {
             .body(ApiResponse.error(new ErrorDetails("NOT_FOUND", "İstenen kaynak bulunamadı: " + ex.getResourcePath(), null, LocalDateTime.now())));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
+        log.warn("Illegal argument: {}", ex.getMessage());
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse.error(new ErrorDetails("BAD_REQUEST", ex.getMessage(), null, LocalDateTime.now())));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalState(IllegalStateException ex) {
+        log.warn("Illegal state: {}", ex.getMessage());
+        return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(ApiResponse.error(new ErrorDetails("CONFLICT", ex.getMessage(), null, LocalDateTime.now())));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
         log.error("Unexpected error occurred", ex);
