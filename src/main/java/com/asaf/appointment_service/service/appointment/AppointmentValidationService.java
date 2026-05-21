@@ -55,6 +55,22 @@ public class AppointmentValidationService {
     }
 
     @Transactional(readOnly = true)
+    public void validateSlotAvailabilityExcluding(
+            Long businessId,
+            Long employeeId,
+            LocalDateTime start,
+            LocalDateTime end,
+            Long excludeAppointmentId) {
+        List<Appointment> conflicts = appointmentRepository.findConflictingAppointmentsForBusinessExcluding(
+            businessId, employeeId, start, end, excludeAppointmentId);
+        if (!conflicts.isEmpty()) {
+            throw new SlotNotAvailableException(AppointmentErrorMessages.SLOT_NOT_AVAILABLE);
+        }
+        validateEmployeeNotOnLeave(employeeId, start);
+        validateEmployeeSchedule(employeeId, start);
+    }
+
+    @Transactional(readOnly = true)
     public void validateDayLimit(Business business, Long customerId, LocalDateTime scheduledAt) {
         Integer dayLimit = business.getMaxAppointmentsPerCustomerPerDay();
         if (dayLimit == null) {
@@ -64,6 +80,26 @@ public class AppointmentValidationService {
         LocalDateTime dayStart = date.atStartOfDay();
         LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
         long count = appointmentRepository.countActiveByCustomerOnDate(customerId, dayStart, dayEnd);
+        if (count >= dayLimit) {
+            throw new CustomerDayLimitExceededException(dayLimit, (int) count);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public void validateDayLimitExcluding(
+            Business business,
+            Long customerId,
+            LocalDateTime scheduledAt,
+            Long excludeAppointmentId) {
+        Integer dayLimit = business.getMaxAppointmentsPerCustomerPerDay();
+        if (dayLimit == null) {
+            return;
+        }
+        LocalDate date = scheduledAt.toLocalDate();
+        LocalDateTime dayStart = date.atStartOfDay();
+        LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
+        long count = appointmentRepository.countActiveByCustomerOnDateExcluding(
+            customerId, dayStart, dayEnd, excludeAppointmentId);
         if (count >= dayLimit) {
             throw new CustomerDayLimitExceededException(dayLimit, (int) count);
         }

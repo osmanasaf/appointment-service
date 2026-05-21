@@ -42,9 +42,12 @@ public class ResendEmailClient implements EmailClient {
 
     @Override
     public void sendOtpEmail(String toEmail, String toName, String otpCode, OtpEmailType type) {
-        String subject = type == OtpEmailType.EMAIL_VERIFICATION
-            ? "Randevum - Email Doğrulama Kodu"
-            : "Randevum - Şifre Sıfırlama Kodu";
+        String subject = switch (type) {
+            case EMAIL_VERIFICATION -> "Randevum - Email Doğrulama Kodu";
+            case PASSWORD_RESET -> "Randevum - Şifre Sıfırlama Kodu";
+            case EMAIL_CHANGE -> "Randevum - Yeni Email Doğrulama Kodu";
+            case PHONE_CHANGE -> "Randevum - Telefon Değişikliği Kodu";
+        };
         String html = buildOtpHtml(toName, otpCode, type);
         send(toEmail, subject, html);
     }
@@ -89,13 +92,22 @@ public class ResendEmailClient implements EmailClient {
     }
 
     private String buildOtpHtml(String name, String otpCode, OtpEmailType type) {
-        String headline = type == OtpEmailType.EMAIL_VERIFICATION
-            ? "Email doğrulama kodu"
-            : "Şifre sıfırlama kodu";
-        String message = type == OtpEmailType.EMAIL_VERIFICATION
-            ? "Hesabınızı doğrulamak için aşağıdaki tek kullanımlık kodu girin."
-            : "Şifrenizi yenilemek için aşağıdaki tek kullanımlık kodu girin.";
-        String kicker = type == OtpEmailType.EMAIL_VERIFICATION ? "Güvenlik kodu" : "Şifre sıfırlama";
+        String headline = switch (type) {
+            case EMAIL_VERIFICATION -> "Email doğrulama kodu";
+            case PASSWORD_RESET -> "Şifre sıfırlama kodu";
+            case EMAIL_CHANGE -> "Yeni email doğrulama kodu";
+            case PHONE_CHANGE -> "Telefon değişikliği kodu";
+        };
+        String message = switch (type) {
+            case EMAIL_VERIFICATION -> "Hesabınızı doğrulamak için aşağıdaki tek kullanımlık kodu girin.";
+            case PASSWORD_RESET -> "Şifrenizi yenilemek için aşağıdaki tek kullanımlık kodu girin.";
+            case EMAIL_CHANGE -> "Yeni e-posta adresinizi doğrulamak için aşağıdaki tek kullanımlık kodu girin.";
+            case PHONE_CHANGE -> "Telefon numarası değişikliğini onaylamak için aşağıdaki tek kullanımlık kodu girin.";
+        };
+        String kicker = switch (type) {
+            case EMAIL_VERIFICATION, EMAIL_CHANGE, PHONE_CHANGE -> "Güvenlik kodu";
+            case PASSWORD_RESET -> "Şifre sıfırlama";
+        };
         String safeName = HtmlEmailLayout.escape(name);
         String safeCode = HtmlEmailLayout.escape(otpCode);
         String inner = """

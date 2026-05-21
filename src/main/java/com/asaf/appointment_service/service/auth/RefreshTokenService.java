@@ -4,6 +4,7 @@ import com.asaf.appointment_service.entity.auth.RefreshToken;
 import com.asaf.appointment_service.entity.user.User;
 import com.asaf.appointment_service.repository.auth.RefreshTokenRepository;
 import java.time.Instant;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -87,6 +88,28 @@ public class RefreshTokenService {
     public void revokeAllUserTokens(Long userId) {
         refreshTokenRepository.revokeAllByUserId(userId);
         log.info("Tüm refresh token'lar revoke edildi: userId={}", userId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<RefreshToken> listUserTokens(Long userId) {
+        return refreshTokenRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
+    @Transactional
+    public void revokeUserToken(Long userId, Long tokenId) {
+        refreshTokenRepository.findById(tokenId)
+            .filter(token -> token.getUser().getId().equals(userId))
+            .ifPresent(token -> {
+                token.revoke();
+                refreshTokenRepository.save(token);
+                log.info("Kullanıcı oturumu kapatıldı: userId={}, tokenId={}", userId, tokenId);
+            });
+    }
+
+    @Transactional
+    public void revokeOtherUserTokens(Long userId, Long currentTokenId) {
+        refreshTokenRepository.revokeAllByUserIdExcept(userId, currentTokenId);
+        log.info("Diğer oturumlar kapatıldı: userId={}, keepTokenId={}", userId, currentTokenId);
     }
 
     @Scheduled(cron = "0 0 3 * * ?") // Her gün saat 03:00'te

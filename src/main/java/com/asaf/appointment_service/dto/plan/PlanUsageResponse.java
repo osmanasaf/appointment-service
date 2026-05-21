@@ -6,5 +6,7 @@ public record PlanUsageResponse(
     int appointmentsCount,
     int smsSent,
     int whatsappSent,
-    int maxAppointmentsMonthly
+    int maxAppointmentsMonthly,
+    int maxSmsMonthly,
+    int maxWhatsappMonthly
 ) {}

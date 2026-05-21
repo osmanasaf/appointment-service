@@ -2,6 +2,7 @@ package com.asaf.appointment_service.mapper.customer;
 
 import com.asaf.appointment_service.dto.customer.CreateCustomerRequest;
 import com.asaf.appointment_service.dto.customer.CustomerResponse;
+import com.asaf.appointment_service.dto.customer.PackageListItemResponse;
 import com.asaf.appointment_service.dto.customer.PackageResponse;
 import com.asaf.appointment_service.entity.customer.Customer;
 import com.asaf.appointment_service.entity.customer.CustomerPackage;
@@ -67,5 +68,22 @@ public class CustomerMapper {
 
     public static List<PackageResponse> toPackageResponseList(List<CustomerPackage> entities) {
         return entities.stream().map(CustomerMapper::toPackageResponse).toList();
+    }
+
+    public static PackageListItemResponse toPackageListItemResponse(CustomerPackage entity, String customerName) {
+        return new PackageListItemResponse(
+            entity.getId(),
+            entity.getCustomerId(),
+            customerName,
+            entity.getServiceId(),
+            entity.getTemplateId(),
+            entity.getName(),
+            entity.getTotalSessions(),
+            entity.getRemainingSessions(),
+            entity.getExpiresAt(),
+            entity.isActive(),
+            entity.isExpired(),
+            entity.isLowOnSessions()
+        );
     }
 }

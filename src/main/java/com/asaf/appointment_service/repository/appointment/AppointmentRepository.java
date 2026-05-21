@@ -43,6 +43,19 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
         @Param("end") LocalDateTime end
     );
 
+    @Query("SELECT a FROM Appointment a WHERE a.businessId = :businessId " +
+           "AND a.employeeId = :employeeId " +
+           "AND a.status IN ('PENDING', 'CONFIRMED', 'RISKY') " +
+           "AND a.scheduledAt < :end AND a.endAt > :start " +
+           "AND a.id <> :excludeAppointmentId")
+    List<Appointment> findConflictingAppointmentsForBusinessExcluding(
+        @Param("businessId") Long businessId,
+        @Param("employeeId") Long employeeId,
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end,
+        @Param("excludeAppointmentId") Long excludeAppointmentId
+    );
+
     @Query("SELECT a FROM Appointment a WHERE a.employeeId = :employeeId " +
            "AND a.status IN ('PENDING', 'CONFIRMED', 'RISKY') " +
            "AND a.scheduledAt > :now ORDER BY a.scheduledAt")
@@ -94,6 +107,17 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
         @Param("customerId") Long customerId,
         @Param("dayStart") LocalDateTime dayStart,
         @Param("dayEnd") LocalDateTime dayEnd
+    );
+
+    @Query("SELECT COUNT(a) FROM Appointment a WHERE a.customerId = :customerId " +
+           "AND a.status IN ('PENDING', 'CONFIRMED', 'RISKY') " +
+           "AND a.scheduledAt >= :dayStart AND a.scheduledAt < :dayEnd " +
+           "AND a.id <> :excludeAppointmentId")
+    long countActiveByCustomerOnDateExcluding(
+        @Param("customerId") Long customerId,
+        @Param("dayStart") LocalDateTime dayStart,
+        @Param("dayEnd") LocalDateTime dayEnd,
+        @Param("excludeAppointmentId") Long excludeAppointmentId
     );
 
     @Query("SELECT a FROM Appointment a WHERE a.employeeId = :employeeId " +

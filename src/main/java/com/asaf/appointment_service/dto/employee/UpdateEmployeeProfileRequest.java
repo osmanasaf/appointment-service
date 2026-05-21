@@ -29,11 +29,14 @@ public record UpdateEmployeeProfileRequest(
     @Max(value = 80, message = "Deneyim yılı geçersiz")
     Integer experienceYears,
 
-    boolean acceptsOnlineBooking
+    Boolean acceptsOnlineBooking
 ) {
     public UpdateEmployeeProfileRequest {
         if (email != null && email.isBlank()) {
             email = null;
+        }
+        if (acceptsOnlineBooking == null) {
+            acceptsOnlineBooking = true;
         }
     }
 }

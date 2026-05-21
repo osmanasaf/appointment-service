@@ -24,7 +24,10 @@ public record CreateEmployeeRequest(
     @Size(max = 500, message = "Biyografi en fazla 500 karakter olabilir")
     String bio,
 
-    boolean owner
+    @Size(max = 100, message = "Ünvan en fazla 100 karakter olabilir")
+    String title,
+
+    Boolean owner
 ) {
     public CreateEmployeeRequest {
         if (phoneCountryCode == null || phoneCountryCode.isBlank()) {
@@ -35,6 +38,12 @@ public record CreateEmployeeRequest(
         }
         if (email != null && email.isBlank()) {
             email = null;
+        }
+        if (title != null && title.isBlank()) {
+            title = null;
+        }
+        if (owner == null) {
+            owner = false;
         }
     }
 }

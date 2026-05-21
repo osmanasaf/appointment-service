@@ -10,6 +10,8 @@ public interface EmailClient {
 
     enum OtpEmailType {
         EMAIL_VERIFICATION,
-        PASSWORD_RESET
+        PASSWORD_RESET,
+        EMAIL_CHANGE,
+        PHONE_CHANGE
     }
 }

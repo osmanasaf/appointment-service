@@ -150,6 +150,27 @@ public class Appointment extends BaseEntity {
         this.reminderSentAt = LocalDateTime.now();
     }
 
+    public void applyStaffBookingUpdate(
+            Long newEmployeeId,
+            Long newServiceId,
+            LocalDateTime newScheduledAt,
+            LocalDateTime newEndAt,
+            int newDurationMinutes,
+            String newNotesOrNullToSkip,
+            AppointmentSource newSourceOrNullToSkip) {
+        this.employeeId = Objects.requireNonNull(newEmployeeId);
+        this.serviceId = Objects.requireNonNull(newServiceId);
+        this.scheduledAt = Objects.requireNonNull(newScheduledAt);
+        this.endAt = Objects.requireNonNull(newEndAt);
+        this.durationMinutes = newDurationMinutes;
+        if (newNotesOrNullToSkip != null) {
+            this.notes = newNotesOrNullToSkip;
+        }
+        if (newSourceOrNullToSkip != null) {
+            this.source = newSourceOrNullToSkip;
+        }
+    }
+
     public boolean isUpcoming() {
         return this.scheduledAt.isAfter(LocalDateTime.now());
     }

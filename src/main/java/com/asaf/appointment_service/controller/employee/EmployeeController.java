@@ -5,7 +5,9 @@ import com.asaf.appointment_service.common.dto.PageResponse;
 import com.asaf.appointment_service.common.service.CurrentUserService;
 import com.asaf.appointment_service.dto.employee.AffectedAppointmentResponse;
 import com.asaf.appointment_service.dto.employee.AssignCapabilityRequest;
+import com.asaf.appointment_service.dto.employee.CreateEmployeeFromInviteRequest;
 import com.asaf.appointment_service.dto.employee.CreateEmployeeRequest;
+import com.asaf.appointment_service.dto.employee.CreateEmployeeInviteRequest;
 import com.asaf.appointment_service.dto.employee.EmployeeCapabilityResponse;
 import com.asaf.appointment_service.dto.employee.EmployeeDetailResponse;
 import com.asaf.appointment_service.dto.employee.EmployeeResponse;
@@ -21,6 +23,7 @@ import com.asaf.appointment_service.entity.service.ServiceDefinition;
 import com.asaf.appointment_service.mapper.employee.EmployeeCapabilityMapper;
 import com.asaf.appointment_service.mapper.employee.EmployeeMapper;
 import com.asaf.appointment_service.service.employee.EmployeeCapabilityService;
+import com.asaf.appointment_service.service.employee.EmployeeInviteService;
 import com.asaf.appointment_service.service.employee.EmployeeOffboardingService;
 import com.asaf.appointment_service.service.employee.EmployeeScheduleService;
 import com.asaf.appointment_service.service.employee.EmployeeService;
@@ -35,6 +38,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -49,6 +53,7 @@ public class EmployeeController {
 
     private final EmployeeService employeeService;
     private final EmployeeCapabilityService capabilityService;
+    private final EmployeeInviteService inviteService;
     private final EmployeeScheduleService scheduleService;
     private final EmployeeOffboardingService offboardingService;
     private final ServiceDefinitionService serviceDefinitionService;
@@ -56,12 +61,14 @@ public class EmployeeController {
 
     public EmployeeController(EmployeeService employeeService,
                                EmployeeCapabilityService capabilityService,
+                               EmployeeInviteService inviteService,
                                EmployeeScheduleService scheduleService,
                                EmployeeOffboardingService offboardingService,
                                ServiceDefinitionService serviceDefinitionService,
                                CurrentUserService currentUserService) {
         this.employeeService = employeeService;
         this.capabilityService = capabilityService;
+        this.inviteService = inviteService;
         this.scheduleService = scheduleService;
         this.offboardingService = offboardingService;
         this.serviceDefinitionService = serviceDefinitionService;
@@ -76,6 +83,46 @@ public class EmployeeController {
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(ApiResponse.success(EmployeeMapper.toResponse(employee), "Çalışan oluşturuldu"));
+    }
+
+    @PostMapping("/invite")
+    public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployeeAndInvite(
+            @Valid @RequestBody CreateEmployeeFromInviteRequest request) {
+        currentUserService.requireBusinessOwnerOrAdmin();
+        Long businessId = currentUserService.getCurrentBusinessId();
+        Employee employee = employeeService.createEmployee(
+            businessId,
+            new CreateEmployeeRequest(
+                request.name(),
+                null,
+                "+90",
+                request.email(),
+                request.message(),
+                request.title(),
+                false
+            )
+        );
+        if (request.title() != null) {
+            employee = employeeService.updateProfile(
+                employee.getId(),
+                new UpdateEmployeeProfileRequest(
+                    employee.getName(),
+                    request.title(),
+                    employee.getEmail(),
+                    employee.getBio(),
+                    employee.getProfileImageUrl(),
+                    employee.getExperienceYears(),
+                    employee.isAcceptsOnlineBooking()
+                )
+            );
+        }
+        inviteService.createInvite(
+            businessId,
+            new CreateEmployeeInviteRequest(employee.getId(), request.email())
+        );
+        return ResponseEntity
+            .status(HttpStatus.CREATED)
+            .body(ApiResponse.success(EmployeeMapper.toResponse(employee), "Çalışan davet edildi"));
     }
 
     @GetMapping("/{id}")
@@ -110,6 +157,13 @@ public class EmployeeController {
             @Valid @RequestBody UpdateEmployeeProfileRequest request) {
         Employee employee = employeeService.updateProfile(id, request);
         return ResponseEntity.ok(ApiResponse.success(EmployeeMapper.toDetailResponse(employee), "Çalışan güncellendi"));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse<EmployeeDetailResponse>> patchEmployee(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateEmployeeProfileRequest request) {
+        return updateEmployee(id, request);
     }
 
     @PostMapping("/{id}/activate")

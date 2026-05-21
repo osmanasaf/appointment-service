@@ -7,6 +7,7 @@ import com.asaf.appointment_service.common.service.CurrentUserService;
 import com.asaf.appointment_service.dto.appointment.AppointmentResponse;
 import com.asaf.appointment_service.dto.appointment.CreateAppointmentRequest;
 import com.asaf.appointment_service.dto.appointment.StaffAppointmentRequest;
+import com.asaf.appointment_service.dto.appointment.UpdateStaffAppointmentRequest;
 import com.asaf.appointment_service.entity.appointment.Appointment;
 import com.asaf.appointment_service.mapper.appointment.AppointmentMapper;
 import com.asaf.appointment_service.service.appointment.AppointmentService;
@@ -22,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -89,6 +91,26 @@ public class AppointmentController {
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(ApiResponse.success(AppointmentMapper.toResponse(appointment), "Randevu kaydedildi"));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse<AppointmentResponse>> updateStaffAppointment(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateStaffAppointmentRequest request) {
+        Long businessId = currentUserService.getCurrentBusinessId();
+        if (currentUserService.isEmployee()) {
+            Long currentEmployeeId = currentUserService.getCurrentEmployeeId();
+            if (currentEmployeeId == null) {
+                throw new UnauthorizedException("Çalışan kaydınız bulunamadı");
+            }
+            if (!currentEmployeeId.equals(request.employeeId())) {
+                throw new UnauthorizedException("Sadece kendinize atanmış randevuları bu şekilde güncelleyebilirsiniz");
+            }
+        }
+        Appointment existing = appointmentService.findByIdOrThrow(id);
+        validateEmployeeAccess(existing);
+        Appointment appointment = appointmentService.updateStaffAppointment(businessId, id, request);
+        return ResponseEntity.ok(ApiResponse.success(AppointmentMapper.toResponse(appointment), "Randevu güncellendi"));
     }
 
     @GetMapping("/{id}")

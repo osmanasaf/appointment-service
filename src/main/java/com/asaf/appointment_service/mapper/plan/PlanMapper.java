@@ -83,7 +83,9 @@ public class PlanMapper {
             usage.getAppointmentsCount(),
             usage.getSmsSent(),
             usage.getWhatsappSent(),
-            plan.getMaxAppointmentsMonthly()
+            plan.getMaxAppointmentsMonthly(),
+            plan.getMaxSmsMonthly(),
+            plan.getMaxWhatsappMonthly()
         );
     }
 }

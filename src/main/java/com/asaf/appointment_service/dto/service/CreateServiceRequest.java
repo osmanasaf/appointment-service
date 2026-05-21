@@ -16,31 +16,43 @@ public record CreateServiceRequest(
     @Size(max = 500, message = "Açıklama en fazla 500 karakter olabilir")
     String description,
 
+    @NotNull(message = "Süre zorunludur")
     @Min(value = 15, message = "Süre en az 15 dakika olmalıdır")
     @Max(value = 360, message = "Süre en fazla 360 dakika olabilir")
-    int durationMinutes,
+    Integer durationMinutes,
 
     @PositiveOrZero(message = "Buffer süresi negatif olamaz")
-    int bufferBeforeMinutes,
+    Integer bufferBeforeMinutes,
 
     @PositiveOrZero(message = "Buffer süresi negatif olamaz")
-    int bufferAfterMinutes,
+    Integer bufferAfterMinutes,
 
     @PositiveOrZero(message = "Fiyat negatif olamaz")
     BigDecimal price,
 
-    boolean requiresConfirmation,
+    Boolean requiresConfirmation,
 
-    boolean sameDayBookingAllowed,
+    Boolean sameDayBookingAllowed,
 
-    boolean packageEligible
+    Boolean packageEligible
 ) {
     public CreateServiceRequest {
-        if (bufferBeforeMinutes == 0 && bufferAfterMinutes == 0) {
+        if (bufferBeforeMinutes == null) {
             bufferBeforeMinutes = 0;
+        }
+        if (bufferAfterMinutes == null) {
             bufferAfterMinutes = 0;
         }
-        if (sameDayBookingAllowed == false && !requiresConfirmation) {
+        if (requiresConfirmation == null) {
+            requiresConfirmation = false;
+        }
+        if (sameDayBookingAllowed == null) {
+            sameDayBookingAllowed = true;
+        }
+        if (packageEligible == null) {
+            packageEligible = true;
+        }
+        if (!sameDayBookingAllowed && !requiresConfirmation) {
             sameDayBookingAllowed = true;
         }
     }

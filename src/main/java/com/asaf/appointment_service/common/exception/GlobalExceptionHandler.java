@@ -22,6 +22,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -140,6 +141,18 @@ public class GlobalExceptionHandler {
             .body(ApiResponse.error(new ErrorDetails(
                 "ACCOUNT_DISABLED",
                 "Hesabınız aktif değil.",
+                null,
+                LocalDateTime.now())));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        log.warn("HTTP method not supported: {} {}", ex.getMethod(), ex.getMessage());
+        return ResponseEntity
+            .status(HttpStatus.METHOD_NOT_ALLOWED)
+            .body(ApiResponse.error(new ErrorDetails(
+                "METHOD_NOT_ALLOWED",
+                "Bu uç nokta için HTTP yöntemi desteklenmiyor: " + ex.getMethod(),
                 null,
                 LocalDateTime.now())));
     }

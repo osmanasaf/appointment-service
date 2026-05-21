@@ -71,6 +71,12 @@ public class User extends BaseEntity {
     @Column(name = "password_reset_token_expiry")
     private Instant passwordResetTokenExpiry;
 
+    @Column(name = "pending_email")
+    private String pendingEmail;
+
+    @Column(name = "pending_phone_number")
+    private String pendingPhoneNumber;
+
     protected User() {}
 
     private User(Builder builder) {
@@ -90,6 +96,33 @@ public class User extends BaseEntity {
     public void updateProfile(String name, String phoneNumber) {
         this.name = name;
         this.phoneNumber = phoneNumber;
+    }
+
+    public void updateProfile(String name) {
+        this.name = name;
+    }
+
+    public void requestEmailChange(String email) {
+        this.pendingEmail = email;
+    }
+
+    public void confirmEmailChange() {
+        if (this.pendingEmail != null && !this.pendingEmail.isBlank()) {
+            this.email = this.pendingEmail;
+            this.emailVerified = true;
+            this.pendingEmail = null;
+        }
+    }
+
+    public void requestPhoneChange(String phoneNumber) {
+        this.pendingPhoneNumber = phoneNumber;
+    }
+
+    public void confirmPhoneChange() {
+        if (this.pendingPhoneNumber != null && !this.pendingPhoneNumber.isBlank()) {
+            this.phoneNumber = this.pendingPhoneNumber;
+            this.pendingPhoneNumber = null;
+        }
     }
 
     public void changePassword(String newPassword) {
@@ -229,6 +262,8 @@ public class User extends BaseEntity {
     public boolean isActive() { return active; }
     public boolean isEmailVerified() { return emailVerified; }
     public String getVerificationToken() { return verificationToken; }
+    public String getPendingEmail() { return pendingEmail; }
+    public String getPendingPhoneNumber() { return pendingPhoneNumber; }
 
     public static class Builder {
         private String email;

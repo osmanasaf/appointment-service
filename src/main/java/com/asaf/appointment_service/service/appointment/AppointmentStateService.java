@@ -70,8 +70,9 @@ public class AppointmentStateService {
         Appointment saved = appointmentRepository.save(appointment);
         if (saved.getPackageSessionId() != null) {
             packageSessionService.markCompleted(saved.getPackageSessionId());
+        } else {
+            deductSessionIfEligible(appointment);
         }
-        deductSessionIfEligible(appointment);
         eventPublisher.publishEvent(new AppointmentCompleted(
             saved.getId(), saved.getBusinessId(), saved.getCustomerId(), saved.getServiceId(),
             saved.getScheduledAt(), saved.getCompletedAt()));

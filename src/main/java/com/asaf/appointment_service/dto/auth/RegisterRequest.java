@@ -22,6 +22,7 @@ public record RegisterRequest(
     @Size(min = 2, max = 100, message = "İsim 2-100 karakter olmalıdır")
     String name,
 
+    @NotBlank(message = "Telefon numarası zorunludur")
     @Pattern(regexp = ValidationPatterns.PHONE_FLEXIBLE_REGEX,
         message = ValidationPatterns.PHONE_MESSAGE)
     String phoneNumber,
@@ -32,10 +33,4 @@ public record RegisterRequest(
 
     @NotNull(message = "İşletme kategorisi zorunludur")
     BusinessCategory businessCategory
-) {
-    public RegisterRequest {
-        if (phoneNumber != null && phoneNumber.isBlank()) {
-            phoneNumber = null;
-        }
-    }
-}
+) {}

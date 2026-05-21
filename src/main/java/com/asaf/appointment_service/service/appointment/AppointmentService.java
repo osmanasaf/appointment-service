@@ -1,11 +1,14 @@
 package com.asaf.appointment_service.service.appointment;
 
 import com.asaf.appointment_service.common.constants.AppointmentErrorMessages;
+import com.asaf.appointment_service.common.exception.ValidationException;
 import com.asaf.appointment_service.common.service.BaseService;
 import com.asaf.appointment_service.dto.appointment.CreateAppointmentRequest;
 import com.asaf.appointment_service.dto.appointment.StaffAppointmentRequest;
+import com.asaf.appointment_service.dto.appointment.UpdateStaffAppointmentRequest;
 import com.asaf.appointment_service.entity.appointment.Appointment;
 import com.asaf.appointment_service.entity.appointment.AppointmentSource;
+import com.asaf.appointment_service.entity.appointment.AppointmentStatus;
 import com.asaf.appointment_service.entity.business.Business;
 import com.asaf.appointment_service.entity.service.ServiceDefinition;
 import com.asaf.appointment_service.exception.appointment.AppointmentNotFoundException;
@@ -21,6 +24,7 @@ import com.asaf.appointment_service.domain.event.AppointmentCreated;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -100,6 +104,58 @@ public class AppointmentService extends BaseService<Appointment, Long, Appointme
             customer.getId(), request.employeeId(), request.serviceId(),
             request.scheduledAt(), request.notes(), null, request.source());
         return createAppointment(businessId, internal);
+    }
+
+    @Transactional
+    public Appointment updateStaffAppointment(
+            Long businessId,
+            Long appointmentId,
+            UpdateStaffAppointmentRequest request) {
+        Appointment appointment = findByIdOrThrow(appointmentId);
+        if (!appointment.getBusinessId().equals(businessId)) {
+            throw new IllegalArgumentException("Bu randevu bu işletmeye ait değil");
+        }
+        if (!isStaffEditableStatus(appointment.getStatus())) {
+            throw new ValidationException("APPOINTMENT_NOT_EDITABLE", "Bu durumdaki randevu düzenlenemez");
+        }
+        if (request.source() != null
+                && request.source() != AppointmentSource.PHONE
+                && request.source() != AppointmentSource.WALK_IN) {
+            throw new IllegalArgumentException(AppointmentErrorMessages.STAFF_SOURCE_INVALID);
+        }
+        employeeService.findByIdOrThrow(request.employeeId());
+        ServiceDefinition service = serviceDefinitionService.findByIdOrThrow(request.serviceId());
+        validationService.validateCapability(request.employeeId(), request.serviceId());
+        int durationMinutes = service.totalDurationMinutes();
+        LocalDateTime endTime = request.scheduledAt().plusMinutes(durationMinutes);
+        validationService.validateSlotAvailabilityExcluding(
+            businessId, request.employeeId(), request.scheduledAt(), endTime, appointmentId);
+        Business business = businessService.findByIdOrThrow(businessId);
+        validationService.validateDayLimitExcluding(
+            business, appointment.getCustomerId(), request.scheduledAt(), appointmentId);
+        if (appointment.getPackageSessionId() != null
+                && !Objects.equals(appointment.getServiceId(), request.serviceId())) {
+            unassignPackageSession(appointmentId);
+            appointment = findByIdOrThrow(appointmentId);
+        }
+        appointment.applyStaffBookingUpdate(
+            request.employeeId(),
+            request.serviceId(),
+            request.scheduledAt(),
+            endTime,
+            durationMinutes,
+            request.notes(),
+            request.source());
+        Appointment saved = repository.save(appointment);
+        log.info("Staff appointment updated: appointmentId={}, businessId={}", appointmentId, businessId);
+        return saved;
+    }
+
+    private static boolean isStaffEditableStatus(AppointmentStatus status) {
+        return status == AppointmentStatus.PENDING
+                || status == AppointmentStatus.CONFIRMED
+                || status == AppointmentStatus.RISKY
+                || status == AppointmentStatus.RESCHEDULE_REQUESTED;
     }
 
     @Transactional

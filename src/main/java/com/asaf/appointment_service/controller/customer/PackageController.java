@@ -1,11 +1,14 @@
 package com.asaf.appointment_service.controller.customer;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
+import com.asaf.appointment_service.common.dto.PageResponse;
 import com.asaf.appointment_service.common.service.CurrentUserService;
 import com.asaf.appointment_service.dto.customer.CreatePackageFromTemplateRequest;
 import com.asaf.appointment_service.dto.customer.CreatePackageRequest;
+import com.asaf.appointment_service.dto.customer.PackageListItemResponse;
 import com.asaf.appointment_service.dto.customer.PackageResponse;
 import com.asaf.appointment_service.dto.customer.PackageSessionResponse;
+import com.asaf.appointment_service.dto.customer.UpdatePackageRequest;
 import com.asaf.appointment_service.entity.customer.CustomerPackage;
 import com.asaf.appointment_service.entity.customer.PackageSession;
 import com.asaf.appointment_service.mapper.customer.CustomerMapper;
@@ -15,6 +18,8 @@ import com.asaf.appointment_service.service.customer.PackageService;
 import com.asaf.appointment_service.service.customer.PackageSessionService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,6 +34,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/v1/packages")
 public class PackageController {
+
+    private static final int MAX_PAGE_SIZE = 100;
 
     private final PackageService packageService;
     private final PackageSessionService packageSessionService;
@@ -83,10 +90,32 @@ public class PackageController {
             .body(ApiResponse.error("BAD_REQUEST", "customerId veya templateId parametresi gerekli"));
     }
 
+    @GetMapping("/business")
+    public ResponseEntity<ApiResponse<PageResponse<PackageListItemResponse>>> listBusinessPackages(
+            @RequestParam(defaultValue = "all") String status,
+            @RequestParam(required = false) Long templateId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Long businessId = currentUserService.getCurrentBusinessId();
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+        var pageable = PageRequest.of(safePage, safeSize, Sort.by("createdAt").descending());
+        return ResponseEntity.ok(ApiResponse.success(
+            packageService.findBusinessPackages(businessId, status, templateId, pageable)));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PackageResponse>> getPackage(@PathVariable Long id) {
         CustomerPackage customerPackage = packageService.findByIdOrThrow(id);
         return ResponseEntity.ok(ApiResponse.success(CustomerMapper.toPackageResponse(customerPackage)));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<PackageResponse>> updatePackage(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdatePackageRequest request) {
+        CustomerPackage customerPackage = packageService.updatePackage(id, request);
+        return ResponseEntity.ok(ApiResponse.success(CustomerMapper.toPackageResponse(customerPackage), "Paket güncellendi"));
     }
 
     @PostMapping("/{id}/deduct")

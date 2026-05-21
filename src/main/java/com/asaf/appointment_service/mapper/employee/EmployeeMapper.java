@@ -17,6 +17,7 @@ public class EmployeeMapper {
             .phone(request.phoneCountryCode(), request.phoneNumber())
             .email(request.email())
             .bio(request.bio())
+            .title(request.title())
             .owner(request.owner())
             .build();
     }

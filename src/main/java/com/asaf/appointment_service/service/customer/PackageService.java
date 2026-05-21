@@ -1,20 +1,30 @@
 package com.asaf.appointment_service.service.customer;
 
 import com.asaf.appointment_service.common.constants.PackageErrorMessages;
+import com.asaf.appointment_service.common.dto.PageResponse;
 import com.asaf.appointment_service.common.exception.BusinessException;
 import com.asaf.appointment_service.common.exception.ValidationException;
 import com.asaf.appointment_service.dto.customer.CreatePackageRequest;
+import com.asaf.appointment_service.dto.customer.PackageListItemResponse;
+import com.asaf.appointment_service.dto.customer.UpdatePackageRequest;
 import com.asaf.appointment_service.entity.customer.Customer;
 import com.asaf.appointment_service.entity.customer.CustomerPackage;
 import com.asaf.appointment_service.entity.service.PackageTemplate;
 import com.asaf.appointment_service.entity.service.ServiceDefinition;
+import com.asaf.appointment_service.mapper.customer.CustomerMapper;
 import com.asaf.appointment_service.repository.customer.CustomerPackageRepository;
+import com.asaf.appointment_service.repository.customer.CustomerRepository;
 import com.asaf.appointment_service.service.service.PackageTemplateService;
 import com.asaf.appointment_service.service.service.ServiceDefinitionService;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,17 +38,20 @@ public class PackageService {
     private final PackageTemplateService packageTemplateService;
     private final PackageSessionService packageSessionService;
     private final CustomerPackageRepository packageRepository;
+    private final CustomerRepository customerRepository;
 
     public PackageService(CustomerService customerService,
                           ServiceDefinitionService serviceDefinitionService,
                           PackageTemplateService packageTemplateService,
                           PackageSessionService packageSessionService,
-                          CustomerPackageRepository packageRepository) {
+                          CustomerPackageRepository packageRepository,
+                          CustomerRepository customerRepository) {
         this.customerService = customerService;
         this.serviceDefinitionService = serviceDefinitionService;
         this.packageTemplateService = packageTemplateService;
         this.packageSessionService = packageSessionService;
         this.packageRepository = packageRepository;
+        this.customerRepository = customerRepository;
     }
 
     @Transactional
@@ -125,6 +138,15 @@ public class PackageService {
         return saved;
     }
 
+    @Transactional
+    public CustomerPackage updatePackage(Long packageId, UpdatePackageRequest request) {
+        CustomerPackage customerPackage = findByIdOrThrow(packageId);
+        customerPackage.updateDetails(request.name().trim(), request.expiresAt(), request.active());
+        CustomerPackage saved = packageRepository.save(customerPackage);
+        log.info("Paket güncellendi: packageId={}, active={}", packageId, saved.isActive());
+        return saved;
+    }
+
     @Transactional(readOnly = true)
     public List<CustomerPackage> findActiveByCustomerId(Long customerId) {
         customerService.findByIdOrThrow(customerId);
@@ -147,6 +169,49 @@ public class PackageService {
             throw new ValidationException("TEMPLATE_WRONG_BUSINESS", PackageErrorMessages.TEMPLATE_WRONG_BUSINESS);
         }
         return packageRepository.findByBusinessIdAndTemplateIdOrderByCreatedAtDesc(businessId, templateId);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<PackageListItemResponse> findBusinessPackages(
+            Long businessId,
+            String status,
+            Long templateId,
+            Pageable pageable) {
+        String normalizedStatus = normalizeBusinessPackageStatus(status);
+        if (templateId != null) {
+            PackageTemplate template = packageTemplateService.findByIdOrThrow(templateId);
+            if (!template.getBusinessId().equals(businessId)) {
+                throw new ValidationException("TEMPLATE_WRONG_BUSINESS", PackageErrorMessages.TEMPLATE_WRONG_BUSINESS);
+            }
+        }
+
+        var page = packageRepository.findBusinessPackages(
+            businessId,
+            normalizedStatus,
+            templateId,
+            LocalDateTime.now(),
+            pageable
+        );
+        Set<Long> customerIds = page.getContent().stream()
+            .map(CustomerPackage::getCustomerId)
+            .collect(Collectors.toSet());
+        Map<Long, String> customerNames = customerRepository.findAllById(customerIds).stream()
+            .filter(customer -> customer.getBusinessId().equals(businessId))
+            .collect(Collectors.toMap(Customer::getId, Customer::getName));
+
+        return PageResponse.from(page, pkg ->
+            CustomerMapper.toPackageListItemResponse(
+                pkg,
+                customerNames.getOrDefault(pkg.getCustomerId(), "-")
+            ));
+    }
+
+    private String normalizeBusinessPackageStatus(String status) {
+        String normalized = status == null || status.isBlank() ? "all" : status.trim().toLowerCase();
+        if (!List.of("all", "active", "low", "expired").contains(normalized)) {
+            throw new ValidationException("INVALID_PACKAGE_STATUS", "Geçersiz paket durum filtresi");
+        }
+        return normalized;
     }
 
     @Transactional(readOnly = true)

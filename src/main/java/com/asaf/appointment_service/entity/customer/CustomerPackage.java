@@ -72,6 +72,12 @@ public class CustomerPackage extends BaseEntity {
         this.active = true;
     }
 
+    public void updateDetails(String name, LocalDateTime expiresAt, boolean active) {
+        this.name = name;
+        this.expiresAt = expiresAt;
+        this.active = active && remainingSessions > 0 && !isExpired();
+    }
+
     public boolean isExpired() {
         return expiresAt != null && LocalDateTime.now().isAfter(expiresAt);
     }

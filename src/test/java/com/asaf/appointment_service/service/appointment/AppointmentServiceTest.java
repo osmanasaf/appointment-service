@@ -1,5 +1,7 @@
 package com.asaf.appointment_service.service.appointment;
 
+import com.asaf.appointment_service.common.exception.ValidationException;
+import com.asaf.appointment_service.dto.appointment.UpdateStaffAppointmentRequest;
 import com.asaf.appointment_service.entity.appointment.Appointment;
 import com.asaf.appointment_service.entity.appointment.AppointmentStatus;
 import com.asaf.appointment_service.exception.appointment.AppointmentNotFoundException;
@@ -117,6 +119,35 @@ class AppointmentServiceTest {
 
         assertThatThrownBy(() -> appointmentService.findByIdOrThrow(999L))
             .isInstanceOf(AppointmentNotFoundException.class);
+    }
+
+    @Test
+    void updateStaffAppointment_whenBusinessMismatch_shouldThrowIllegalArgumentException() {
+        long appointmentId = 5L;
+        Appointment appointment = buildAppointment(AppointmentStatus.PENDING);
+        when(repository.findById(appointmentId)).thenReturn(Optional.of(appointment));
+        var request = new UpdateStaffAppointmentRequest(
+            1L, 1L, LocalDateTime.now().plusDays(2), null, null);
+
+        assertThatThrownBy(() -> appointmentService.updateStaffAppointment(999L, appointmentId, request))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("işletmeye ait değil");
+
+        verifyNoInteractions(validationService);
+    }
+
+    @Test
+    void updateStaffAppointment_whenStatusNotEditable_shouldThrowValidationException() {
+        long appointmentId = 1L;
+        Appointment appointment = buildAppointment(AppointmentStatus.CANCELLED);
+        when(repository.findById(appointmentId)).thenReturn(Optional.of(appointment));
+        var request = new UpdateStaffAppointmentRequest(
+            1L, 1L, LocalDateTime.now().plusDays(2), null, null);
+
+        assertThatThrownBy(() -> appointmentService.updateStaffAppointment(1L, appointmentId, request))
+            .isInstanceOf(ValidationException.class);
+
+        verifyNoInteractions(validationService);
     }
 
     private Appointment buildAppointment(AppointmentStatus status) {
