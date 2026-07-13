@@ -19,4 +19,21 @@ public final class PhoneNumberUtil {
         if (digits.length() <= 4) return "***";
         return "***" + digits.substring(digits.length() - 4);
     }
+
+    public static String formatForWhatsApp(String countryCode, String phoneNumber) {
+        String code = countryCode != null ? countryCode : "+90";
+        String digits = normalizeDigitsOnly(code + phoneNumber);
+        if (digits.startsWith("0")) {
+            digits = "90" + digits.substring(1);
+        }
+        if (!digits.startsWith("90") && digits.length() == 10) {
+            digits = "90" + digits;
+        }
+        return digits;
+    }
+
+    public static String formatWithCountryCode(String countryCode, String phoneNumber) {
+        String code = countryCode != null ? countryCode : "+90";
+        return code + normalizeDigitsOnly(phoneNumber);
+    }
 }

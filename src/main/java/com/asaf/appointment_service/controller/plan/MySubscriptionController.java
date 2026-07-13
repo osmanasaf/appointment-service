@@ -2,12 +2,17 @@ package com.asaf.appointment_service.controller.plan;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
 import com.asaf.appointment_service.common.service.CurrentUserService;
+import com.asaf.appointment_service.dto.payment.ToggleAutoRenewRequest;
 import com.asaf.appointment_service.dto.plan.BusinessSubscriptionResponse;
 import com.asaf.appointment_service.dto.plan.PlanUsageResponse;
 import com.asaf.appointment_service.mapper.plan.PlanMapper;
 import com.asaf.appointment_service.service.plan.SubscriptionService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -38,5 +43,20 @@ public class MySubscriptionController {
         var usage = subscriptionService.getCurrentUsage(businessId);
         var plan = subscriptionService.getCurrentPlanByBusinessId(businessId);
         return ResponseEntity.ok(ApiResponse.success(PlanMapper.toUsageResponse(usage, plan)));
+    }
+
+    @PostMapping("/cancel")
+    public ResponseEntity<ApiResponse<Void>> cancelSubscription() {
+        currentUserService.requireBusinessOwnerOrAdmin();
+        subscriptionService.cancelSubscription(currentUserService.getCurrentBusinessId());
+        return ResponseEntity.ok(ApiResponse.success(null, "Otomatik yenileme iptal edildi"));
+    }
+
+    @PatchMapping("/auto-renew")
+    public ResponseEntity<ApiResponse<Void>> toggleAutoRenew(
+            @Valid @RequestBody ToggleAutoRenewRequest request) {
+        currentUserService.requireBusinessOwnerOrAdmin();
+        subscriptionService.toggleAutoRenew(currentUserService.getCurrentBusinessId(), request.autoRenew());
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

@@ -23,6 +23,12 @@ public class MockWhatsAppClient implements WhatsAppClientInterface {
     }
 
     @Override
+    public WhatsAppMessageResponse sendOtp(String to, String code) {
+        log.info("[MOCK] WhatsApp OTP: to={}, code={}", maskPhone(to), code);
+        return WhatsAppMessageResponse.success("mock-otp-" + System.currentTimeMillis());
+    }
+
+    @Override
     public WhatsAppMessageResponse sendInteractiveButtons(String to, String header, String body, String footer, List<ButtonOption> buttons) {
         log.info("[MOCK] WhatsApp interactive mesajı: to={}, header={}, buttons={}", 
             maskPhone(to), header, buttons.stream().map(ButtonOption::title).toList());

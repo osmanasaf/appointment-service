@@ -15,5 +15,7 @@ public record PlanResponse(
     List<String> features,
     Map<String, String> featureNames,
     BigDecimal monthlyPrice,
+    BigDecimal quarterlyPrice,
+    BigDecimal semiannualPrice,
     BigDecimal yearlyPrice
 ) {}

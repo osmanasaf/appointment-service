@@ -1,6 +1,7 @@
 package com.asaf.appointment_service.entity.plan;
 
 import com.asaf.appointment_service.common.entity.BaseEntity;
+import com.asaf.appointment_service.entity.payment.BillingPeriod;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -34,6 +35,33 @@ public class BusinessSubscription extends BaseEntity {
     @Column(nullable = false)
     private boolean manual;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "billing_period")
+    private BillingPeriod billingPeriod;
+
+    @Column(name = "auto_renew", nullable = false)
+    private boolean autoRenew = true;
+
+    @Column(name = "next_payment_date")
+    private LocalDate nextPaymentDate;
+
+    @Column(name = "last_payment_date")
+    private LocalDate lastPaymentDate;
+
+    /**
+     * AES-GCM ile şifrelenmiş PayTR utoken (işletme/kart sahibi tokenı).
+     * Ham değeri asla loglamayın; sadece EncryptionService üzerinden erişin.
+     */
+    @Column(name = "paytr_utoken_encrypted", length = 512)
+    private String paytrUtokenEncrypted;
+
+    /**
+     * Dönem bitişine kaç gün kala son yenileme hatırlatması gönderildiğini tutar
+     * (7/3/1). Aynı eşik için mükerrer gönderimi engellemek için kullanılır.
+     */
+    @Column(name = "last_reminder_days_before")
+    private Integer lastReminderDaysBefore;
+
     protected BusinessSubscription() {}
 
     private BusinessSubscription(Builder builder) {
@@ -44,6 +72,11 @@ public class BusinessSubscription extends BaseEntity {
         this.currentPeriodStart = builder.currentPeriodStart;
         this.currentPeriodEnd = builder.currentPeriodEnd;
         this.manual = builder.manual;
+        this.billingPeriod = builder.billingPeriod;
+        this.autoRenew = builder.autoRenew;
+        this.nextPaymentDate = builder.nextPaymentDate;
+        this.lastPaymentDate = builder.lastPaymentDate;
+        this.paytrUtokenEncrypted = builder.paytrUtokenEncrypted;
     }
 
     public static Builder builder() {
@@ -57,6 +90,66 @@ public class BusinessSubscription extends BaseEntity {
         this.currentPeriodStart = periodStart;
         this.currentPeriodEnd = periodEnd;
         this.manual = manual;
+        this.lastReminderDaysBefore = null;
+    }
+
+    public void activatePayment(Long planId, BillingPeriod billingPeriod,
+                                LocalDate periodStart, LocalDate periodEnd,
+                                LocalDate nextPaymentDate, String paytrUtokenEncrypted) {
+        this.planId = planId;
+        this.status = SubscriptionStatus.ACTIVE;
+        this.trialEndDate = null;
+        this.manual = false;
+        this.billingPeriod = billingPeriod;
+        this.currentPeriodStart = periodStart;
+        this.currentPeriodEnd = periodEnd;
+        this.nextPaymentDate = nextPaymentDate;
+        this.lastPaymentDate = periodStart;
+        this.lastReminderDaysBefore = null;
+        if (paytrUtokenEncrypted != null) {
+            this.paytrUtokenEncrypted = paytrUtokenEncrypted;
+        }
+    }
+
+    public void renewPayment(LocalDate periodStart, LocalDate periodEnd, LocalDate nextPaymentDate) {
+        this.status = SubscriptionStatus.ACTIVE;
+        this.currentPeriodStart = periodStart;
+        this.currentPeriodEnd = periodEnd;
+        this.lastPaymentDate = periodStart;
+        this.nextPaymentDate = nextPaymentDate;
+        this.lastReminderDaysBefore = null;
+    }
+
+    /**
+     * Bir eşik için (7/3/1 gün kala) hatırlatma gönderildiğini işaretler; aynı eşik
+     * için tekrar gönderimi engeller.
+     */
+    public void markReminderSent(int daysBefore) {
+        this.lastReminderDaysBefore = daysBefore;
+    }
+
+    public boolean hasReminderBeenSentFor(int daysBefore) {
+        return lastReminderDaysBefore != null && lastReminderDaysBefore == daysBefore;
+    }
+
+    /**
+     * ACTIVE bir abonelik dönem bitişinden itibaren tolerans (grace) süresi kadar
+     * ödeme yapılmadan geçerse süresi dolmuş sayılır.
+     */
+    public boolean isGraceExpired(LocalDate today, int gracePeriodDays) {
+        return status == SubscriptionStatus.ACTIVE
+            && currentPeriodEnd != null
+            && currentPeriodEnd.plusDays(gracePeriodDays).isBefore(today);
+    }
+
+    public void cancelAutoRenew() {
+        this.autoRenew = false;
+        this.nextPaymentDate = null;
+    }
+
+    public void enableAutoRenew(LocalDate nextPaymentDate) {
+        this.autoRenew = true;
+        this.nextPaymentDate = nextPaymentDate;
     }
 
     public void startTrial(Long planId, LocalDate periodStart, LocalDate trialEndDate) {
@@ -114,6 +207,34 @@ public class BusinessSubscription extends BaseEntity {
         return manual;
     }
 
+    public BillingPeriod getBillingPeriod() {
+        return billingPeriod;
+    }
+
+    public boolean isAutoRenew() {
+        return autoRenew;
+    }
+
+    public LocalDate getNextPaymentDate() {
+        return nextPaymentDate;
+    }
+
+    public LocalDate getLastPaymentDate() {
+        return lastPaymentDate;
+    }
+
+    public String getPaytrUtokenEncrypted() {
+        return paytrUtokenEncrypted;
+    }
+
+    public boolean hasStoredPaymentMethod() {
+        return paytrUtokenEncrypted != null && !paytrUtokenEncrypted.isBlank();
+    }
+
+    public Integer getLastReminderDaysBefore() {
+        return lastReminderDaysBefore;
+    }
+
     public static class Builder {
         private Long businessId;
         private Long planId;
@@ -122,6 +243,11 @@ public class BusinessSubscription extends BaseEntity {
         private LocalDate currentPeriodStart;
         private LocalDate currentPeriodEnd;
         private boolean manual = true;
+        private BillingPeriod billingPeriod;
+        private boolean autoRenew = true;
+        private LocalDate nextPaymentDate;
+        private LocalDate lastPaymentDate;
+        private String paytrUtokenEncrypted;
 
         public Builder businessId(Long businessId) {
             this.businessId = businessId;
@@ -155,6 +281,31 @@ public class BusinessSubscription extends BaseEntity {
 
         public Builder manual(boolean manual) {
             this.manual = manual;
+            return this;
+        }
+
+        public Builder billingPeriod(BillingPeriod billingPeriod) {
+            this.billingPeriod = billingPeriod;
+            return this;
+        }
+
+        public Builder autoRenew(boolean autoRenew) {
+            this.autoRenew = autoRenew;
+            return this;
+        }
+
+        public Builder nextPaymentDate(LocalDate nextPaymentDate) {
+            this.nextPaymentDate = nextPaymentDate;
+            return this;
+        }
+
+        public Builder lastPaymentDate(LocalDate lastPaymentDate) {
+            this.lastPaymentDate = lastPaymentDate;
+            return this;
+        }
+
+        public Builder paytrUtokenEncrypted(String paytrUtokenEncrypted) {
+            this.paytrUtokenEncrypted = paytrUtokenEncrypted;
             return this;
         }
 

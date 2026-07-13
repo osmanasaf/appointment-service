@@ -27,7 +27,13 @@ public enum ErrorCode {
     CONFLICT("Bu kayıt başka bir kayıtla çakışıyor."),
     DATA_CONFLICT("Veri tutarlılığı hatası."),
     FILE_TOO_LARGE("Dosya boyutu çok büyük."),
-    INTERNAL_ERROR("Beklenmeyen bir hata oluştu.");
+    INTERNAL_ERROR("Beklenmeyen bir hata oluştu."),
+    PAYMENT_INITIATION_FAILED("Ödeme başlatılamadı."),
+    PAYMENT_NOT_FOUND("Ödeme işlemi bulunamadı."),
+    PAYMENT_ALREADY_PROCESSED("Bu ödeme zaten işlenmiş."),
+    PAYMENT_HASH_INVALID("Ödeme güvenlik doğrulaması başarısız."),
+    CARD_NOT_FOUND("Kayıtlı kart bulunamadı."),
+    NO_STORED_PAYMENT_METHOD("Kayıtlı ödeme yöntemi bulunamadı.");
 
     private final String defaultMessage;
 

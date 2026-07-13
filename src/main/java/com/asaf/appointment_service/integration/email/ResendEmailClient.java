@@ -52,6 +52,20 @@ public class ResendEmailClient implements EmailClient {
         send(toEmail, subject, html);
     }
 
+    @Override
+    public void sendSubscriptionRenewalReminder(String toEmail, String businessName, String planName,
+                                                String endDate, int daysBefore, String renewUrl) {
+        String subject = "Randevum - Aboneliğiniz %d gün sonra bitiyor".formatted(daysBefore);
+        String html = buildSubscriptionReminderHtml(businessName, planName, endDate, daysBefore, renewUrl);
+        send(toEmail, subject, html);
+    }
+
+    @Override
+    public void sendSubscriptionExpired(String toEmail, String businessName, String renewUrl) {
+        String html = buildSubscriptionExpiredHtml(businessName, renewUrl);
+        send(toEmail, "Randevum - Aboneliğinizin süresi doldu", html);
+    }
+
     private void send(String to, String subject, String html) {
         var body = new ResendRequest(emailProperties.from(), List.of(to), subject, html);
         try {
@@ -154,6 +168,52 @@ public class ResendEmailClient implements EmailClient {
             "Yeni bir davet",
             inner,
             "Bu daveti siz beklemediyseniz bu e-postayı yok sayabilirsiniz.");
+    }
+
+    private String buildSubscriptionReminderHtml(String businessName, String planName, String endDate,
+                                                 int daysBefore, String renewUrl) {
+        String bn = HtmlEmailLayout.escape(businessName);
+        String pn = HtmlEmailLayout.escape(planName);
+        String ed = HtmlEmailLayout.escape(endDate);
+        String inner = """
+            <p style="margin:0 0 16px;">Merhaba <strong style="color:#0f172a;">%s</strong>,</p>
+            <p style="margin:0 0 6px;color:#475569;">
+              <strong style="color:#0f172a;">%s</strong> paketiniz <strong style="color:#0f172a;">%d gün sonra (%s)</strong> sona eriyor.
+            </p>
+            <p style="margin:0 0 24px;color:#475569;">
+              Hizmetinizin kesintisiz devam etmesi için paketinizi şimdi yenileyebilirsiniz.
+            </p>
+            %s
+            %s
+            """.formatted(bn, pn, daysBefore, ed,
+            HtmlEmailLayout.primaryButton(renewUrl, "Paketimi yenile"),
+            HtmlEmailLayout.mutedLinkFallback(renewUrl));
+        return HtmlEmailLayout.document(
+            "Aboneliğiniz %d gün sonra bitiyor — Randevum".formatted(daysBefore),
+            "Abonelik hatırlatma",
+            "Aboneliğiniz yakında sona eriyor",
+            inner,
+            "Aboneliğinizi zaten yenilediyseniz bu e-postayı yok sayabilirsiniz.");
+    }
+
+    private String buildSubscriptionExpiredHtml(String businessName, String renewUrl) {
+        String bn = HtmlEmailLayout.escape(businessName);
+        String inner = """
+            <p style="margin:0 0 16px;">Merhaba <strong style="color:#0f172a;">%s</strong>,</p>
+            <p style="margin:0 0 24px;color:#475569;">
+              Aboneliğinizin süresi doldu ve hesabınız kısıtlı erişime geçti. Kaldığınız yerden devam etmek için paketinizi yenileyin.
+            </p>
+            %s
+            %s
+            """.formatted(bn,
+            HtmlEmailLayout.primaryButton(renewUrl, "Paketimi yenile"),
+            HtmlEmailLayout.mutedLinkFallback(renewUrl));
+        return HtmlEmailLayout.document(
+            "Aboneliğinizin süresi doldu — Randevum",
+            "Abonelik süresi doldu",
+            "Aboneliğinizin süresi doldu",
+            inner,
+            "Sorularınız için destek ekibimizle iletişime geçebilirsiniz.");
     }
 
     private record ResendRequest(String from, List<String> to, String subject, String html) {}

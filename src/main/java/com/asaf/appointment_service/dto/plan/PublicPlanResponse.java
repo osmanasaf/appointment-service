@@ -8,6 +8,8 @@ import java.util.Map;
 public record PublicPlanResponse(
     PlanCode code,
     BigDecimal monthlyPrice,
+    BigDecimal quarterlyPrice,
+    BigDecimal semiannualPrice,
     BigDecimal yearlyPrice,
     int maxEmployees,
     int maxAppointmentsMonthly,

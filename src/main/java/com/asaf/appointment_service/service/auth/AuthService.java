@@ -18,6 +18,8 @@ import com.asaf.appointment_service.exception.auth.InvalidVerificationTokenExcep
 import com.asaf.appointment_service.exception.auth.OtpBlockedException;
 import com.asaf.appointment_service.entity.auth.RefreshToken;
 import com.asaf.appointment_service.integration.email.EmailClient;
+import com.asaf.appointment_service.integration.whatsapp.WhatsAppClientInterface;
+import com.asaf.appointment_service.integration.whatsapp.WhatsAppMessageResponse;
 import com.asaf.appointment_service.repository.user.UserRepository;
 import com.asaf.appointment_service.security.JwtTokenProvider;
 import com.asaf.appointment_service.service.business.BusinessService;
@@ -45,6 +47,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final SubscriptionService subscriptionService;
     private final EmailClient emailClient;
+    private final WhatsAppClientInterface whatsAppClient;
     private final NicheServiceTemplateService nicheServiceTemplateService;
     private final EmployeeInviteService employeeInviteService;
     private final RefreshTokenService refreshTokenService;
@@ -56,6 +59,7 @@ public class AuthService {
                        AuthenticationManager authenticationManager,
                        SubscriptionService subscriptionService,
                        EmailClient emailClient,
+                       WhatsAppClientInterface whatsAppClient,
                        NicheServiceTemplateService nicheServiceTemplateService,
                        EmployeeInviteService employeeInviteService,
                        RefreshTokenService refreshTokenService) {
@@ -66,6 +70,7 @@ public class AuthService {
         this.authenticationManager = authenticationManager;
         this.subscriptionService = subscriptionService;
         this.emailClient = emailClient;
+        this.whatsAppClient = whatsAppClient;
         this.nicheServiceTemplateService = nicheServiceTemplateService;
         this.employeeInviteService = employeeInviteService;
         this.refreshTokenService = refreshTokenService;
@@ -83,8 +88,7 @@ public class AuthService {
             if (!existingUser.isEmailVerified()) {
                 String otp = existingUser.generateOtp(OtpType.EMAIL_VERIFICATION, 5);
                 userRepository.save(existingUser);
-                emailClient.sendOtpEmail(existingUser.getEmail(), existingUser.getName(), otp, 
-                    EmailClient.OtpEmailType.EMAIL_VERIFICATION);
+                sendRegistrationOtp(existingUser, otp);
                 log.info("Mevcut doğrulanmamış kullanıcıya yeni OTP gönderildi: email={}", request.email());
                 return;
             }
@@ -123,8 +127,15 @@ public class AuthService {
         log.info("Yeni kullanıcı kaydedildi (OTP bekleniyor): userId={}, businessId={}", 
             savedUser.getId(), business.getId());
 
-        emailClient.sendOtpEmail(savedUser.getEmail(), savedUser.getName(), otp, 
-            EmailClient.OtpEmailType.EMAIL_VERIFICATION);
+        sendRegistrationOtp(savedUser, otp);
+    }
+
+    private void sendRegistrationOtp(User user, String otp) {
+        WhatsAppMessageResponse response = whatsAppClient.sendOtp(user.getPhoneNumber(), otp);
+        if (!response.success()) {
+            throw new BusinessException("OTP_SEND_FAILED",
+                "Doğrulama kodu gönderilemedi. Lütfen tekrar deneyin.");
+        }
     }
 
     /**
@@ -174,8 +185,7 @@ public class AuthService {
         String otp = user.generateOtp(OtpType.EMAIL_VERIFICATION, 5);
         userRepository.save(user);
 
-        emailClient.sendOtpEmail(user.getEmail(), user.getName(), otp, 
-            EmailClient.OtpEmailType.EMAIL_VERIFICATION);
+        sendRegistrationOtp(user, otp);
         log.info("Kayıt OTP'si yeniden gönderildi: userId={}", user.getId());
     }
 

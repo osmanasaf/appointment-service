@@ -4,6 +4,7 @@ import com.asaf.appointment_service.common.dto.ApiResponse;
 import com.asaf.appointment_service.dto.appointment.AppointmentResponse;
 import com.asaf.appointment_service.dto.appointment.AvailableSlotResponse;
 import com.asaf.appointment_service.dto.appointment.CreateAppointmentRequest;
+import com.asaf.appointment_service.dto.appointment.PublicAppointmentOtpRequest;
 import com.asaf.appointment_service.dto.appointment.PublicAppointmentRequest;
 import com.asaf.appointment_service.dto.business.BusinessResponse;
 import com.asaf.appointment_service.dto.employee.EmployeeResponse;
@@ -25,6 +26,7 @@ import com.asaf.appointment_service.service.business.BusinessService;
 import com.asaf.appointment_service.service.customer.CustomerService;
 import com.asaf.appointment_service.service.employee.EmployeeCapabilityService;
 import com.asaf.appointment_service.service.employee.EmployeeService;
+import com.asaf.appointment_service.service.otp.PublicOtpService;
 import com.asaf.appointment_service.service.service.ServiceDefinitionService;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
@@ -52,6 +54,7 @@ public class PublicAppointmentController {
     private final CustomerService customerService;
     private final AppointmentService appointmentService;
     private final AvailabilityService availabilityService;
+    private final PublicOtpService publicOtpService;
 
     public PublicAppointmentController(BusinessService businessService,
                                         EmployeeService employeeService,
@@ -59,7 +62,8 @@ public class PublicAppointmentController {
                                         ServiceDefinitionService serviceDefinitionService,
                                         CustomerService customerService,
                                         AppointmentService appointmentService,
-                                        AvailabilityService availabilityService) {
+                                        AvailabilityService availabilityService,
+                                        PublicOtpService publicOtpService) {
         this.businessService = businessService;
         this.employeeService = employeeService;
         this.capabilityService = capabilityService;
@@ -67,6 +71,7 @@ public class PublicAppointmentController {
         this.customerService = customerService;
         this.appointmentService = appointmentService;
         this.availabilityService = availabilityService;
+        this.publicOtpService = publicOtpService;
     }
     @GetMapping("/businesses/{slug}")
     public ResponseEntity<ApiResponse<BusinessResponse>> getBusinessBySlug(@PathVariable String slug) {
@@ -121,12 +126,34 @@ public class PublicAppointmentController {
             availabilityService.getAvailableDates(business.getId(), employeeId, serviceId, daysAhead);
         return ResponseEntity.ok(ApiResponse.success(dates));
     }
+
+    @PostMapping("/businesses/{slug}/appointments/otp")
+    public ResponseEntity<ApiResponse<Void>> requestPublicAppointmentOtp(
+            @PathVariable String slug,
+            @Valid @RequestBody PublicAppointmentOtpRequest request) {
+        Business business = businessService.findBySlug(slug);
+        publicOtpService.requestOtp(
+            business.getId(),
+            request.getPhoneCountryCode(),
+            request.phoneNumber()
+        );
+        return ResponseEntity.ok(ApiResponse.success(null,
+            "Doğrulama kodu WhatsApp ile gönderildi."));
+    }
+
     @PostMapping("/businesses/{slug}/appointments")
     public ResponseEntity<ApiResponse<AppointmentResponse>> createPublicAppointment(
             @PathVariable String slug,
             @Valid @RequestBody PublicAppointmentRequest request) {
 
         Business business = businessService.findBySlug(slug);
+
+        publicOtpService.verifyAndConsume(
+            business.getId(),
+            request.getPhoneCountryCode(),
+            request.phoneNumber(),
+            request.otpCode()
+        );
 
         Optional<Customer> existingCustomer = customerService.findByBusinessIdAndPhoneOptional(
             business.getId(),

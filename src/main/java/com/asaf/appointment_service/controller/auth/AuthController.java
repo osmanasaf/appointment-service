@@ -54,7 +54,7 @@ public class AuthController {
         authService.register(request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
-            .body(ApiResponse.success(null, "Kayıt başarılı. Email adresinize doğrulama kodu gönderildi."));
+            .body(ApiResponse.success(null, "Kayıt başarılı. Telefonunuza WhatsApp ile doğrulama kodu gönderildi."));
     }
 
     @PostMapping("/verify-registration-otp")
@@ -65,14 +65,14 @@ public class AuthController {
         String deviceInfo = extractDeviceInfo(httpRequest);
         AuthResponse response = authService.verifyRegistrationOtp(request.email(), request.otp(), deviceInfo);
         setRefreshTokenCookie(httpResponse, response.refreshToken());
-        return ResponseEntity.ok(ApiResponse.success(response, "Email doğrulandı. Giriş yapıldı."));
+        return ResponseEntity.ok(ApiResponse.success(response, "Telefon doğrulandı. Giriş yapıldı."));
     }
 
     @PostMapping("/resend-registration-otp")
     public ResponseEntity<ApiResponse<Void>> resendRegistrationOtp(
             @Valid @RequestBody EmailRequest request) {
         authService.resendRegistrationOtp(request.email());
-        return ResponseEntity.ok(ApiResponse.success(null, "Doğrulama kodu yeniden gönderildi."));
+        return ResponseEntity.ok(ApiResponse.success(null, "Doğrulama kodu WhatsApp ile yeniden gönderildi."));
     }
 
     @PostMapping("/register-employee")

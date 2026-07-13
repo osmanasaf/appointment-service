@@ -67,6 +67,12 @@ public class MetaCloudWhatsAppClient implements WhatsAppClientInterface {
     }
 
     @Override
+    public WhatsAppMessageResponse sendOtp(String to, String code) {
+        WhatsAppMessageRequest request = WhatsAppMessageRequest.otpVerification(to, code);
+        return sendMessage(request);
+    }
+
+    @Override
     public WhatsAppMessageResponse sendInteractiveButtons(String to, String header, String body, String footer, List<ButtonOption> buttons) {
         String normalizedTo = normalizePhoneNumber(to);
         
@@ -148,6 +154,10 @@ public class MetaCloudWhatsAppClient implements WhatsAppClientInterface {
             case "appointment_reminder" -> List.of("customer_name", "date", "time", "service_name");
             case "appointment_confirmation" -> List.of("customer_name", "date", "time", "service_name");
             case "appointment_cancelled" -> List.of("customer_name", "date", "service_name");
+            case "otp_verification" -> List.of("code");
+            case "subscription_renewal_reminder" ->
+                List.of("business_name", "plan_name", "days_before", "end_date", "renew_link");
+            case "subscription_expired" -> List.of("business_name", "renew_link");
             default -> List.of("customer_name", "service_name", "date", "time", "price", "confirm_link");
         };
     }

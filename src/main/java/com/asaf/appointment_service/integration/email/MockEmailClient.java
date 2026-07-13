@@ -34,4 +34,16 @@ public class MockEmailClient implements EmailClient {
     public void sendOtpEmail(String toEmail, String toName, String otpCode, OtpEmailType type) {
         log.info("[MOCK EMAIL] OTP → to={} name={} code={} type={}", toEmail, toName, otpCode, type);
     }
+
+    @Override
+    public void sendSubscriptionRenewalReminder(String toEmail, String businessName, String planName,
+                                                String endDate, int daysBefore, String renewUrl) {
+        log.info("[MOCK EMAIL] Abonelik hatırlatma → to={} business={} plan={} endDate={} daysBefore={} url={}",
+            toEmail, businessName, planName, endDate, daysBefore, renewUrl);
+    }
+
+    @Override
+    public void sendSubscriptionExpired(String toEmail, String businessName, String renewUrl) {
+        log.info("[MOCK EMAIL] Abonelik süresi doldu → to={} business={} url={}", toEmail, businessName, renewUrl);
+    }
 }

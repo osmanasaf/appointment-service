@@ -2,6 +2,7 @@ package com.asaf.appointment_service.controller.plan;
 
 import com.asaf.appointment_service.common.dto.ApiResponse;
 import com.asaf.appointment_service.dto.plan.PublicPlanResponse;
+import com.asaf.appointment_service.integration.paytr.config.PayTRProperties;
 import com.asaf.appointment_service.mapper.plan.PlanMapper;
 import com.asaf.appointment_service.service.plan.SubscriptionService;
 import java.util.List;
@@ -15,16 +16,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class PublicPlanController {
 
     private final SubscriptionService subscriptionService;
+    private final PayTRProperties payTRProperties;
 
-    public PublicPlanController(SubscriptionService subscriptionService) {
+    public PublicPlanController(SubscriptionService subscriptionService, PayTRProperties payTRProperties) {
         this.subscriptionService = subscriptionService;
+        this.payTRProperties = payTRProperties;
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<PublicPlanResponse>>> getPublicPlans() {
         List<PublicPlanResponse> plans = subscriptionService.getPlans()
             .stream()
-            .map(PlanMapper::toPublicResponse)
+            .map(plan -> PlanMapper.toPublicResponse(plan, payTRProperties.discount()))
             .toList();
         return ResponseEntity.ok(ApiResponse.success(plans));
     }

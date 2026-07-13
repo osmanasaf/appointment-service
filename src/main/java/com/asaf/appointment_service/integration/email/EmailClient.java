@@ -8,6 +8,11 @@ public interface EmailClient {
 
     void sendOtpEmail(String toEmail, String toName, String otpCode, OtpEmailType type);
 
+    void sendSubscriptionRenewalReminder(String toEmail, String businessName, String planName,
+                                         String endDate, int daysBefore, String renewUrl);
+
+    void sendSubscriptionExpired(String toEmail, String businessName, String renewUrl);
+
     enum OtpEmailType {
         EMAIL_VERIFICATION,
         PASSWORD_RESET,

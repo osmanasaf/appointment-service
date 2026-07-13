@@ -10,6 +10,8 @@ public interface WhatsAppClientInterface {
     
     WhatsAppMessageResponse sendInteractiveButtons(String to, String header, String body, String footer, List<ButtonOption> buttons);
     
+    WhatsAppMessageResponse sendOtp(String to, String code);
+    
     boolean isEnabled();
     
     record ButtonOption(String id, String title) {}

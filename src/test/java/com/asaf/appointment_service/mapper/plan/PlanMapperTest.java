@@ -4,6 +4,7 @@ import com.asaf.appointment_service.dto.plan.PublicPlanResponse;
 import com.asaf.appointment_service.entity.plan.Plan;
 import com.asaf.appointment_service.entity.plan.PlanCode;
 import com.asaf.appointment_service.entity.plan.PlanFeature;
+import com.asaf.appointment_service.integration.paytr.config.PayTRProperties;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,9 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PlanMapperTest {
+
+    private static final PayTRProperties.Discount DEFAULT_DISCOUNT =
+            new PayTRProperties.Discount(new BigDecimal("0.05"), new BigDecimal("0.10"));
 
     @Test
     void should_mapAllFieldsAndLocalizedFeatureNames_when_toPublicResponseCalled() {
@@ -30,7 +34,7 @@ class PlanMapperTest {
             .yearlyPrice(new BigDecimal("11900.00"))
             .build();
 
-        PublicPlanResponse response = PlanMapper.toPublicResponse(plan);
+        PublicPlanResponse response = PlanMapper.toPublicResponse(plan, DEFAULT_DISCOUNT);
 
         assertThat(response.code()).isEqualTo(PlanCode.PRO);
         assertThat(response.monthlyPrice()).isEqualByComparingTo("1190.00");
@@ -68,7 +72,7 @@ class PlanMapperTest {
             .yearlyPrice(new BigDecimal("19900.00"))
             .build();
 
-        PublicPlanResponse response = PlanMapper.toPublicResponse(plan);
+        PublicPlanResponse response = PlanMapper.toPublicResponse(plan, DEFAULT_DISCOUNT);
 
         assertThat(response.unlimitedEmployees()).isTrue();
         assertThat(response.unlimitedAppointments()).isTrue();

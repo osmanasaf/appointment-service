@@ -4,10 +4,14 @@ import com.asaf.appointment_service.dto.plan.BusinessSubscriptionResponse;
 import com.asaf.appointment_service.dto.plan.PlanResponse;
 import com.asaf.appointment_service.dto.plan.PlanUsageResponse;
 import com.asaf.appointment_service.dto.plan.PublicPlanResponse;
+import com.asaf.appointment_service.entity.payment.BillingPeriod;
 import com.asaf.appointment_service.entity.plan.BusinessSubscription;
 import com.asaf.appointment_service.entity.plan.Plan;
 import com.asaf.appointment_service.entity.plan.PlanFeatureNames;
 import com.asaf.appointment_service.entity.plan.PlanLimitUsage;
+import com.asaf.appointment_service.integration.paytr.config.PayTRProperties;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -15,13 +19,13 @@ public class PlanMapper {
 
     private PlanMapper() {}
 
-    public static PlanResponse toResponse(Plan plan) {
+    public static PlanResponse toResponse(Plan plan, PayTRProperties.Discount discount) {
         Map<String, String> featureNames = plan.getFeatures().stream()
             .collect(Collectors.toMap(
                 feature -> feature,
                 PlanFeatureNames::getDisplayName
             ));
-        
+
         return new PlanResponse(
             plan.getId(),
             plan.getCode(),
@@ -32,6 +36,8 @@ public class PlanMapper {
             plan.getFeatures(),
             featureNames,
             plan.getMonthlyPrice(),
+            packagePrice(plan.getMonthlyPrice(), BillingPeriod.QUARTERLY, discount.quarterly()),
+            packagePrice(plan.getMonthlyPrice(), BillingPeriod.SEMIANNUAL, discount.semiannual()),
             plan.getYearlyPrice()
         );
     }
@@ -48,7 +54,7 @@ public class PlanMapper {
         );
     }
 
-    public static PublicPlanResponse toPublicResponse(Plan plan) {
+    public static PublicPlanResponse toPublicResponse(Plan plan, PayTRProperties.Discount discount) {
         Map<String, String> featureNames = plan.getFeatures().stream()
             .collect(Collectors.toMap(
                 feature -> feature,
@@ -58,6 +64,8 @@ public class PlanMapper {
         return new PublicPlanResponse(
             plan.getCode(),
             plan.getMonthlyPrice(),
+            packagePrice(plan.getMonthlyPrice(), BillingPeriod.QUARTERLY, discount.quarterly()),
+            packagePrice(plan.getMonthlyPrice(), BillingPeriod.SEMIANNUAL, discount.semiannual()),
             plan.getYearlyPrice(),
             plan.getMaxEmployees(),
             plan.getMaxAppointmentsMonthly(),
@@ -87,5 +95,11 @@ public class PlanMapper {
             plan.getMaxSmsMonthly(),
             plan.getMaxWhatsappMonthly()
         );
+    }
+
+    private static BigDecimal packagePrice(BigDecimal monthlyPrice, BillingPeriod period, BigDecimal discountRate) {
+        BigDecimal fullPrice = monthlyPrice.multiply(BigDecimal.valueOf(period.getMonths()));
+        BigDecimal multiplier = BigDecimal.ONE.subtract(discountRate);
+        return fullPrice.multiply(multiplier).setScale(2, RoundingMode.HALF_UP);
     }
 }

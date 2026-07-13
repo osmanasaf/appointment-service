@@ -30,6 +30,10 @@ public record PublicAppointmentRequest(
 
     String phoneCountryCode,
 
+    @NotBlank(message = "Doğrulama kodu zorunludur")
+    @Pattern(regexp = ValidationPatterns.OTP_REGEX, message = "Doğrulama kodu 6 haneli olmalıdır")
+    String otpCode,
+
     @Size(max = 500, message = "Notlar en fazla 500 karakter olabilir")
     String notes
 ) {

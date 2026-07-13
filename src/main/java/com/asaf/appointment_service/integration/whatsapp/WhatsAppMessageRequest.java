@@ -51,4 +51,30 @@ public record WhatsAppMessageRequest(
         }
         return new WhatsAppMessageRequest(phoneNumber, "appointment_cancelled", params);
     }
+
+    public static WhatsAppMessageRequest otpVerification(String phoneNumber, String code) {
+        return new WhatsAppMessageRequest(phoneNumber, "otp_verification", Map.of("code", code));
+    }
+
+    public static WhatsAppMessageRequest subscriptionRenewalReminder(String phoneNumber, String businessName,
+                                                                      String planName, String daysBefore,
+                                                                      String endDate, String renewLink) {
+        Map<String, String> params = Map.of(
+            "business_name", businessName,
+            "plan_name", planName,
+            "days_before", daysBefore,
+            "end_date", endDate,
+            "renew_link", renewLink
+        );
+        return new WhatsAppMessageRequest(phoneNumber, "subscription_renewal_reminder", params);
+    }
+
+    public static WhatsAppMessageRequest subscriptionExpired(String phoneNumber, String businessName,
+                                                              String renewLink) {
+        Map<String, String> params = Map.of(
+            "business_name", businessName,
+            "renew_link", renewLink
+        );
+        return new WhatsAppMessageRequest(phoneNumber, "subscription_expired", params);
+    }
 }

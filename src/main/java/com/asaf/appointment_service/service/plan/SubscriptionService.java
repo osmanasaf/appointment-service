@@ -1,5 +1,6 @@
 package com.asaf.appointment_service.service.plan;
 
+import com.asaf.appointment_service.entity.payment.BillingPeriod;
 import com.asaf.appointment_service.entity.plan.BusinessSubscription;
 import com.asaf.appointment_service.entity.plan.Plan;
 import com.asaf.appointment_service.entity.plan.PlanCode;
@@ -14,9 +15,12 @@ import com.asaf.appointment_service.repository.plan.PlanLimitUsageRepository;
 import com.asaf.appointment_service.repository.plan.PlanRepository;
 import com.asaf.appointment_service.repository.service.ServiceRepository;
 import com.asaf.appointment_service.service.business.BusinessService;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -167,6 +171,72 @@ public class SubscriptionService {
         if (usage.getAppointmentsCount() >= plan.getMaxAppointmentsMonthly()) {
             throw new PlanLimitExceededException("Aylık randevu limitiniz doldu. Planınızı yükseltin.");
         }
+    }
+
+    /**
+     * Dönem ortasında plan yükseltir. Kalan süreye orantılı fiyat farkını döner
+     * (ödeme akışında bu tutar kullanılır).
+     */
+    @Transactional(readOnly = true)
+    public BigDecimal calculateUpgradeProration(Long businessId, PlanCode targetPlanCode,
+                                                BillingPeriod billingPeriod) {
+        BusinessSubscription subscription = getCurrentSubscriptionByBusinessId(businessId);
+        Plan currentPlan = getCurrentPlanByBusinessId(businessId);
+        Plan targetPlan = findPlanByCode(targetPlanCode);
+
+        BigDecimal targetPrice = billingPeriod == BillingPeriod.YEARLY
+                ? targetPlan.getYearlyPrice() : targetPlan.getMonthlyPrice();
+        BigDecimal currentPrice = billingPeriod == BillingPeriod.YEARLY
+                ? currentPlan.getYearlyPrice() : currentPlan.getMonthlyPrice();
+
+        if (targetPrice.compareTo(currentPrice) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        LocalDate today = utcToday();
+        LocalDate periodEnd = subscription.getCurrentPeriodEnd();
+        long totalDays = ChronoUnit.DAYS.between(subscription.getCurrentPeriodStart(), periodEnd) + 1;
+        long remainingDays = ChronoUnit.DAYS.between(today, periodEnd) + 1;
+
+        if (totalDays <= 0 || remainingDays <= 0) {
+            return targetPrice.subtract(currentPrice);
+        }
+
+        BigDecimal ratio = BigDecimal.valueOf(remainingDays)
+                .divide(BigDecimal.valueOf(totalDays), 4, RoundingMode.HALF_UP);
+        BigDecimal priceDiff = targetPrice.subtract(currentPrice);
+        return priceDiff.multiply(ratio).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    @Transactional
+    public BusinessSubscription cancelSubscription(Long businessId) {
+        businessService.findByIdOrThrow(businessId);
+        BusinessSubscription subscription = getCurrentSubscriptionByBusinessId(businessId);
+        subscription.cancelAutoRenew();
+        return subscriptionRepository.save(subscription);
+    }
+
+    @Transactional
+    public BusinessSubscription toggleAutoRenew(Long businessId, boolean enabled) {
+        businessService.findByIdOrThrow(businessId);
+        BusinessSubscription subscription = getCurrentSubscriptionByBusinessId(businessId);
+        if (enabled) {
+            LocalDate nextPayment = subscription.getCurrentPeriodEnd().plusDays(1);
+            subscription.enableAutoRenew(nextPayment);
+        } else {
+            subscription.cancelAutoRenew();
+        }
+        return subscriptionRepository.save(subscription);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BusinessSubscription> findSubscriptionsDueForRenewal(LocalDate date) {
+        return subscriptionRepository.findByStatus(SubscriptionStatus.ACTIVE).stream()
+                .filter(sub -> sub.isAutoRenew()
+                        && sub.hasStoredPaymentMethod()
+                        && sub.getNextPaymentDate() != null
+                        && !sub.getNextPaymentDate().isAfter(date))
+                .toList();
     }
 
     @Transactional
