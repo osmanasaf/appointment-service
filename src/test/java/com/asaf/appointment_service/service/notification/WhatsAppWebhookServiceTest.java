@@ -142,7 +142,7 @@ class WhatsAppWebhookServiceTest {
 
     private PublicActionToken tokenWithValue(String tokenValue) {
         return PublicActionToken.builder()
-            .businessId(1L).appointmentId(100L).type(PublicActionTokenType.RESCHEDULE)
+            .businessId(1L).subjectId(100L).type(PublicActionTokenType.RESCHEDULE)
             .token(tokenValue).expiresAt(Instant.now().plusSeconds(3600)).build();
     }
 }

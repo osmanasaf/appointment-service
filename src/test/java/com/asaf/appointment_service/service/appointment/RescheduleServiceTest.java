@@ -23,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,6 +50,8 @@ class RescheduleServiceTest {
     private ServiceDefinitionService serviceDefinitionService;
     @Mock
     private NotificationService notificationService;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private RescheduleService rescheduleService;
@@ -80,6 +83,8 @@ class RescheduleServiceTest {
     void should_confirmAppointmentAndConsumeToken_when_rescheduleCalledAndAutoConfirmEligible() {
         PublicActionToken token = tokenFor(100L);
         Appointment appointment = appointmentWithStatus(AppointmentStatus.RESCHEDULE_REQUESTED, 100L);
+        Long originalEmployeeId = appointment.getEmployeeId();
+        LocalDateTime originalScheduledAt = appointment.getScheduledAt();
         Business business = Business.builder().id(1L).slug("kuafor-x").autoConfirm(true).build();
         ServiceDefinition service = ServiceDefinition.builder()
             .id(3L).businessId(1L).name("Saç Kesimi").durationMinutes(60).buffers(0, 0)
@@ -103,6 +108,12 @@ class RescheduleServiceTest {
         verify(validationService).validateDayLimitExcluding(business, appointment.getCustomerId(), newStart, 100L);
         verify(tokenService).consume(token);
         verify(notificationService).sendRescheduleConfirmation(result);
+
+        org.mockito.ArgumentCaptor<com.asaf.appointment_service.domain.event.SlotFreedEvent> eventCaptor =
+            org.mockito.ArgumentCaptor.forClass(com.asaf.appointment_service.domain.event.SlotFreedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().employeeId()).isEqualTo(originalEmployeeId);
+        assertThat(eventCaptor.getValue().scheduledAt()).isEqualTo(originalScheduledAt);
     }
 
     @Test
@@ -145,7 +156,7 @@ class RescheduleServiceTest {
 
     private PublicActionToken tokenFor(Long appointmentId) {
         return PublicActionToken.builder()
-            .businessId(1L).appointmentId(appointmentId).type(PublicActionTokenType.RESCHEDULE)
+            .businessId(1L).subjectId(appointmentId).type(PublicActionTokenType.RESCHEDULE)
             .token("tok").expiresAt(Instant.now().plusSeconds(3600)).build();
     }
 

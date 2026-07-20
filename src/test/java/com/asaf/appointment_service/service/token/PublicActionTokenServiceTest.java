@@ -41,11 +41,27 @@ class PublicActionTokenServiceTest {
         verify(repository).save(captor.capture());
         PublicActionToken saved = captor.getValue();
         assertThat(saved.getBusinessId()).isEqualTo(1L);
-        assertThat(saved.getAppointmentId()).isEqualTo(100L);
+        assertThat(saved.getSubjectId()).isEqualTo(100L);
         assertThat(saved.getType()).isEqualTo(PublicActionTokenType.RESCHEDULE);
         assertThat(saved.getStatus()).isEqualTo(PublicActionTokenStatus.PENDING);
         assertThat(saved.getExpiresAt()).isAfter(Instant.now().plus(47, ChronoUnit.HOURS));
         assertThat(saved.getExpiresAt()).isBefore(Instant.now().plus(49, ChronoUnit.HOURS));
+        assertThat(result).isSameAs(saved);
+    }
+
+    @Test
+    void should_saveTokenWithWaitlistOfferTypeAnd2HourExpiry_when_issueWaitlistOfferTokenCalled() {
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        PublicActionToken result = tokenService.issueWaitlistOfferToken(1L, 200L);
+
+        ArgumentCaptor<PublicActionToken> captor = ArgumentCaptor.forClass(PublicActionToken.class);
+        verify(repository).save(captor.capture());
+        PublicActionToken saved = captor.getValue();
+        assertThat(saved.getSubjectId()).isEqualTo(200L);
+        assertThat(saved.getType()).isEqualTo(PublicActionTokenType.WAITLIST_OFFER);
+        assertThat(saved.getExpiresAt()).isAfter(Instant.now().plus(1, ChronoUnit.HOURS));
+        assertThat(saved.getExpiresAt()).isBefore(Instant.now().plus(3, ChronoUnit.HOURS));
         assertThat(result).isSameAs(saved);
     }
 
@@ -80,7 +96,7 @@ class PublicActionTokenServiceTest {
     @Test
     void should_throwActionTokenExpired_when_tokenExpired() {
         PublicActionToken token = PublicActionToken.builder()
-            .businessId(1L).appointmentId(100L).type(PublicActionTokenType.RESCHEDULE)
+            .businessId(1L).subjectId(100L).type(PublicActionTokenType.RESCHEDULE)
             .token("tok").expiresAt(Instant.now().minusSeconds(1)).build();
         when(repository.findByToken("tok")).thenReturn(Optional.of(token));
 
@@ -100,7 +116,7 @@ class PublicActionTokenServiceTest {
 
     private PublicActionToken validToken() {
         return PublicActionToken.builder()
-            .businessId(1L).appointmentId(100L).type(PublicActionTokenType.RESCHEDULE)
+            .businessId(1L).subjectId(100L).type(PublicActionTokenType.RESCHEDULE)
             .token("tok").expiresAt(Instant.now().plusSeconds(3600)).build();
     }
 }

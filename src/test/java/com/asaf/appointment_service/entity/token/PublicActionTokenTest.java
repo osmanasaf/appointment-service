@@ -10,7 +10,7 @@ class PublicActionTokenTest {
     private PublicActionToken tokenWithExpiry(Instant expiresAt) {
         return PublicActionToken.builder()
             .businessId(1L)
-            .appointmentId(10L)
+            .subjectId(10L)
             .type(PublicActionTokenType.RESCHEDULE)
             .token("abc123")
             .expiresAt(expiresAt)

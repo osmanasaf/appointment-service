@@ -77,6 +77,26 @@ class NotificationServiceTest {
     }
 
     @Test
+    void sendWaitlistSlotOffer_shouldSendMessageAndLogWithoutAppointmentId() {
+        Customer customer = Customer.builder().businessId(1L).name("Ali").phone("+90", "5551234567").build();
+        ServiceDefinition service = ServiceDefinition.builder()
+            .businessId(1L).name("Saç Kesimi").durationMinutes(60).buffers(0, 0).build();
+
+        when(whatsAppClient.sendMessage(any(WhatsAppMessageRequest.class)))
+            .thenReturn(WhatsAppMessageResponse.success("msg-1"));
+
+        notificationService.sendWaitlistSlotOffer(1L, customer, service,
+            LocalDateTime.now().plusDays(1), "https://randevum.pro/waitlist-offer/tok123");
+
+        ArgumentCaptor<WhatsAppMessageRequest> requestCaptor = ArgumentCaptor.forClass(WhatsAppMessageRequest.class);
+        verify(whatsAppClient).sendMessage(requestCaptor.capture());
+        assertThat(requestCaptor.getValue().templateName()).isEqualTo("waitlist_slot_offer");
+        assertThat(requestCaptor.getValue().parameters()).containsEntry(
+            "offer_link", "https://randevum.pro/waitlist-offer/tok123");
+        verify(notificationLogRepository).save(any());
+    }
+
+    @Test
     void sendAppointmentReminder_whenAlreadySent_shouldNotCallWhatsApp() {
         // Arrange
         Appointment appointment = Appointment.builder()

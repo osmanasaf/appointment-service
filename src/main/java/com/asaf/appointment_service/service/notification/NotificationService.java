@@ -17,6 +17,7 @@ import com.asaf.appointment_service.service.business.BusinessService;
 import com.asaf.appointment_service.service.customer.CustomerService;
 import com.asaf.appointment_service.service.service.ServiceDefinitionService;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.slf4j.Logger;
@@ -80,7 +81,8 @@ public class NotificationService {
             priceText
         );
 
-        sendAndLog(appointment, customer, NotificationType.APPOINTMENT_REMINDER, messageRequest);
+        sendAndLog(appointment.getBusinessId(), appointment.getId(), customer,
+            NotificationType.APPOINTMENT_REMINDER, messageRequest);
     }
 
     @Transactional
@@ -99,7 +101,8 @@ public class NotificationService {
             priceText
         );
 
-        sendAndLog(appointment, customer, NotificationType.CONFIRMATION_REQUEST, messageRequest);
+        sendAndLog(appointment.getBusinessId(), appointment.getId(), customer,
+            NotificationType.CONFIRMATION_REQUEST, messageRequest);
     }
 
     @Transactional
@@ -116,7 +119,8 @@ public class NotificationService {
             priceText
         );
 
-        sendAndLog(appointment, customer, NotificationType.APPOINTMENT_CANCELLED, messageRequest);
+        sendAndLog(appointment.getBusinessId(), appointment.getId(), customer,
+            NotificationType.APPOINTMENT_CANCELLED, messageRequest);
     }
 
     @Transactional
@@ -134,7 +138,29 @@ public class NotificationService {
             priceText
         );
 
-        sendAndLog(appointment, customer, NotificationType.APPOINTMENT_RESCHEDULED, messageRequest);
+        sendAndLog(appointment.getBusinessId(), appointment.getId(), customer,
+            NotificationType.APPOINTMENT_RESCHEDULED, messageRequest);
+    }
+
+    /**
+     * Bekleme listesindeki müşteriye, boşalan bir slotu WhatsApp üzerinden teklif eder.
+     * Henüz bir randevu oluşmadığı için appointmentId taşımaz.
+     */
+    @Transactional
+    public void sendWaitlistSlotOffer(Long businessId, Customer customer, ServiceDefinition service,
+                                      LocalDateTime offeredScheduledAt, String offerLink) {
+        String priceText = formatPriceIfEnabled(businessId, service);
+        WhatsAppMessageRequest messageRequest = WhatsAppMessageRequest.waitlistSlotOffer(
+            customer.getFormattedPhoneNumber(),
+            customer.getName(),
+            service.getName(),
+            offeredScheduledAt.format(DATE_FORMATTER),
+            offeredScheduledAt.format(TIME_FORMATTER),
+            offerLink,
+            priceText
+        );
+
+        sendAndLog(businessId, null, customer, NotificationType.WAITLIST_SLOT_OFFER, messageRequest);
     }
 
     @Transactional
@@ -149,28 +175,28 @@ public class NotificationService {
         }
     }
 
-    private void sendAndLog(Appointment appointment, Customer customer,
+    private void sendAndLog(Long businessId, Long appointmentId, Customer customer,
                             NotificationType type, WhatsAppMessageRequest messageRequest) {
-        NotificationLog logEntry = buildLogEntry(appointment, customer, type, messageRequest);
+        NotificationLog logEntry = buildLogEntry(businessId, appointmentId, customer, type, messageRequest);
         WhatsAppMessageResponse response = whatsAppClient.sendMessage(messageRequest);
         if (response.success()) {
             logEntry.markAsSent(response.messageId());
-            notificationSettingsService.incrementWhatsappUsage(appointment.getBusinessId());
-            log.info("Bildirim gönderildi: type={}, appointmentId={}", type, appointment.getId());
+            notificationSettingsService.incrementWhatsappUsage(businessId);
+            log.info("Bildirim gönderildi: type={}, appointmentId={}", type, appointmentId);
         } else {
             logEntry.markAsFailed(response.errorMessage());
             log.error("Bildirim gönderilemedi: type={}, error={}", type, response.errorMessage());
-            trySmsIfFallback(customer, type, messageRequest, appointment);
+            trySmsIfFallback(customer, type, messageRequest, appointmentId);
         }
         notificationLogRepository.save(logEntry);
     }
 
-    private NotificationLog buildLogEntry(Appointment appointment, Customer customer,
+    private NotificationLog buildLogEntry(Long businessId, Long appointmentId, Customer customer,
                                           NotificationType type, WhatsAppMessageRequest messageRequest) {
         return NotificationLog.builder()
-            .businessId(appointment.getBusinessId())
+            .businessId(businessId)
             .customerId(customer.getId())
-            .appointmentId(appointment.getId())
+            .appointmentId(appointmentId)
             .type(type)
             .phoneNumber(PhoneNumberUtil.normalizeDigitsOnly(customer.getFormattedPhoneNumber()))
             .message(messageRequest.templateName() + ": " + messageRequest.parameters())
@@ -178,14 +204,14 @@ public class NotificationService {
     }
 
     private void trySmsIfFallback(Customer customer, NotificationType type,
-                                   WhatsAppMessageRequest messageRequest, Appointment appointment) {
+                                   WhatsAppMessageRequest messageRequest, Long appointmentId) {
         if (!smsFallbackEnabled) {
             return;
         }
         String smsText = buildSmsFallbackText(type, messageRequest);
         SmsSendResult smsResult = smsClient.send(customer.getFormattedPhoneNumber(), smsText);
         if (smsResult.success()) {
-            log.info("SMS fallback gönderildi: type={}, appointmentId={}", type, appointment.getId());
+            log.info("SMS fallback gönderildi: type={}, appointmentId={}", type, appointmentId);
         } else {
             log.warn("SMS fallback başarısız: type={}, error={}", type, smsResult.errorMessage());
         }

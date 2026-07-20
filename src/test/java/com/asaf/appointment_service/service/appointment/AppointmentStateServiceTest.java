@@ -1,5 +1,6 @@
 package com.asaf.appointment_service.service.appointment;
 
+import com.asaf.appointment_service.domain.event.SlotFreedEvent;
 import com.asaf.appointment_service.entity.appointment.Appointment;
 import com.asaf.appointment_service.entity.appointment.AppointmentStatus;
 import com.asaf.appointment_service.exception.appointment.AppointmentNotFoundException;
@@ -58,6 +59,23 @@ class AppointmentStateServiceTest {
 
         verify(packageSessionService).unassignAppointment(42L);
         assertThat(appointment.getPackageSessionId()).isNull();
+    }
+
+    @Test
+    void cancel_shouldPublishSlotFreedEventWithOriginalSlotDetails() {
+        Appointment appointment = buildAppointment(AppointmentStatus.PENDING);
+        when(appointmentRepository.findById(1L)).thenReturn(Optional.of(appointment));
+        when(appointmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        stateService.cancel(1L, "iptal");
+
+        org.mockito.ArgumentCaptor<SlotFreedEvent> captor =
+            org.mockito.ArgumentCaptor.forClass(SlotFreedEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        assertThat(captor.getValue().businessId()).isEqualTo(appointment.getBusinessId());
+        assertThat(captor.getValue().employeeId()).isEqualTo(appointment.getEmployeeId());
+        assertThat(captor.getValue().serviceId()).isEqualTo(appointment.getServiceId());
+        assertThat(captor.getValue().scheduledAt()).isEqualTo(appointment.getScheduledAt());
     }
 
     @Test

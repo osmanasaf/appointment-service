@@ -1,5 +1,8 @@
 package com.asaf.appointment_service.entity.token;
 
 public enum PublicActionTokenType {
-    RESCHEDULE
+    /** subjectId = appointmentId */
+    RESCHEDULE,
+    /** subjectId = waitlistEntryId */
+    WAITLIST_OFFER
 }

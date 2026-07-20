@@ -1,6 +1,7 @@
 package com.asaf.appointment_service.service.appointment;
 
 import com.asaf.appointment_service.common.exception.BusinessException;
+import com.asaf.appointment_service.domain.event.SlotFreedEvent;
 import com.asaf.appointment_service.dto.appointment.RescheduleContextResponse;
 import com.asaf.appointment_service.entity.appointment.Appointment;
 import com.asaf.appointment_service.entity.appointment.AppointmentStatus;
@@ -19,6 +20,7 @@ import com.asaf.appointment_service.service.token.PublicActionTokenService;
 import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,7 @@ public class RescheduleService {
     private final EmployeeService employeeService;
     private final ServiceDefinitionService serviceDefinitionService;
     private final NotificationService notificationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public RescheduleService(PublicActionTokenService tokenService,
                              AppointmentRepository appointmentRepository,
@@ -45,7 +48,8 @@ public class RescheduleService {
                              BusinessService businessService,
                              EmployeeService employeeService,
                              ServiceDefinitionService serviceDefinitionService,
-                             NotificationService notificationService) {
+                             NotificationService notificationService,
+                             ApplicationEventPublisher eventPublisher) {
         this.tokenService = tokenService;
         this.appointmentRepository = appointmentRepository;
         this.validationService = validationService;
@@ -53,12 +57,13 @@ public class RescheduleService {
         this.employeeService = employeeService;
         this.serviceDefinitionService = serviceDefinitionService;
         this.notificationService = notificationService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional(readOnly = true)
     public RescheduleContextResponse getContext(String token) {
         PublicActionToken actionToken = tokenService.validate(token, PublicActionTokenType.RESCHEDULE);
-        Appointment appointment = findAppointmentOrThrow(actionToken.getAppointmentId());
+        Appointment appointment = findAppointmentOrThrow(actionToken.getSubjectId());
         Business business = businessService.findByIdOrThrow(appointment.getBusinessId());
         ServiceDefinition service = serviceDefinitionService.findByIdOrThrow(appointment.getServiceId());
         Employee employee = employeeService.findByIdOrThrow(appointment.getEmployeeId());
@@ -80,8 +85,13 @@ public class RescheduleService {
     @Transactional
     public Appointment reschedule(String token, Long employeeId, LocalDateTime newScheduledAt) {
         PublicActionToken actionToken = tokenService.validate(token, PublicActionTokenType.RESCHEDULE);
-        Appointment appointment = findAppointmentOrThrow(actionToken.getAppointmentId());
+        Appointment appointment = findAppointmentOrThrow(actionToken.getSubjectId());
         RescheduleTarget target = resolveAndValidateTarget(appointment, employeeId, newScheduledAt);
+
+        Long freedEmployeeId = appointment.getEmployeeId();
+        Long freedServiceId = appointment.getServiceId();
+        LocalDateTime freedScheduledAt = appointment.getScheduledAt();
+        LocalDateTime freedEndAt = appointment.getEndAt();
 
         appointment.reschedule(employeeId, newScheduledAt, target.newEndAt(), target.durationMinutes(),
             target.autoConfirm());
@@ -89,6 +99,8 @@ public class RescheduleService {
 
         tokenService.consume(actionToken);
         notifyCustomerSafely(saved);
+        eventPublisher.publishEvent(new SlotFreedEvent(
+            saved.getBusinessId(), freedEmployeeId, freedServiceId, freedScheduledAt, freedEndAt));
 
         return saved;
     }

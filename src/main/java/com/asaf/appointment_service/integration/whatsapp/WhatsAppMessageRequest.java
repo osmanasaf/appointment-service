@@ -67,6 +67,22 @@ public record WhatsAppMessageRequest(
         return new WhatsAppMessageRequest(phoneNumber, "appointment_rescheduled", params);
     }
 
+    public static WhatsAppMessageRequest waitlistSlotOffer(String phoneNumber, String customerName,
+                                                            String serviceName, String date, String time,
+                                                            String offerLink, String priceText) {
+        Map<String, String> params = new HashMap<>(Map.of(
+            "customer_name", customerName,
+            "service_name", serviceName,
+            "date", date,
+            "time", time,
+            "offer_link", offerLink
+        ));
+        if (priceText != null && !priceText.isBlank()) {
+            params.put("price", priceText);
+        }
+        return new WhatsAppMessageRequest(phoneNumber, "waitlist_slot_offer", params);
+    }
+
     public static WhatsAppMessageRequest otpVerification(String phoneNumber, String code) {
         return new WhatsAppMessageRequest(phoneNumber, "otp_verification", Map.of("code", code));
     }

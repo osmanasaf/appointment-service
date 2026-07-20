@@ -12,7 +12,8 @@ import java.util.UUID;
 /**
  * Randevu üzerinde tek kullanımlık public işlemler (erteleme, bekleme listesi
  * teklifi, değerlendirme isteği vb.) için opak, süreli token. Modüller arası
- * paylaşılan altyapı; şu an yalnızca RESCHEDULE tipi kullanılıyor.
+ * paylaşılan altyapı; {@code subjectId}'nin neyi işaret ettiği {@code type}'a göre değişir
+ * (RESCHEDULE → appointmentId, WAITLIST_OFFER → waitlistEntryId).
  */
 @Entity
 @Table(name = "public_action_tokens")
@@ -21,8 +22,8 @@ public class PublicActionToken extends BaseEntity {
     @Column(name = "business_id", nullable = false)
     private Long businessId;
 
-    @Column(name = "appointment_id", nullable = false)
-    private Long appointmentId;
+    @Column(name = "subject_id", nullable = false)
+    private Long subjectId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
@@ -45,7 +46,7 @@ public class PublicActionToken extends BaseEntity {
 
     private PublicActionToken(Builder builder) {
         this.businessId = builder.businessId;
-        this.appointmentId = builder.appointmentId;
+        this.subjectId = builder.subjectId;
         this.type = builder.type;
         this.token = builder.token;
         this.status = PublicActionTokenStatus.PENDING;
@@ -77,8 +78,8 @@ public class PublicActionToken extends BaseEntity {
         return businessId;
     }
 
-    public Long getAppointmentId() {
-        return appointmentId;
+    public Long getSubjectId() {
+        return subjectId;
     }
 
     public PublicActionTokenType getType() {
@@ -103,7 +104,7 @@ public class PublicActionToken extends BaseEntity {
 
     public static class Builder {
         private Long businessId;
-        private Long appointmentId;
+        private Long subjectId;
         private PublicActionTokenType type;
         private String token;
         private Instant expiresAt;
@@ -113,8 +114,8 @@ public class PublicActionToken extends BaseEntity {
             return this;
         }
 
-        public Builder appointmentId(Long appointmentId) {
-            this.appointmentId = appointmentId;
+        public Builder subjectId(Long subjectId) {
+            this.subjectId = subjectId;
             return this;
         }
 
@@ -134,7 +135,7 @@ public class PublicActionToken extends BaseEntity {
         }
 
         public PublicActionToken build() {
-            if (businessId == null || appointmentId == null || type == null
+            if (businessId == null || subjectId == null || type == null
                     || token == null || expiresAt == null) {
                 throw new IllegalStateException("All required fields must be set");
             }

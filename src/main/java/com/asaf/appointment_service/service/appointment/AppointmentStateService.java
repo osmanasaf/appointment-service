@@ -3,12 +3,14 @@ package com.asaf.appointment_service.service.appointment;
 import com.asaf.appointment_service.domain.event.AppointmentCancelled;
 import com.asaf.appointment_service.domain.event.AppointmentCompleted;
 import com.asaf.appointment_service.domain.event.AppointmentConfirmed;
+import com.asaf.appointment_service.domain.event.SlotFreedEvent;
 import com.asaf.appointment_service.entity.appointment.Appointment;
 import com.asaf.appointment_service.exception.appointment.AppointmentNotFoundException;
 import com.asaf.appointment_service.repository.appointment.AppointmentRepository;
 import com.asaf.appointment_service.service.customer.CustomerService;
 import com.asaf.appointment_service.service.customer.PackageService;
 import com.asaf.appointment_service.service.customer.PackageSessionService;
+import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -53,12 +55,19 @@ public class AppointmentStateService {
     @Transactional
     public Appointment cancel(Long appointmentId, String reason) {
         Appointment appointment = findByIdOrThrow(appointmentId);
+        Long freedEmployeeId = appointment.getEmployeeId();
+        Long freedServiceId = appointment.getServiceId();
+        LocalDateTime freedScheduledAt = appointment.getScheduledAt();
+        LocalDateTime freedEndAt = appointment.getEndAt();
+
         unassignSessionIfPresent(appointment);
         appointment.cancel(reason);
         Appointment saved = appointmentRepository.save(appointment);
         eventPublisher.publishEvent(new AppointmentCancelled(
             saved.getId(), saved.getBusinessId(), saved.getCustomerId(),
             saved.getScheduledAt(), saved.getCancellationReason()));
+        eventPublisher.publishEvent(new SlotFreedEvent(
+            saved.getBusinessId(), freedEmployeeId, freedServiceId, freedScheduledAt, freedEndAt));
         log.info("Randevu iptal edildi: appointmentId={}", appointmentId);
         return saved;
     }
