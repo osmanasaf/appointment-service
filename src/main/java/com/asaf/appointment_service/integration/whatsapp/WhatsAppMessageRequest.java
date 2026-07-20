@@ -10,7 +10,7 @@ public record WhatsAppMessageRequest(
 ) {
     public static WhatsAppMessageRequest reminder(String phoneNumber, String customerName,
                                                    String serviceName, String date, String time,
-                                                   String priceText) {
+                                                   String priceText, String calendarLink) {
         Map<String, String> params = new HashMap<>(Map.of(
             "customer_name", customerName,
             "service_name", serviceName,
@@ -19,6 +19,9 @@ public record WhatsAppMessageRequest(
         ));
         if (priceText != null && !priceText.isBlank()) {
             params.put("price", priceText);
+        }
+        if (calendarLink != null && !calendarLink.isBlank()) {
+            params.put("calendar_link", calendarLink);
         }
         return new WhatsAppMessageRequest(phoneNumber, "appointment_reminder", params);
     }

@@ -61,7 +61,7 @@ public class NotificationService {
     }
 
     @Transactional
-    public void sendAppointmentReminder(Appointment appointment) {
+    public void sendAppointmentReminder(Appointment appointment, String calendarLink) {
         if (notificationLogRepository.existsByAppointmentIdAndType(
                 appointment.getId(), NotificationType.APPOINTMENT_REMINDER)) {
             log.debug("Hatırlatma zaten gönderilmiş: appointmentId={}", appointment.getId());
@@ -78,7 +78,8 @@ public class NotificationService {
             service.getName(),
             appointment.getScheduledAt().format(DATE_FORMATTER),
             appointment.getScheduledAt().format(TIME_FORMATTER),
-            priceText
+            priceText,
+            calendarLink
         );
 
         sendAndLog(appointment.getBusinessId(), appointment.getId(), customer,

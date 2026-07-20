@@ -16,6 +16,7 @@ public class PublicActionTokenService {
     private static final int RESCHEDULE_TOKEN_VALID_HOURS = 48;
     private static final int WAITLIST_OFFER_TOKEN_VALID_HOURS = 2;
     private static final int REVIEW_TOKEN_VALID_HOURS = 24 * 30;
+    private static final int CALENDAR_ICS_TOKEN_VALID_HOURS = 24 * 365;
 
     private final PublicActionTokenRepository repository;
 
@@ -37,6 +38,18 @@ public class PublicActionTokenService {
     @Transactional
     public PublicActionToken issueReviewToken(Long businessId, Long appointmentId) {
         return issue(businessId, appointmentId, PublicActionTokenType.REVIEW, REVIEW_TOKEN_VALID_HOURS);
+    }
+
+    /**
+     * .ics linki tek kullanımlık değildir (müşteri istediği zaman tekrar indirebilmeli);
+     * bu yüzden aynı randevu için var olan geçerli bir token varsa onu yeniden kullanır.
+     */
+    @Transactional
+    public PublicActionToken getOrIssueCalendarIcsToken(Long businessId, Long appointmentId) {
+        return repository.findFirstBySubjectIdAndTypeOrderByCreatedAtDesc(appointmentId, PublicActionTokenType.CALENDAR_ICS)
+            .filter(PublicActionToken::isValid)
+            .orElseGet(() -> issue(businessId, appointmentId, PublicActionTokenType.CALENDAR_ICS,
+                CALENDAR_ICS_TOKEN_VALID_HOURS));
     }
 
     @Transactional(readOnly = true)

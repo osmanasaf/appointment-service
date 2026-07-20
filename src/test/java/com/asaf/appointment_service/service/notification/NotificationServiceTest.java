@@ -66,13 +66,15 @@ class NotificationServiceTest {
             .thenReturn(WhatsAppMessageResponse.success("msg-1"));
 
         // Act
-        notificationService.sendAppointmentReminder(appointment);
+        notificationService.sendAppointmentReminder(appointment, "https://randevum.pro/api/v1/public/appointments/tok/calendar.ics");
 
         // Assert
         ArgumentCaptor<WhatsAppMessageRequest> requestCaptor = ArgumentCaptor.forClass(WhatsAppMessageRequest.class);
         verify(whatsAppClient).sendMessage(requestCaptor.capture());
         assertThat(requestCaptor.getValue().templateName()).isEqualTo("appointment_reminder");
         assertThat(requestCaptor.getValue().to()).isEqualTo("+905551234567");
+        assertThat(requestCaptor.getValue().parameters()).containsEntry(
+            "calendar_link", "https://randevum.pro/api/v1/public/appointments/tok/calendar.ics");
         verify(notificationLogRepository).save(any());
     }
 
@@ -133,7 +135,7 @@ class NotificationServiceTest {
             com.asaf.appointment_service.entity.notification.NotificationType.APPOINTMENT_REMINDER)).thenReturn(true);
 
         // Act (businessService not called when reminder already sent)
-        notificationService.sendAppointmentReminder(appointment);
+        notificationService.sendAppointmentReminder(appointment, "https://randevum.pro/calendar.ics");
 
         // Assert
         verify(whatsAppClient, never()).sendMessage(any(WhatsAppMessageRequest.class));

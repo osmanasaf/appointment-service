@@ -82,6 +82,48 @@ class PublicActionTokenServiceTest {
     }
 
     @Test
+    void should_reuseExistingValidToken_when_getOrIssueCalendarIcsTokenCalledAgain() {
+        PublicActionToken existing = PublicActionToken.builder()
+            .businessId(1L).subjectId(400L).type(PublicActionTokenType.CALENDAR_ICS)
+            .token("existing-tok").expiresAt(Instant.now().plusSeconds(3600)).build();
+        when(repository.findFirstBySubjectIdAndTypeOrderByCreatedAtDesc(400L, PublicActionTokenType.CALENDAR_ICS))
+            .thenReturn(Optional.of(existing));
+
+        PublicActionToken result = tokenService.getOrIssueCalendarIcsToken(1L, 400L);
+
+        assertThat(result).isSameAs(existing);
+        verify(repository, org.mockito.Mockito.never()).save(any());
+    }
+
+    @Test
+    void should_issueNewToken_when_getOrIssueCalendarIcsTokenCalledWithNoExistingToken() {
+        when(repository.findFirstBySubjectIdAndTypeOrderByCreatedAtDesc(400L, PublicActionTokenType.CALENDAR_ICS))
+            .thenReturn(Optional.empty());
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        PublicActionToken result = tokenService.getOrIssueCalendarIcsToken(1L, 400L);
+
+        assertThat(result.getType()).isEqualTo(PublicActionTokenType.CALENDAR_ICS);
+        assertThat(result.getSubjectId()).isEqualTo(400L);
+        assertThat(result.getExpiresAt()).isAfter(Instant.now().plus(360, ChronoUnit.DAYS));
+    }
+
+    @Test
+    void should_issueNewToken_when_existingTokenIsExpired() {
+        PublicActionToken expired = PublicActionToken.builder()
+            .businessId(1L).subjectId(400L).type(PublicActionTokenType.CALENDAR_ICS)
+            .token("expired-tok").expiresAt(Instant.now().minusSeconds(1)).build();
+        when(repository.findFirstBySubjectIdAndTypeOrderByCreatedAtDesc(400L, PublicActionTokenType.CALENDAR_ICS))
+            .thenReturn(Optional.of(expired));
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        PublicActionToken result = tokenService.getOrIssueCalendarIcsToken(1L, 400L);
+
+        assertThat(result).isNotSameAs(expired);
+        assertThat(result.getExpiresAt()).isAfter(Instant.now().plus(1, ChronoUnit.DAYS));
+    }
+
+    @Test
     void should_returnToken_when_validateCalledWithValidPendingToken() {
         PublicActionToken token = validToken();
         when(repository.findByToken("tok")).thenReturn(Optional.of(token));

@@ -2,8 +2,10 @@ package com.asaf.appointment_service.service.notification;
 
 import com.asaf.appointment_service.entity.appointment.Appointment;
 import com.asaf.appointment_service.entity.business.Business;
+import com.asaf.appointment_service.integration.email.EmailProperties;
 import com.asaf.appointment_service.repository.appointment.AppointmentRepository;
 import com.asaf.appointment_service.service.business.BusinessService;
+import com.asaf.appointment_service.service.calendar.IcsService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -21,13 +23,19 @@ public class ReminderScheduler {
     private final AppointmentRepository appointmentRepository;
     private final BusinessService businessService;
     private final NotificationService notificationService;
+    private final IcsService icsService;
+    private final EmailProperties emailProperties;
 
     public ReminderScheduler(AppointmentRepository appointmentRepository,
                              BusinessService businessService,
-                             NotificationService notificationService) {
+                             NotificationService notificationService,
+                             IcsService icsService,
+                             EmailProperties emailProperties) {
         this.appointmentRepository = appointmentRepository;
         this.businessService = businessService;
         this.notificationService = notificationService;
+        this.icsService = icsService;
+        this.emailProperties = emailProperties;
     }
 
     @Scheduled(fixedDelayString = "${reminder.scheduler.interval:3600000}")
@@ -52,7 +60,8 @@ public class ReminderScheduler {
             try {
                 Business business = businessCache.get(appointment.getBusinessId());
                 if (business != null && appointment.needsReminder(business.getReminderHoursBefore())) {
-                    notificationService.sendAppointmentReminder(appointment);
+                    String calendarLink = icsService.getOrIssueCalendarLink(emailProperties.baseUrl(), appointment);
+                    notificationService.sendAppointmentReminder(appointment, calendarLink);
                     appointment.markReminderSent();
                     appointmentRepository.save(appointment);
                     sentCount++;

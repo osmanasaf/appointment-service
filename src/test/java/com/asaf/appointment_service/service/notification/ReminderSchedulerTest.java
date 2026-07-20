@@ -3,8 +3,10 @@ package com.asaf.appointment_service.service.notification;
 import com.asaf.appointment_service.entity.appointment.Appointment;
 import com.asaf.appointment_service.entity.appointment.AppointmentStatus;
 import com.asaf.appointment_service.entity.business.Business;
+import com.asaf.appointment_service.integration.email.EmailProperties;
 import com.asaf.appointment_service.repository.appointment.AppointmentRepository;
 import com.asaf.appointment_service.service.business.BusinessService;
+import com.asaf.appointment_service.service.calendar.IcsService;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -14,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,6 +28,8 @@ class ReminderSchedulerTest {
     @Mock private AppointmentRepository appointmentRepository;
     @Mock private BusinessService businessService;
     @Mock private NotificationService notificationService;
+    @Mock private IcsService icsService;
+    @Mock private EmailProperties emailProperties;
 
     @InjectMocks
     private ReminderScheduler reminderScheduler;
@@ -66,10 +71,14 @@ class ReminderSchedulerTest {
         when(businessService.findAllByIds(any())).thenReturn(List.of(business));
         when(appointment.needsReminder(24)).thenReturn(true);
         when(appointmentRepository.save(any())).thenReturn(appointment);
+        when(emailProperties.baseUrl()).thenReturn("https://randevum.pro");
+        when(icsService.getOrIssueCalendarLink(eq("https://randevum.pro"), eq(appointment)))
+            .thenReturn("https://randevum.pro/api/v1/public/appointments/tok/calendar.ics");
 
         reminderScheduler.sendScheduledReminders();
 
-        verify(notificationService).sendAppointmentReminder(appointment);
+        verify(notificationService).sendAppointmentReminder(
+            appointment, "https://randevum.pro/api/v1/public/appointments/tok/calendar.ics");
     }
 
     private Business buildBusiness(Long id, int reminderHours) {

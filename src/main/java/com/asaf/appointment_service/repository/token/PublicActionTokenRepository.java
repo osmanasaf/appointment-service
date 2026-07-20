@@ -1,6 +1,7 @@
 package com.asaf.appointment_service.repository.token;
 
 import com.asaf.appointment_service.entity.token.PublicActionToken;
+import com.asaf.appointment_service.entity.token.PublicActionTokenType;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -9,4 +10,7 @@ import org.springframework.stereotype.Repository;
 public interface PublicActionTokenRepository extends JpaRepository<PublicActionToken, Long> {
 
     Optional<PublicActionToken> findByToken(String token);
+
+    Optional<PublicActionToken> findFirstBySubjectIdAndTypeOrderByCreatedAtDesc(
+        Long subjectId, PublicActionTokenType type);
 }

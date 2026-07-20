@@ -6,5 +6,7 @@ public enum PublicActionTokenType {
     /** subjectId = waitlistEntryId */
     WAITLIST_OFFER,
     /** subjectId = appointmentId */
-    REVIEW
+    REVIEW,
+    /** subjectId = appointmentId; tekrar tekrar indirilebilir olması için hiç consume edilmez */
+    CALENDAR_ICS
 }
