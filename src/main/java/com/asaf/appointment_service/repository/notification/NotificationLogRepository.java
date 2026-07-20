@@ -23,6 +23,9 @@ public interface NotificationLogRepository extends JpaRepository<NotificationLog
 
     boolean existsByAppointmentIdAndType(Long appointmentId, NotificationType type);
 
+    boolean existsByBusinessIdAndTypeAndCreatedAtAfter(
+        Long businessId, NotificationType type, LocalDateTime createdAfter);
+
     long countByStatusInAndCreatedAtBetween(
         List<NotificationStatus> statuses, LocalDateTime from, LocalDateTime to);
 

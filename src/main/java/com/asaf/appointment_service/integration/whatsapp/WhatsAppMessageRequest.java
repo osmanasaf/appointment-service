@@ -1,5 +1,6 @@
 package com.asaf.appointment_service.integration.whatsapp;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -94,6 +95,22 @@ public record WhatsAppMessageRequest(
             "review_link", reviewLink
         );
         return new WhatsAppMessageRequest(phoneNumber, "review_request", params);
+    }
+
+    public static WhatsAppMessageRequest monthlySummary(String phoneNumber, int appointmentCount,
+                                                         double noShowRatePercent, Double previousNoShowRatePercent,
+                                                         BigDecimal recoveredRevenue) {
+        Map<String, String> params = new HashMap<>(Map.of(
+            "appointment_count", String.valueOf(appointmentCount),
+            "no_show_rate", String.valueOf(noShowRatePercent)
+        ));
+        if (previousNoShowRatePercent != null) {
+            params.put("previous_no_show_rate", String.valueOf(previousNoShowRatePercent));
+        }
+        if (recoveredRevenue != null) {
+            params.put("recovered_revenue", recoveredRevenue.toPlainString());
+        }
+        return new WhatsAppMessageRequest(phoneNumber, "monthly_summary", params);
     }
 
     public static WhatsAppMessageRequest otpVerification(String phoneNumber, String code) {

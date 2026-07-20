@@ -16,6 +16,7 @@ import com.asaf.appointment_service.repository.notification.NotificationLogRepos
 import com.asaf.appointment_service.service.business.BusinessService;
 import com.asaf.appointment_service.service.customer.CustomerService;
 import com.asaf.appointment_service.service.service.ServiceDefinitionService;
+import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -181,6 +182,35 @@ public class NotificationService {
 
         sendAndLog(appointment.getBusinessId(), appointment.getId(), customer,
             NotificationType.REVIEW_REQUEST, messageRequest);
+    }
+
+    /**
+     * İşletme sahibine ayın başında geçen ayın performans özetini gönderir.
+     * Müşteriye değil işletmenin kendi WhatsApp numarasına gider; işletme kotasından düşülmez.
+     */
+    @Transactional
+    public void sendMonthlySummary(Long businessId, String businessPhoneNumber, int appointmentCount,
+                                   double noShowRatePercent, Double previousNoShowRatePercent,
+                                   BigDecimal recoveredRevenue) {
+        WhatsAppMessageRequest messageRequest = WhatsAppMessageRequest.monthlySummary(
+            businessPhoneNumber, appointmentCount, noShowRatePercent, previousNoShowRatePercent, recoveredRevenue);
+
+        NotificationLog logEntry = NotificationLog.builder()
+            .businessId(businessId)
+            .type(NotificationType.MONTHLY_SUMMARY)
+            .phoneNumber(PhoneNumberUtil.normalizeDigitsOnly(businessPhoneNumber))
+            .message(messageRequest.templateName() + ": " + messageRequest.parameters())
+            .build();
+
+        WhatsAppMessageResponse response = whatsAppClient.sendMessage(messageRequest);
+        if (response.success()) {
+            logEntry.markAsSent(response.messageId());
+            log.info("Aylık özet gönderildi: businessId={}", businessId);
+        } else {
+            logEntry.markAsFailed(response.errorMessage());
+            log.error("Aylık özet gönderilemedi: businessId={}, error={}", businessId, response.errorMessage());
+        }
+        notificationLogRepository.save(logEntry);
     }
 
     @Transactional

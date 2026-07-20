@@ -5,6 +5,7 @@ import com.asaf.appointment_service.common.util.SlugGenerator;
 import com.asaf.appointment_service.dto.business.CreateBusinessRequest;
 import com.asaf.appointment_service.dto.business.UpdateBusinessRequest;
 import com.asaf.appointment_service.entity.business.Business;
+import com.asaf.appointment_service.entity.business.BusinessStatus;
 import com.asaf.appointment_service.entity.business.BusinessWorkingHours;
 import com.asaf.appointment_service.exception.business.BusinessNotFoundException;
 import com.asaf.appointment_service.mapper.business.BusinessMapper;
@@ -84,6 +85,11 @@ public class BusinessService extends BaseService<Business, Long, BusinessReposit
     @Transactional(readOnly = true)
     public List<Business> findAllByIds(List<Long> ids) {
         return repository.findAllById(ids);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Business> findAllActive() {
+        return repository.findByStatus(BusinessStatus.ACTIVE);
     }
 
     @Override

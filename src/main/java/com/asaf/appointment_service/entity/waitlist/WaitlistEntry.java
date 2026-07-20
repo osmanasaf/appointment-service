@@ -42,6 +42,9 @@ public class WaitlistEntry extends BaseEntity {
     @Column(name = "notified_at")
     private LocalDateTime notifiedAt;
 
+    @Column(name = "converted_at")
+    private LocalDateTime convertedAt;
+
     @Column(name = "offered_employee_id")
     private Long offeredEmployeeId;
 
@@ -111,6 +114,7 @@ public class WaitlistEntry extends BaseEntity {
             throw new IllegalStateException("Sadece teklif gönderilmiş kayıtlar randevuya dönüştürülebilir");
         }
         this.status = WaitlistStatus.CONVERTED;
+        this.convertedAt = LocalDateTime.now();
     }
 
     public void cancel() {
@@ -150,6 +154,10 @@ public class WaitlistEntry extends BaseEntity {
 
     public LocalDateTime getNotifiedAt() {
         return notifiedAt;
+    }
+
+    public LocalDateTime getConvertedAt() {
+        return convertedAt;
     }
 
     public Long getOfferedEmployeeId() {

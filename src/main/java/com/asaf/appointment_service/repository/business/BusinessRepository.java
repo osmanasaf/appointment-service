@@ -3,6 +3,7 @@ package com.asaf.appointment_service.repository.business;
 import com.asaf.appointment_service.entity.business.Business;
 import com.asaf.appointment_service.entity.business.BusinessStatus;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,4 +22,6 @@ public interface BusinessRepository extends JpaRepository<Business, Long> {
     long countByStatus(BusinessStatus status);
 
     long countByCreatedAtAfter(LocalDateTime after);
+
+    List<Business> findByStatus(BusinessStatus status);
 }

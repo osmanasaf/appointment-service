@@ -53,6 +53,9 @@ public class NotificationSettings extends BaseEntity {
     @Column(name = "review_request_delay_hours", nullable = false)
     private int reviewRequestDelayHours = 2;
 
+    @Column(name = "monthly_summary_enabled", nullable = false)
+    private boolean monthlySummaryEnabled = true;
+
     // Kullanım sayaçları (aylık reset)
     @Column(name = "whatsapp_used_this_month", nullable = false)
     private int whatsappUsedThisMonth = 0;
@@ -81,6 +84,7 @@ public class NotificationSettings extends BaseEntity {
         this.secondReminderHoursBefore = builder.secondReminderHoursBefore;
         this.reviewRequestEnabled = builder.reviewRequestEnabled;
         this.reviewRequestDelayHours = builder.reviewRequestDelayHours;
+        this.monthlySummaryEnabled = builder.monthlySummaryEnabled;
     }
 
     public static Builder builder() {
@@ -114,6 +118,10 @@ public class NotificationSettings extends BaseEntity {
     public void updateReviewRequestSettings(boolean enabled, int delayHours) {
         this.reviewRequestEnabled = enabled;
         this.reviewRequestDelayHours = delayHours;
+    }
+
+    public void updateMonthlySummaryEnabled(boolean enabled) {
+        this.monthlySummaryEnabled = enabled;
     }
 
     public void incrementWhatsappUsage() {
@@ -180,6 +188,10 @@ public class NotificationSettings extends BaseEntity {
         return reviewRequestDelayHours;
     }
 
+    public boolean isMonthlySummaryEnabled() {
+        return monthlySummaryEnabled;
+    }
+
     public int getWhatsappUsedThisMonth() {
         return whatsappUsedThisMonth;
     }
@@ -209,6 +221,7 @@ public class NotificationSettings extends BaseEntity {
         private Integer secondReminderHoursBefore = 2;
         private boolean reviewRequestEnabled = true;
         private int reviewRequestDelayHours = 2;
+        private boolean monthlySummaryEnabled = true;
 
         public Builder businessId(Long businessId) {
             this.businessId = businessId;
@@ -267,6 +280,11 @@ public class NotificationSettings extends BaseEntity {
 
         public Builder reviewRequestDelayHours(int reviewRequestDelayHours) {
             this.reviewRequestDelayHours = reviewRequestDelayHours;
+            return this;
+        }
+
+        public Builder monthlySummaryEnabled(boolean monthlySummaryEnabled) {
+            this.monthlySummaryEnabled = monthlySummaryEnabled;
             return this;
         }
 
