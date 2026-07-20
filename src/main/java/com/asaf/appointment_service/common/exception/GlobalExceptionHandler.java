@@ -6,6 +6,7 @@ import com.asaf.appointment_service.exception.auth.EmailNotVerifiedException;
 import com.asaf.appointment_service.exception.auth.InvalidOtpException;
 import com.asaf.appointment_service.exception.auth.OtpBlockedException;
 import com.asaf.appointment_service.exception.employee.EmployeeOnLeaveException;
+import com.asaf.appointment_service.exception.plan.PlanFeatureNotAvailableException;
 import com.asaf.appointment_service.exception.plan.PlanLimitExceededException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -97,9 +98,9 @@ public class GlobalExceptionHandler {
             .body(ApiResponse.error(new ErrorDetails(ex.getCode(), ex.getMessage(), null, LocalDateTime.now())));
     }
 
-    @ExceptionHandler(PlanLimitExceededException.class)
-    public ResponseEntity<ApiResponse<Void>> handlePlanLimitExceeded(PlanLimitExceededException ex) {
-        log.warn("Plan limit exceeded. code={}", ex.getCode());
+    @ExceptionHandler({PlanLimitExceededException.class, PlanFeatureNotAvailableException.class})
+    public ResponseEntity<ApiResponse<Void>> handlePlanUpgradeRequired(BusinessException ex) {
+        log.warn("Plan upgrade required. code={}", ex.getCode());
         return ResponseEntity
             .status(HttpStatus.PAYMENT_REQUIRED)
             .body(ApiResponse.error(new ErrorDetails(ex.getCode(), ex.getMessage(), null, LocalDateTime.now())));

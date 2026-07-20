@@ -32,7 +32,14 @@ public final class PlanFeatureNames {
         // Destek ve API
         Map.entry(PlanFeature.PRIORITY_SUPPORT, "Öncelikli destek"),
         Map.entry(PlanFeature.SUPPORT_24_7, "7/24 destek"),
-        Map.entry(PlanFeature.API_ACCESS, "API erişimi")
+        Map.entry(PlanFeature.API_ACCESS, "API erişimi"),
+
+        // Müşteri çekme özellikleri
+        Map.entry(PlanFeature.WAITLIST, "Bekleme listesi"),
+        Map.entry(PlanFeature.CUSTOMER_REVIEWS, "Müşteri değerlendirmeleri"),
+        Map.entry(PlanFeature.DEPOSIT_PAYMENTS, "Kapora ile randevu"),
+        Map.entry(PlanFeature.CALENDAR_SYNC, "Takvim senkronizasyonu"),
+        Map.entry(PlanFeature.MINI_WEBSITE, "Mini web sitesi")
     );
     
     public static String getDisplayName(String featureCode) {

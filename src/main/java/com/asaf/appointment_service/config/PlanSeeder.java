@@ -32,21 +32,41 @@ public class PlanSeeder implements ApplicationRunner {
         this.planRepository = planRepository;
     }
 
+    private static final List<String> CUSTOMER_ACQUISITION_FEATURES = List.of(
+            PlanFeature.WAITLIST,
+            PlanFeature.CUSTOMER_REVIEWS,
+            PlanFeature.DEPOSIT_PAYMENTS,
+            PlanFeature.CALENDAR_SYNC,
+            PlanFeature.MINI_WEBSITE
+    );
+
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        if (planRepository.count() > 0) {
-            log.debug("Plan seed skipped: plans already exist");
+        if (planRepository.count() == 0) {
+            log.info("Seeding subscription plans...");
+            planRepository.save(buildSoloPlan());
+            planRepository.save(buildProPlan());
+            planRepository.save(buildEnterprisePlan());
+            log.info("Plan seed completed: SOLO, PRO, ENTERPRISE");
             return;
         }
 
-        log.info("Seeding subscription plans...");
+        syncMissingFeatures(PlanCode.PRO, CUSTOMER_ACQUISITION_FEATURES);
+        syncMissingFeatures(PlanCode.ENTERPRISE, CUSTOMER_ACQUISITION_FEATURES);
+    }
 
-        planRepository.save(buildSoloPlan());
-        planRepository.save(buildProPlan());
-        planRepository.save(buildEnterprisePlan());
-
-        log.info("Plan seed completed: SOLO, PRO, ENTERPRISE");
+    /**
+     * Var olan plan kayıtlarına, uygulama güncellemesiyle eklenen yeni feature
+     * kodlarını sonradan işler. Zaten mevcut olanları tekrar eklemez.
+     */
+    private void syncMissingFeatures(PlanCode code, List<String> featureCodes) {
+        planRepository.findByCode(code).ifPresent(plan -> {
+            if (plan.mergeFeatures(featureCodes)) {
+                planRepository.save(plan);
+                log.info("Plan feature sync: {} plan updated with new features", code);
+            }
+        });
     }
 
     private Plan buildSoloPlan() {
@@ -90,7 +110,12 @@ public class PlanSeeder implements ApplicationRunner {
                         PlanFeature.BASIC_REPORTS,
                         PlanFeature.ADVANCED_REPORTS,
                         PlanFeature.EXPORT_REPORTS,
-                        PlanFeature.PRIORITY_SUPPORT
+                        PlanFeature.PRIORITY_SUPPORT,
+                        PlanFeature.WAITLIST,
+                        PlanFeature.CUSTOMER_REVIEWS,
+                        PlanFeature.DEPOSIT_PAYMENTS,
+                        PlanFeature.CALENDAR_SYNC,
+                        PlanFeature.MINI_WEBSITE
                 ))
                 .monthlyPrice(new BigDecimal("1190.00"))
                 .yearlyPrice(new BigDecimal("11900.00"))
@@ -119,7 +144,12 @@ public class PlanSeeder implements ApplicationRunner {
                         PlanFeature.EXPORT_REPORTS,
                         PlanFeature.PRIORITY_SUPPORT,
                         PlanFeature.SUPPORT_24_7,
-                        PlanFeature.API_ACCESS
+                        PlanFeature.API_ACCESS,
+                        PlanFeature.WAITLIST,
+                        PlanFeature.CUSTOMER_REVIEWS,
+                        PlanFeature.DEPOSIT_PAYMENTS,
+                        PlanFeature.CALENDAR_SYNC,
+                        PlanFeature.MINI_WEBSITE
                 ))
                 .monthlyPrice(new BigDecimal("1990.00"))
                 .yearlyPrice(new BigDecimal("19900.00"))

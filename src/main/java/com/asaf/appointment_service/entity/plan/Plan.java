@@ -9,6 +9,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -132,6 +133,24 @@ public class Plan extends BaseEntity {
 
     public boolean hasFeature(String featureCode) {
         return features != null && features.contains(featureCode);
+    }
+
+    /**
+     * Eksik özellik kodlarını mevcut listeye ekler; zaten var olanları yeniden eklemez.
+     * @return değişiklik yapıldıysa true (persist edilmeli)
+     */
+    public boolean mergeFeatures(List<String> additionalFeatureCodes) {
+        List<String> missing = additionalFeatureCodes.stream()
+            .distinct()
+            .filter(featureCode -> !hasFeature(featureCode))
+            .toList();
+        if (missing.isEmpty()) {
+            return false;
+        }
+        List<String> merged = new ArrayList<>(features);
+        merged.addAll(missing);
+        this.features = List.copyOf(merged);
+        return true;
     }
 
     public static class Builder {

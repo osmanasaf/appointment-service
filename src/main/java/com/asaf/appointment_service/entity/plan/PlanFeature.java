@@ -31,4 +31,11 @@ public final class PlanFeature {
     public static final String PRIORITY_SUPPORT = "PRIORITY_SUPPORT";
     public static final String SUPPORT_24_7 = "SUPPORT_24_7";
     public static final String API_ACCESS = "API_ACCESS";
+
+    // Müşteri çekme özellikleri (PRO+)
+    public static final String WAITLIST = "WAITLIST";
+    public static final String CUSTOMER_REVIEWS = "CUSTOMER_REVIEWS";
+    public static final String DEPOSIT_PAYMENTS = "DEPOSIT_PAYMENTS";
+    public static final String CALENDAR_SYNC = "CALENDAR_SYNC";
+    public static final String MINI_WEBSITE = "MINI_WEBSITE";
 }

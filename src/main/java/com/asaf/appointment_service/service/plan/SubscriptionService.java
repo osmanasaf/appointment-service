@@ -7,6 +7,7 @@ import com.asaf.appointment_service.entity.plan.PlanCode;
 import com.asaf.appointment_service.entity.plan.PlanLimitUsage;
 import com.asaf.appointment_service.entity.plan.SubscriptionStatus;
 import com.asaf.appointment_service.common.exception.EntityNotFoundException;
+import com.asaf.appointment_service.exception.plan.PlanFeatureNotAvailableException;
 import com.asaf.appointment_service.exception.plan.PlanLimitExceededException;
 import com.asaf.appointment_service.exception.plan.PlanNotFoundException;
 import com.asaf.appointment_service.repository.employee.EmployeeRepository;
@@ -132,6 +133,13 @@ public class SubscriptionService {
     @Transactional(readOnly = true)
     public boolean isFeatureEnabled(Long businessId, String featureCode) {
         return getCurrentPlanByBusinessId(businessId).hasFeature(featureCode);
+    }
+
+    @Transactional(readOnly = true)
+    public void requireFeature(Long businessId, String featureCode) {
+        if (!isFeatureEnabled(businessId, featureCode)) {
+            throw new PlanFeatureNotAvailableException(featureCode);
+        }
     }
 
     @Transactional(readOnly = true)

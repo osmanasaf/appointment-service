@@ -95,7 +95,7 @@ class GlobalExceptionHandlerTest {
     void handlePlanLimitExceeded_returns402WithUpgradeCode() {
         PlanLimitExceededException ex = new PlanLimitExceededException("Aktif plan limitiniz doldu.");
 
-        ResponseEntity<ApiResponse<Void>> response = handler.handlePlanLimitExceeded(ex);
+        ResponseEntity<ApiResponse<Void>> response = handler.handlePlanUpgradeRequired(ex);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.PAYMENT_REQUIRED);
         ErrorDetails error = response.getBody().error();

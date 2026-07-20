@@ -5,6 +5,7 @@ import com.asaf.appointment_service.entity.plan.Plan;
 import com.asaf.appointment_service.entity.plan.PlanCode;
 import com.asaf.appointment_service.entity.plan.PlanLimitUsage;
 import com.asaf.appointment_service.entity.plan.SubscriptionStatus;
+import com.asaf.appointment_service.exception.plan.PlanFeatureNotAvailableException;
 import com.asaf.appointment_service.exception.plan.PlanLimitExceededException;
 import com.asaf.appointment_service.repository.employee.EmployeeRepository;
 import com.asaf.appointment_service.repository.plan.BusinessSubscriptionRepository;
@@ -128,6 +129,60 @@ class SubscriptionServiceTest {
         assertThat(updated.getStatus()).isEqualTo(SubscriptionStatus.ACTIVE);
         assertThat(updated.getTrialEndDate()).isNull();
         assertThat(updated.isManual()).isTrue();
+    }
+
+    @Test
+    void should_notThrow_when_requireFeatureCalledAndPlanHasFeature() {
+        Long businessId = 40L;
+        Plan proPlan = createPlanWithFeatures(PlanCode.PRO, 3L, List.of("WAITLIST"));
+        BusinessSubscription subscription = activeSubscription(businessId, proPlan.getId());
+
+        when(subscriptionRepository.findByBusinessId(businessId)).thenReturn(Optional.of(subscription));
+        when(planRepository.findById(proPlan.getId())).thenReturn(Optional.of(proPlan));
+
+        subscriptionService.requireFeature(businessId, "WAITLIST");
+    }
+
+    @Test
+    void should_throwPlanFeatureNotAvailable_when_requireFeatureCalledAndPlanLacksFeature() {
+        Long businessId = 41L;
+        Plan soloPlan = createPlanWithFeatures(PlanCode.SOLO, 4L, List.of("WHATSAPP_NOTIFICATIONS"));
+        BusinessSubscription subscription = activeSubscription(businessId, soloPlan.getId());
+
+        when(subscriptionRepository.findByBusinessId(businessId)).thenReturn(Optional.of(subscription));
+        when(planRepository.findById(soloPlan.getId())).thenReturn(Optional.of(soloPlan));
+
+        assertThatThrownBy(() -> subscriptionService.requireFeature(businessId, "WAITLIST"))
+            .isInstanceOf(PlanFeatureNotAvailableException.class)
+            .hasMessageContaining("WAITLIST");
+    }
+
+    private BusinessSubscription activeSubscription(Long businessId, Long planId) {
+        return BusinessSubscription.builder()
+            .businessId(businessId)
+            .planId(planId)
+            .status(SubscriptionStatus.ACTIVE)
+            .currentPeriodStart(LocalDate.now(ZoneOffset.UTC))
+            .currentPeriodEnd(LocalDate.now(ZoneOffset.UTC).plusMonths(1))
+            .manual(true)
+            .build();
+    }
+
+    private Plan createPlanWithFeatures(PlanCode code, Long id, List<String> features) {
+        Plan plan = Plan.builder()
+            .code(code)
+            .maxEmployees(5)
+            .maxAppointmentsMonthly(500)
+            .maxServices(20)
+            .maxBranches(1)
+            .maxWhatsappMonthly(500)
+            .maxSmsMonthly(0)
+            .features(features)
+            .monthlyPrice(BigDecimal.valueOf(499))
+            .yearlyPrice(BigDecimal.valueOf(4790.40))
+            .build();
+        ReflectionTestUtils.setField(plan, "id", id);
+        return plan;
     }
 
     private Plan createPlan(PlanCode code, Long id, int maxEmployees, int maxAppointmentsMonthly, int maxServices) {
