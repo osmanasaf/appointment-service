@@ -54,6 +54,8 @@ class AvailabilityServiceCapabilityTest {
     private AppointmentRepository appointmentRepository;
     @Mock
     private BusinessWorkingHoursRepository workingHoursRepository;
+    @Mock
+    private AppointmentValidationService validationService;
 
     @InjectMocks
     private AvailabilityService availabilityService;
@@ -170,6 +172,8 @@ class AvailabilityServiceCapabilityTest {
 
         when(businessService.findByIdOrThrow(BUSINESS_ID)).thenReturn(business);
         when(serviceDefinitionService.findByIdOrThrow(SERVICE_ID)).thenReturn(service);
+        doThrow(new ValidationException("PAST_DATE_BOOKING", "Geçmiş tarihe randevu alınamaz"))
+            .when(validationService).validateBookingPolicy(business, yesterday, service);
 
         assertThatThrownBy(() ->
             availabilityService.getAvailableSlots(BUSINESS_ID, EMPLOYEE_ID, SERVICE_ID, yesterday))

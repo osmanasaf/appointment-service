@@ -1,11 +1,16 @@
 package com.asaf.appointment_service.service.notification;
 
 import com.asaf.appointment_service.common.util.PhoneNumberUtil;
+import com.asaf.appointment_service.entity.appointment.Appointment;
+import com.asaf.appointment_service.entity.appointment.AppointmentStatus;
 import com.asaf.appointment_service.entity.notification.NotificationLog;
 import com.asaf.appointment_service.entity.notification.NotificationType;
+import com.asaf.appointment_service.entity.token.PublicActionToken;
+import com.asaf.appointment_service.integration.email.EmailProperties;
 import com.asaf.appointment_service.integration.whatsapp.WhatsAppClientInterface;
 import com.asaf.appointment_service.repository.notification.NotificationLogRepository;
 import com.asaf.appointment_service.service.appointment.AppointmentService;
+import com.asaf.appointment_service.service.token.PublicActionTokenService;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -57,13 +62,6 @@ public class WhatsAppWebhookService {
         
         Randevum Pro""";
 
-    private static final String AUTO_REPLY_RESCHEDULE_REQUESTED = """
-        🔄 Erteleme talebiniz alındı!
-        
-        En kısa sürede sizinle iletişime geçeceğiz.
-        
-        Randevum Pro""";
-
     private static final String AUTO_REPLY_NO_APPOINTMENT = """
         Aktif bir randevunuz bulunamadı.
         
@@ -74,13 +72,19 @@ public class WhatsAppWebhookService {
     private final NotificationLogRepository notificationLogRepository;
     private final AppointmentService appointmentService;
     private final WhatsAppClientInterface whatsAppClient;
+    private final PublicActionTokenService publicActionTokenService;
+    private final EmailProperties emailProperties;
 
     public WhatsAppWebhookService(NotificationLogRepository notificationLogRepository,
                                   AppointmentService appointmentService,
-                                  WhatsAppClientInterface whatsAppClient) {
+                                  WhatsAppClientInterface whatsAppClient,
+                                  PublicActionTokenService publicActionTokenService,
+                                  EmailProperties emailProperties) {
         this.notificationLogRepository = notificationLogRepository;
         this.appointmentService = appointmentService;
         this.whatsAppClient = whatsAppClient;
+        this.publicActionTokenService = publicActionTokenService;
+        this.emailProperties = emailProperties;
     }
 
     @Transactional
@@ -205,12 +209,29 @@ public class WhatsAppWebhookService {
             return;
         }
         try {
-            appointmentService.requestReschedule(appointmentId.get(), "WhatsApp üzerinden erteleme talebi");
+            Appointment appointment = appointmentService.findByIdOrThrow(appointmentId.get());
+            if (appointment.getStatus() != AppointmentStatus.RESCHEDULE_REQUESTED) {
+                appointment = appointmentService.requestReschedule(
+                    appointmentId.get(), "WhatsApp üzerinden erteleme talebi");
+            }
+            PublicActionToken token = publicActionTokenService.issueRescheduleToken(
+                appointment.getBusinessId(), appointment.getId());
             log.info("WhatsApp ile erteleme talep edildi: appointmentId={}", appointmentId.get());
-            sendAutoReply(normalizedPhone, AUTO_REPLY_RESCHEDULE_REQUESTED);
+            sendAutoReply(normalizedPhone, buildRescheduleLinkMessage(token.getToken()));
         } catch (Exception e) {
             log.error("WhatsApp erteleme işlenemedi: appointmentId={}, error={}", appointmentId.get(), e.getMessage());
         }
+    }
+
+    private String buildRescheduleLinkMessage(String token) {
+        String link = emailProperties.baseUrl() + "/reschedule/" + token;
+        return """
+            🔄 Erteleme talebiniz alındı!
+
+            Yeni saatinizi kendiniz seçmek için linke tıklayın (48 saat geçerlidir):
+            %s
+
+            Randevum Pro""".formatted(link);
     }
 
     private void sendAutoReply(String normalizedPhone, String message) {

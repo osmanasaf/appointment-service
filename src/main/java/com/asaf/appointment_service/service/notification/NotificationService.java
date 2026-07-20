@@ -120,6 +120,24 @@ public class NotificationService {
     }
 
     @Transactional
+    public void sendRescheduleConfirmation(Appointment appointment) {
+        Customer customer = customerService.findByIdOrThrow(appointment.getCustomerId());
+        ServiceDefinition service = serviceDefinitionService.findByIdOrThrow(appointment.getServiceId());
+        String priceText = formatPriceIfEnabled(appointment.getBusinessId(), service);
+
+        WhatsAppMessageRequest messageRequest = WhatsAppMessageRequest.rescheduled(
+            customer.getFormattedPhoneNumber(),
+            customer.getName(),
+            service.getName(),
+            appointment.getScheduledAt().format(DATE_FORMATTER),
+            appointment.getScheduledAt().format(TIME_FORMATTER),
+            priceText
+        );
+
+        sendAndLog(appointment, customer, NotificationType.APPOINTMENT_RESCHEDULED, messageRequest);
+    }
+
+    @Transactional
     public void retryFailedNotifications() {
         List<NotificationLog> failedLogs = notificationLogRepository
             .findByStatusAndRetryCountLessThan(NotificationStatus.FAILED, 3);

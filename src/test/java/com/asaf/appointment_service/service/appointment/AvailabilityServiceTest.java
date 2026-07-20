@@ -51,6 +51,8 @@ class AvailabilityServiceTest {
     private AppointmentRepository appointmentRepository;
     @Mock
     private BusinessWorkingHoursRepository workingHoursRepository;
+    @Mock
+    private AppointmentValidationService validationService;
 
     @InjectMocks
     private AvailabilityService availabilityService;

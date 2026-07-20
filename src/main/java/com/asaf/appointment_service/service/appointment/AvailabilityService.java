@@ -1,6 +1,5 @@
 package com.asaf.appointment_service.service.appointment;
 
-import com.asaf.appointment_service.common.exception.ValidationException;
 import com.asaf.appointment_service.dto.appointment.AvailableSlotResponse;
 import com.asaf.appointment_service.entity.appointment.Appointment;
 import com.asaf.appointment_service.entity.business.Business;
@@ -36,6 +35,7 @@ public class AvailabilityService {
     private final ServiceDefinitionService serviceDefinitionService;
     private final AppointmentRepository appointmentRepository;
     private final BusinessWorkingHoursRepository workingHoursRepository;
+    private final AppointmentValidationService validationService;
 
     public AvailabilityService(BusinessService businessService,
                                EmployeeService employeeService,
@@ -43,7 +43,8 @@ public class AvailabilityService {
                                EmployeeScheduleService scheduleService,
                                ServiceDefinitionService serviceDefinitionService,
                                AppointmentRepository appointmentRepository,
-                               BusinessWorkingHoursRepository workingHoursRepository) {
+                               BusinessWorkingHoursRepository workingHoursRepository,
+                               AppointmentValidationService validationService) {
         this.businessService = businessService;
         this.employeeService = employeeService;
         this.capabilityService = capabilityService;
@@ -51,6 +52,7 @@ public class AvailabilityService {
         this.serviceDefinitionService = serviceDefinitionService;
         this.appointmentRepository = appointmentRepository;
         this.workingHoursRepository = workingHoursRepository;
+        this.validationService = validationService;
     }
 
     @Transactional(readOnly = true)
@@ -59,7 +61,7 @@ public class AvailabilityService {
         Business business = businessService.findByIdOrThrow(businessId);
         ServiceDefinition service = serviceDefinitionService.findByIdOrThrow(serviceId);
 
-        validateBookingAllowed(business, date, service);
+        validationService.validateBookingPolicy(business, date, service);
 
         LocalDateTime dayStart = date.atStartOfDay();
         LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
@@ -232,25 +234,6 @@ public class AvailabilityService {
 
     private static LocalTime earlierOf(LocalTime a, LocalTime b) {
         return a.isBefore(b) ? a : b;
-    }
-
-    private void validateBookingAllowed(Business business, LocalDate date, ServiceDefinition service) {
-        LocalDate today = LocalDate.now();
-
-        if (date.isBefore(today)) {
-            throw new ValidationException("PAST_DATE_BOOKING", "Geçmiş tarihe randevu alınamaz");
-        }
-        if (date.equals(today) && !business.isSameDayBookingAllowed()) {
-            throw new ValidationException("SAME_DAY_BOOKING_NOT_ALLOWED", "Aynı gün randevu alınamaz");
-        }
-        if (date.equals(today) && !service.isSameDayBookingAllowed()) {
-            throw new ValidationException("SERVICE_SAME_DAY_NOT_ALLOWED", "Bu hizmet için aynı gün randevu alınamaz");
-        }
-        LocalDate maxDate = today.plusDays(business.getMaxAdvanceBookingDays());
-        if (date.isAfter(maxDate)) {
-            throw new ValidationException("MAX_ADVANCE_BOOKING_EXCEEDED",
-                "En fazla %d gün sonrasına randevu alınabilir".formatted(business.getMaxAdvanceBookingDays()));
-        }
     }
 
     private boolean isSlotInBreakTime(LocalTime slotStart, LocalTime slotEnd, BusinessWorkingHours workingHours) {

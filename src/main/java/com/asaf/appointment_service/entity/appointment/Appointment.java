@@ -145,6 +145,27 @@ public class Appointment extends BaseEntity {
         this.cancellationReason = reason;
     }
 
+    /**
+     * Müşterinin public erteleme linki üzerinden randevusunu yeni bir saate taşıması.
+     * autoConfirm true ise CONFIRMED'e, değilse manuel onay bekleyen PENDING'e geçer.
+     */
+    public void reschedule(Long newEmployeeId, LocalDateTime newScheduledAt, LocalDateTime newEndAt,
+                           int newDurationMinutes, boolean autoConfirm) {
+        AppointmentStatus target = autoConfirm ? AppointmentStatus.CONFIRMED : AppointmentStatus.PENDING;
+        STATE_MACHINE.validateTransition(this.status, target);
+        this.employeeId = Objects.requireNonNull(newEmployeeId);
+        this.scheduledAt = Objects.requireNonNull(newScheduledAt);
+        this.endAt = Objects.requireNonNull(newEndAt);
+        this.durationMinutes = newDurationMinutes;
+        this.status = target;
+        this.risky = false;
+        this.riskReason = null;
+        this.cancellationReason = null;
+        if (target == AppointmentStatus.CONFIRMED) {
+            this.confirmedAt = LocalDateTime.now();
+        }
+    }
+
     public void markReminderSent() {
         this.reminderSent = true;
         this.reminderSentAt = LocalDateTime.now();
@@ -379,6 +400,7 @@ public class Appointment extends BaseEntity {
             addTransition(AppointmentStatus.RISKY, AppointmentStatus.CANCELLED);
             addTransition(AppointmentStatus.RISKY, AppointmentStatus.RESCHEDULE_REQUESTED);
             addTransition(AppointmentStatus.RESCHEDULE_REQUESTED, AppointmentStatus.CONFIRMED);
+            addTransition(AppointmentStatus.RESCHEDULE_REQUESTED, AppointmentStatus.PENDING);
             addTransition(AppointmentStatus.RESCHEDULE_REQUESTED, AppointmentStatus.CANCELLED);
         }
     }

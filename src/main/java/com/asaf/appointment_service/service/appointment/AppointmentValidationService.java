@@ -1,8 +1,10 @@
 package com.asaf.appointment_service.service.appointment;
 
 import com.asaf.appointment_service.common.constants.AppointmentErrorMessages;
+import com.asaf.appointment_service.common.exception.ValidationException;
 import com.asaf.appointment_service.entity.appointment.Appointment;
 import com.asaf.appointment_service.entity.business.Business;
+import com.asaf.appointment_service.entity.service.ServiceDefinition;
 import com.asaf.appointment_service.exception.appointment.CustomerDayLimitExceededException;
 import com.asaf.appointment_service.exception.appointment.SlotNotAvailableException;
 import com.asaf.appointment_service.exception.employee.EmployeeOnLeaveException;
@@ -102,6 +104,31 @@ public class AppointmentValidationService {
             customerId, dayStart, dayEnd, excludeAppointmentId);
         if (count >= dayLimit) {
             throw new CustomerDayLimitExceededException(dayLimit, (int) count);
+        }
+    }
+
+    /**
+     * İşletme/hizmetin rezervasyon politikasını doğrular: geçmiş tarih, aynı gün
+     * yasağı (işletme veya hizmet bazlı) ve azami ileri tarih sınırı.
+     * Hem online müsaitlik listelemesinde hem müşteri self-servis erteleme akışında
+     * tek kaynak olarak kullanılır.
+     */
+    public void validateBookingPolicy(Business business, LocalDate date, ServiceDefinition service) {
+        LocalDate today = LocalDate.now();
+
+        if (date.isBefore(today)) {
+            throw new ValidationException("PAST_DATE_BOOKING", "Geçmiş tarihe randevu alınamaz");
+        }
+        if (date.equals(today) && !business.isSameDayBookingAllowed()) {
+            throw new ValidationException("SAME_DAY_BOOKING_NOT_ALLOWED", "Aynı gün randevu alınamaz");
+        }
+        if (date.equals(today) && !service.isSameDayBookingAllowed()) {
+            throw new ValidationException("SERVICE_SAME_DAY_NOT_ALLOWED", "Bu hizmet için aynı gün randevu alınamaz");
+        }
+        LocalDate maxDate = today.plusDays(business.getMaxAdvanceBookingDays());
+        if (date.isAfter(maxDate)) {
+            throw new ValidationException("MAX_ADVANCE_BOOKING_EXCEEDED",
+                "En fazla %d gün sonrasına randevu alınabilir".formatted(business.getMaxAdvanceBookingDays()));
         }
     }
 

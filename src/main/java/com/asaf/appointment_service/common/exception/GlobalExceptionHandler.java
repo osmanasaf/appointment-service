@@ -8,6 +8,7 @@ import com.asaf.appointment_service.exception.auth.OtpBlockedException;
 import com.asaf.appointment_service.exception.employee.EmployeeOnLeaveException;
 import com.asaf.appointment_service.exception.plan.PlanFeatureNotAvailableException;
 import com.asaf.appointment_service.exception.plan.PlanLimitExceededException;
+import com.asaf.appointment_service.exception.token.ActionTokenExpiredException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.time.LocalDateTime;
@@ -103,6 +104,14 @@ public class GlobalExceptionHandler {
         log.warn("Plan upgrade required. code={}", ex.getCode());
         return ResponseEntity
             .status(HttpStatus.PAYMENT_REQUIRED)
+            .body(ApiResponse.error(new ErrorDetails(ex.getCode(), ex.getMessage(), null, LocalDateTime.now())));
+    }
+
+    @ExceptionHandler(ActionTokenExpiredException.class)
+    public ResponseEntity<ApiResponse<Void>> handleActionTokenExpired(ActionTokenExpiredException ex) {
+        log.warn("Action token expired or already used. code={}", ex.getCode());
+        return ResponseEntity
+            .status(HttpStatus.GONE)
             .body(ApiResponse.error(new ErrorDetails(ex.getCode(), ex.getMessage(), null, LocalDateTime.now())));
     }
 
