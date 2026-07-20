@@ -24,5 +24,11 @@ public record BusinessResponse(
     BusinessStatus status,
     LocalDateTime createdAt,
     Double averageRating,
-    int reviewCount
+    int reviewCount,
+    String googleReviewUrl,
+    String instagramUrl,
+    String tiktokUrl,
+    String facebookUrl,
+    Double latitude,
+    Double longitude
 ) {}

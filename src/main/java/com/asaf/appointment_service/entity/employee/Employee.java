@@ -48,6 +48,9 @@ public class Employee extends BaseEntity {
     @Column(name = "accepts_online_booking", nullable = false)
     private boolean acceptsOnlineBooking = true;
 
+    @Column(name = "show_on_public_page", nullable = false)
+    private boolean showOnPublicPage = true;
+
     protected Employee() {}
 
     private Employee(Builder builder) {
@@ -64,6 +67,7 @@ public class Employee extends BaseEntity {
         this.title = builder.title;
         this.experienceYears = builder.experienceYears;
         this.acceptsOnlineBooking = builder.acceptsOnlineBooking;
+        this.showOnPublicPage = builder.showOnPublicPage;
     }
 
     public static Builder builder() {
@@ -87,6 +91,10 @@ public class Employee extends BaseEntity {
         this.profileImageUrl = profileImageUrl;
         this.experienceYears = experienceYears;
         this.acceptsOnlineBooking = acceptsOnlineBooking;
+    }
+
+    public void updatePublicVisibility(boolean showOnPublicPage) {
+        this.showOnPublicPage = showOnPublicPage;
     }
 
     public void activate() {
@@ -155,6 +163,10 @@ public class Employee extends BaseEntity {
         return acceptsOnlineBooking;
     }
 
+    public boolean isShowOnPublicPage() {
+        return showOnPublicPage;
+    }
+
     public static class Builder {
         private Long id;
         private Long businessId;
@@ -169,6 +181,7 @@ public class Employee extends BaseEntity {
         private String title;
         private Integer experienceYears;
         private boolean acceptsOnlineBooking = true;
+        private boolean showOnPublicPage = true;
 
         public Builder id(Long id) {
             this.id = id;
@@ -228,6 +241,11 @@ public class Employee extends BaseEntity {
 
         public Builder acceptsOnlineBooking(boolean accepts) {
             this.acceptsOnlineBooking = accepts;
+            return this;
+        }
+
+        public Builder showOnPublicPage(boolean showOnPublicPage) {
+            this.showOnPublicPage = showOnPublicPage;
             return this;
         }
 

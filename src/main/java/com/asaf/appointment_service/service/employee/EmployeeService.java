@@ -75,6 +75,13 @@ public class EmployeeService extends BusinessAwareService<Employee, Long, Employ
         return repository.save(employee);
     }
 
+    @Transactional
+    public Employee updatePublicVisibility(Long id, boolean showOnPublicPage) {
+        Employee employee = findByIdOrThrow(id);
+        employee.updatePublicVisibility(showOnPublicPage);
+        return repository.save(employee);
+    }
+
     @Override
     public Employee findByIdOrThrow(Long id) {
         return repository.findById(id)

@@ -16,5 +16,6 @@ public record EmployeeDetailResponse(
     boolean owner,
     Integer experienceYears,
     boolean acceptsOnlineBooking,
+    boolean showOnPublicPage,
     LocalDateTime createdAt
 ) {}

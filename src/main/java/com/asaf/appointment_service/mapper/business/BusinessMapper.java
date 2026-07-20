@@ -46,7 +46,13 @@ public class BusinessMapper {
             entity.getStatus(),
             entity.getCreatedAt(),
             averageRating,
-            reviewCount
+            reviewCount,
+            entity.getGoogleReviewUrl(),
+            entity.getInstagramUrl(),
+            entity.getTiktokUrl(),
+            entity.getFacebookUrl(),
+            entity.getLatitude(),
+            entity.getLongitude()
         );
     }
 

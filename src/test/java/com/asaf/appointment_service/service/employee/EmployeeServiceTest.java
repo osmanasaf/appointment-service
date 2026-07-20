@@ -56,6 +56,17 @@ class EmployeeServiceTest {
         assertThat(result.getStatus()).isEqualTo(EmployeeStatus.INACTIVE);
     }
 
+    @Test
+    void updatePublicVisibility_shouldToggleShowOnPublicPage() {
+        Employee employee = buildEmployee(EmployeeStatus.ACTIVE);
+        when(repository.findById(1L)).thenReturn(Optional.of(employee));
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        Employee result = employeeService.updatePublicVisibility(1L, false);
+
+        assertThat(result.isShowOnPublicPage()).isFalse();
+    }
+
     private Employee buildEmployee(EmployeeStatus status) {
         return Employee.builder()
             .id(1L).businessId(10L).name("Test Çalışan").status(status).build();

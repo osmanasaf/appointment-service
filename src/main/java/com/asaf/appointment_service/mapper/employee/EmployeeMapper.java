@@ -36,6 +36,7 @@ public class EmployeeMapper {
             entity.isOwner(),
             entity.getExperienceYears(),
             entity.isAcceptsOnlineBooking(),
+            entity.isShowOnPublicPage(),
             entity.getCreatedAt()
         );
     }
@@ -54,6 +55,7 @@ public class EmployeeMapper {
             entity.isOwner(),
             entity.getExperienceYears(),
             entity.isAcceptsOnlineBooking(),
+            entity.isShowOnPublicPage(),
             entity.getCreatedAt()
         );
     }

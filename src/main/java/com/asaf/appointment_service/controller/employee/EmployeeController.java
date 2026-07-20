@@ -166,6 +166,14 @@ public class EmployeeController {
         return updateEmployee(id, request);
     }
 
+    @PostMapping("/{id}/public-visibility")
+    public ResponseEntity<ApiResponse<EmployeeResponse>> updatePublicVisibility(
+            @PathVariable Long id,
+            @RequestParam boolean visible) {
+        Employee employee = employeeService.updatePublicVisibility(id, visible);
+        return ResponseEntity.ok(ApiResponse.success(EmployeeMapper.toResponse(employee), "Görünürlük güncellendi"));
+    }
+
     @PostMapping("/{id}/activate")
     public ResponseEntity<ApiResponse<EmployeeResponse>> activateEmployee(@PathVariable Long id) {
         Employee employee = employeeService.activateEmployee(id);

@@ -45,5 +45,18 @@ public record UpdateBusinessRequest(
     Boolean whatsappSendPrice,
 
     @Size(max = 500, message = "Google yorum linki çok uzun")
-    String googleReviewUrl
+    String googleReviewUrl,
+
+    @Size(max = 500, message = "Instagram linki çok uzun")
+    String instagramUrl,
+
+    @Size(max = 500, message = "TikTok linki çok uzun")
+    String tiktokUrl,
+
+    @Size(max = 500, message = "Facebook linki çok uzun")
+    String facebookUrl,
+
+    Double latitude,
+
+    Double longitude
 ) {}

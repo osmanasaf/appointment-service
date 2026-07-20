@@ -67,6 +67,17 @@ public class BusinessService extends BaseService<Business, Long, BusinessReposit
             business.updateGoogleReviewUrl(request.googleReviewUrl());
         }
 
+        business.updateSocialLinks(
+            request.instagramUrl() != null ? request.instagramUrl() : business.getInstagramUrl(),
+            request.tiktokUrl() != null ? request.tiktokUrl() : business.getTiktokUrl(),
+            request.facebookUrl() != null ? request.facebookUrl() : business.getFacebookUrl()
+        );
+
+        business.updateLocation(
+            request.latitude() != null ? request.latitude() : business.getLatitude(),
+            request.longitude() != null ? request.longitude() : business.getLongitude()
+        );
+
         return repository.save(business);
     }
 

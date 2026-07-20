@@ -58,6 +58,21 @@ public class Business extends BaseEntity {
     @Column(name = "google_review_url", length = 500)
     private String googleReviewUrl;
 
+    @Column(name = "instagram_url", length = 500)
+    private String instagramUrl;
+
+    @Column(name = "tiktok_url", length = 500)
+    private String tiktokUrl;
+
+    @Column(name = "facebook_url", length = 500)
+    private String facebookUrl;
+
+    @Column(name = "latitude")
+    private Double latitude;
+
+    @Column(name = "longitude")
+    private Double longitude;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BusinessCategory category;
@@ -85,6 +100,11 @@ public class Business extends BaseEntity {
         this.maxAppointmentsPerCustomerPerDay = builder.maxAppointmentsPerCustomerPerDay;
         this.whatsappSendPrice = builder.whatsappSendPrice;
         this.googleReviewUrl = builder.googleReviewUrl;
+        this.instagramUrl = builder.instagramUrl;
+        this.tiktokUrl = builder.tiktokUrl;
+        this.facebookUrl = builder.facebookUrl;
+        this.latitude = builder.latitude;
+        this.longitude = builder.longitude;
         this.category = builder.category;
         this.status = builder.status;
     }
@@ -123,6 +143,17 @@ public class Business extends BaseEntity {
 
     public void updateGoogleReviewUrl(String googleReviewUrl) {
         this.googleReviewUrl = googleReviewUrl;
+    }
+
+    public void updateSocialLinks(String instagramUrl, String tiktokUrl, String facebookUrl) {
+        this.instagramUrl = instagramUrl;
+        this.tiktokUrl = tiktokUrl;
+        this.facebookUrl = facebookUrl;
+    }
+
+    public void updateLocation(Double latitude, Double longitude) {
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     public void activate() {
@@ -203,6 +234,26 @@ public class Business extends BaseEntity {
         return googleReviewUrl;
     }
 
+    public String getInstagramUrl() {
+        return instagramUrl;
+    }
+
+    public String getTiktokUrl() {
+        return tiktokUrl;
+    }
+
+    public String getFacebookUrl() {
+        return facebookUrl;
+    }
+
+    public Double getLatitude() {
+        return latitude;
+    }
+
+    public Double getLongitude() {
+        return longitude;
+    }
+
     public BusinessCategory getCategory() {
         return category;
     }
@@ -228,6 +279,11 @@ public class Business extends BaseEntity {
         private Integer maxAppointmentsPerCustomerPerDay;
         private boolean whatsappSendPrice = false;
         private String googleReviewUrl;
+        private String instagramUrl;
+        private String tiktokUrl;
+        private String facebookUrl;
+        private Double latitude;
+        private Double longitude;
         private BusinessCategory category;
         private BusinessStatus status = BusinessStatus.ACTIVE;
 
@@ -304,6 +360,31 @@ public class Business extends BaseEntity {
 
         public Builder googleReviewUrl(String googleReviewUrl) {
             this.googleReviewUrl = googleReviewUrl;
+            return this;
+        }
+
+        public Builder instagramUrl(String instagramUrl) {
+            this.instagramUrl = instagramUrl;
+            return this;
+        }
+
+        public Builder tiktokUrl(String tiktokUrl) {
+            this.tiktokUrl = tiktokUrl;
+            return this;
+        }
+
+        public Builder facebookUrl(String facebookUrl) {
+            this.facebookUrl = facebookUrl;
+            return this;
+        }
+
+        public Builder latitude(Double latitude) {
+            this.latitude = latitude;
+            return this;
+        }
+
+        public Builder longitude(Double longitude) {
+            this.longitude = longitude;
             return this;
         }
 

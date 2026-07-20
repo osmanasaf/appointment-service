@@ -40,7 +40,7 @@ class BusinessServiceGoogleReviewUrlTest {
 
         UpdateBusinessRequest request = new UpdateBusinessRequest(
             null, null, null, null, null, null, null, null, null, null, null, null,
-            "https://g.page/r/kuafor-x/review");
+            "https://g.page/r/kuafor-x/review", null, null, null, null, null);
 
         Business updated = businessService.updateBusiness(1L, request);
 
@@ -57,7 +57,8 @@ class BusinessServiceGoogleReviewUrlTest {
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         UpdateBusinessRequest request = new UpdateBusinessRequest(
-            null, null, null, null, null, null, null, null, null, null, null, null, null);
+            null, null, null, null, null, null, null, null, null, null, null, null, null,
+            null, null, null, null, null);
 
         Business updated = businessService.updateBusiness(1L, request);
 
