@@ -91,6 +91,13 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
         @Param("end") LocalDateTime end
     );
 
+    @Query("SELECT a FROM Appointment a WHERE a.status = 'COMPLETED' " +
+           "AND a.completedAt IS NOT NULL AND a.completedAt BETWEEN :start AND :end")
+    List<Appointment> findCompletedBetween(
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end
+    );
+
     @Query("SELECT a FROM Appointment a WHERE a.customerId = :customerId " +
            "AND a.status IN ('PENDING', 'CONFIRMED', 'RISKY') " +
            "AND a.scheduledAt < :end AND a.endAt > :start")

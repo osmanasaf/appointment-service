@@ -83,6 +83,16 @@ public record WhatsAppMessageRequest(
         return new WhatsAppMessageRequest(phoneNumber, "waitlist_slot_offer", params);
     }
 
+    public static WhatsAppMessageRequest reviewRequest(String phoneNumber, String customerName,
+                                                        String serviceName, String reviewLink) {
+        Map<String, String> params = Map.of(
+            "customer_name", customerName,
+            "service_name", serviceName,
+            "review_link", reviewLink
+        );
+        return new WhatsAppMessageRequest(phoneNumber, "review_request", params);
+    }
+
     public static WhatsAppMessageRequest otpVerification(String phoneNumber, String code) {
         return new WhatsAppMessageRequest(phoneNumber, "otp_verification", Map.of("code", code));
     }

@@ -22,5 +22,7 @@ public record BusinessResponse(
     Integer maxAppointmentsPerCustomerPerDay,
     boolean whatsappSendPrice,
     BusinessStatus status,
-    LocalDateTime createdAt
+    LocalDateTime createdAt,
+    Double averageRating,
+    int reviewCount
 ) {}

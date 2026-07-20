@@ -55,6 +55,9 @@ public class Business extends BaseEntity {
     @Column(name = "whatsapp_send_price")
     private boolean whatsappSendPrice = false;
 
+    @Column(name = "google_review_url", length = 500)
+    private String googleReviewUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private BusinessCategory category;
@@ -81,6 +84,7 @@ public class Business extends BaseEntity {
         this.maxAdvanceBookingDays = builder.maxAdvanceBookingDays;
         this.maxAppointmentsPerCustomerPerDay = builder.maxAppointmentsPerCustomerPerDay;
         this.whatsappSendPrice = builder.whatsappSendPrice;
+        this.googleReviewUrl = builder.googleReviewUrl;
         this.category = builder.category;
         this.status = builder.status;
     }
@@ -115,6 +119,10 @@ public class Business extends BaseEntity {
         if (whatsappSendPrice != null) {
             this.whatsappSendPrice = whatsappSendPrice;
         }
+    }
+
+    public void updateGoogleReviewUrl(String googleReviewUrl) {
+        this.googleReviewUrl = googleReviewUrl;
     }
 
     public void activate() {
@@ -191,6 +199,10 @@ public class Business extends BaseEntity {
         return whatsappSendPrice;
     }
 
+    public String getGoogleReviewUrl() {
+        return googleReviewUrl;
+    }
+
     public BusinessCategory getCategory() {
         return category;
     }
@@ -215,6 +227,7 @@ public class Business extends BaseEntity {
         private int maxAdvanceBookingDays = 30;
         private Integer maxAppointmentsPerCustomerPerDay;
         private boolean whatsappSendPrice = false;
+        private String googleReviewUrl;
         private BusinessCategory category;
         private BusinessStatus status = BusinessStatus.ACTIVE;
 
@@ -286,6 +299,11 @@ public class Business extends BaseEntity {
 
         public Builder whatsappSendPrice(boolean sendPrice) {
             this.whatsappSendPrice = sendPrice;
+            return this;
+        }
+
+        public Builder googleReviewUrl(String googleReviewUrl) {
+            this.googleReviewUrl = googleReviewUrl;
             return this;
         }
 

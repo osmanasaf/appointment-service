@@ -15,6 +15,7 @@ public class PublicActionTokenService {
 
     private static final int RESCHEDULE_TOKEN_VALID_HOURS = 48;
     private static final int WAITLIST_OFFER_TOKEN_VALID_HOURS = 2;
+    private static final int REVIEW_TOKEN_VALID_HOURS = 24 * 30;
 
     private final PublicActionTokenRepository repository;
 
@@ -31,6 +32,11 @@ public class PublicActionTokenService {
     public PublicActionToken issueWaitlistOfferToken(Long businessId, Long waitlistEntryId) {
         return issue(businessId, waitlistEntryId, PublicActionTokenType.WAITLIST_OFFER,
             WAITLIST_OFFER_TOKEN_VALID_HOURS);
+    }
+
+    @Transactional
+    public PublicActionToken issueReviewToken(Long businessId, Long appointmentId) {
+        return issue(businessId, appointmentId, PublicActionTokenType.REVIEW, REVIEW_TOKEN_VALID_HOURS);
     }
 
     @Transactional(readOnly = true)

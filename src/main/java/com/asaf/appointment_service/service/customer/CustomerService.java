@@ -150,4 +150,9 @@ public class CustomerService extends BusinessAwareService<Customer, Long, Custom
         return repository.findById(id)
             .orElseThrow(() -> new CustomerNotFoundException(id));
     }
+
+    @Transactional(readOnly = true)
+    public List<Customer> findAllByIds(List<Long> ids) {
+        return repository.findAllById(ids);
+    }
 }

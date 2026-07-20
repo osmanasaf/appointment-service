@@ -61,7 +61,11 @@ public class BusinessService extends BaseService<Business, Long, BusinessReposit
             request.maxAppointmentsPerCustomerPerDay(),
             request.whatsappSendPrice()
         );
-        
+
+        if (request.googleReviewUrl() != null) {
+            business.updateGoogleReviewUrl(request.googleReviewUrl());
+        }
+
         return repository.save(business);
     }
 

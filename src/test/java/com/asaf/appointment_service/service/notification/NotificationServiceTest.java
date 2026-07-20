@@ -97,6 +97,31 @@ class NotificationServiceTest {
     }
 
     @Test
+    void sendReviewRequest_shouldSendMessageWithReviewLink() {
+        Appointment appointment = Appointment.builder()
+            .businessId(1L).customerId(10L).employeeId(2L).serviceId(3L)
+            .scheduledAt(LocalDateTime.now().minusDays(1)).endAt(LocalDateTime.now().minusDays(1).plusMinutes(60))
+            .durationMinutes(60).status(AppointmentStatus.COMPLETED).build();
+        Customer customer = Customer.builder().businessId(1L).name("Ali").phone("+90", "5551234567").build();
+        ServiceDefinition service = ServiceDefinition.builder()
+            .businessId(1L).name("Saç Kesimi").durationMinutes(60).buffers(0, 0).build();
+
+        when(customerService.findByIdOrThrow(10L)).thenReturn(customer);
+        when(serviceDefinitionService.findByIdOrThrow(3L)).thenReturn(service);
+        when(whatsAppClient.sendMessage(any(WhatsAppMessageRequest.class)))
+            .thenReturn(WhatsAppMessageResponse.success("msg-1"));
+
+        notificationService.sendReviewRequest(appointment, "https://randevum.pro/review/tok123");
+
+        ArgumentCaptor<WhatsAppMessageRequest> requestCaptor = ArgumentCaptor.forClass(WhatsAppMessageRequest.class);
+        verify(whatsAppClient).sendMessage(requestCaptor.capture());
+        assertThat(requestCaptor.getValue().templateName()).isEqualTo("review_request");
+        assertThat(requestCaptor.getValue().parameters()).containsEntry(
+            "review_link", "https://randevum.pro/review/tok123");
+        verify(notificationLogRepository).save(any());
+    }
+
+    @Test
     void sendAppointmentReminder_whenAlreadySent_shouldNotCallWhatsApp() {
         // Arrange
         Appointment appointment = Appointment.builder()

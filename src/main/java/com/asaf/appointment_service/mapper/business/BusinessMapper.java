@@ -22,6 +22,10 @@ public class BusinessMapper {
     }
 
     public static BusinessResponse toResponse(Business entity) {
+        return toResponse(entity, null, 0);
+    }
+
+    public static BusinessResponse toResponse(Business entity, Double averageRating, int reviewCount) {
         return new BusinessResponse(
             entity.getId(),
             entity.getName(),
@@ -40,7 +44,9 @@ public class BusinessMapper {
             entity.getMaxAppointmentsPerCustomerPerDay(),
             entity.isWhatsappSendPrice(),
             entity.getStatus(),
-            entity.getCreatedAt()
+            entity.getCreatedAt(),
+            averageRating,
+            reviewCount
         );
     }
 

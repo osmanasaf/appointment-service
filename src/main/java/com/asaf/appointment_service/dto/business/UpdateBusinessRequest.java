@@ -42,5 +42,8 @@ public record UpdateBusinessRequest(
     @Max(value = 10, message = "Müşteri başına günlük randevu en fazla 10 olabilir")
     Integer maxAppointmentsPerCustomerPerDay,
 
-    Boolean whatsappSendPrice
+    Boolean whatsappSendPrice,
+
+    @Size(max = 500, message = "Google yorum linki çok uzun")
+    String googleReviewUrl
 ) {}

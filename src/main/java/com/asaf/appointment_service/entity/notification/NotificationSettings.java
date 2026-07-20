@@ -46,6 +46,13 @@ public class NotificationSettings extends BaseEntity {
     @Column(name = "second_reminder_hours_before")
     private Integer secondReminderHoursBefore = 2;
 
+    // Değerlendirme (review) isteği ayarları
+    @Column(name = "review_request_enabled", nullable = false)
+    private boolean reviewRequestEnabled = true;
+
+    @Column(name = "review_request_delay_hours", nullable = false)
+    private int reviewRequestDelayHours = 2;
+
     // Kullanım sayaçları (aylık reset)
     @Column(name = "whatsapp_used_this_month", nullable = false)
     private int whatsappUsedThisMonth = 0;
@@ -72,6 +79,8 @@ public class NotificationSettings extends BaseEntity {
         this.reminderHoursBefore = builder.reminderHoursBefore;
         this.secondReminderEnabled = builder.secondReminderEnabled;
         this.secondReminderHoursBefore = builder.secondReminderHoursBefore;
+        this.reviewRequestEnabled = builder.reviewRequestEnabled;
+        this.reviewRequestDelayHours = builder.reviewRequestDelayHours;
     }
 
     public static Builder builder() {
@@ -100,6 +109,11 @@ public class NotificationSettings extends BaseEntity {
         this.reminderHoursBefore = hoursBefore;
         this.secondReminderEnabled = secondEnabled;
         this.secondReminderHoursBefore = secondHoursBefore;
+    }
+
+    public void updateReviewRequestSettings(boolean enabled, int delayHours) {
+        this.reviewRequestEnabled = enabled;
+        this.reviewRequestDelayHours = delayHours;
     }
 
     public void incrementWhatsappUsage() {
@@ -158,6 +172,14 @@ public class NotificationSettings extends BaseEntity {
         return secondReminderHoursBefore;
     }
 
+    public boolean isReviewRequestEnabled() {
+        return reviewRequestEnabled;
+    }
+
+    public int getReviewRequestDelayHours() {
+        return reviewRequestDelayHours;
+    }
+
     public int getWhatsappUsedThisMonth() {
         return whatsappUsedThisMonth;
     }
@@ -185,6 +207,8 @@ public class NotificationSettings extends BaseEntity {
         private int reminderHoursBefore = 24;
         private boolean secondReminderEnabled = false;
         private Integer secondReminderHoursBefore = 2;
+        private boolean reviewRequestEnabled = true;
+        private int reviewRequestDelayHours = 2;
 
         public Builder businessId(Long businessId) {
             this.businessId = businessId;
@@ -233,6 +257,16 @@ public class NotificationSettings extends BaseEntity {
 
         public Builder secondReminderHoursBefore(Integer secondReminderHoursBefore) {
             this.secondReminderHoursBefore = secondReminderHoursBefore;
+            return this;
+        }
+
+        public Builder reviewRequestEnabled(boolean reviewRequestEnabled) {
+            this.reviewRequestEnabled = reviewRequestEnabled;
+            return this;
+        }
+
+        public Builder reviewRequestDelayHours(int reviewRequestDelayHours) {
+            this.reviewRequestDelayHours = reviewRequestDelayHours;
             return this;
         }
 

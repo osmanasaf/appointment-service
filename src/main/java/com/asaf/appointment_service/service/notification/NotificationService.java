@@ -163,6 +163,25 @@ public class NotificationService {
         sendAndLog(businessId, null, customer, NotificationType.WAITLIST_SLOT_OFFER, messageRequest);
     }
 
+    /**
+     * Tamamlanan randevu için müşteriye değerlendirme (review) linki gönderir.
+     */
+    @Transactional
+    public void sendReviewRequest(Appointment appointment, String reviewLink) {
+        Customer customer = customerService.findByIdOrThrow(appointment.getCustomerId());
+        ServiceDefinition service = serviceDefinitionService.findByIdOrThrow(appointment.getServiceId());
+
+        WhatsAppMessageRequest messageRequest = WhatsAppMessageRequest.reviewRequest(
+            customer.getFormattedPhoneNumber(),
+            customer.getName(),
+            service.getName(),
+            reviewLink
+        );
+
+        sendAndLog(appointment.getBusinessId(), appointment.getId(), customer,
+            NotificationType.REVIEW_REQUEST, messageRequest);
+    }
+
     @Transactional
     public void retryFailedNotifications() {
         List<NotificationLog> failedLogs = notificationLogRepository

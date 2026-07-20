@@ -27,6 +27,7 @@ import com.asaf.appointment_service.service.customer.CustomerService;
 import com.asaf.appointment_service.service.employee.EmployeeCapabilityService;
 import com.asaf.appointment_service.service.employee.EmployeeService;
 import com.asaf.appointment_service.service.otp.PublicOtpService;
+import com.asaf.appointment_service.service.review.ReviewService;
 import com.asaf.appointment_service.service.service.ServiceDefinitionService;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
@@ -55,6 +56,7 @@ public class PublicAppointmentController {
     private final AppointmentService appointmentService;
     private final AvailabilityService availabilityService;
     private final PublicOtpService publicOtpService;
+    private final ReviewService reviewService;
 
     public PublicAppointmentController(BusinessService businessService,
                                         EmployeeService employeeService,
@@ -63,7 +65,8 @@ public class PublicAppointmentController {
                                         CustomerService customerService,
                                         AppointmentService appointmentService,
                                         AvailabilityService availabilityService,
-                                        PublicOtpService publicOtpService) {
+                                        PublicOtpService publicOtpService,
+                                        ReviewService reviewService) {
         this.businessService = businessService;
         this.employeeService = employeeService;
         this.capabilityService = capabilityService;
@@ -72,11 +75,15 @@ public class PublicAppointmentController {
         this.appointmentService = appointmentService;
         this.availabilityService = availabilityService;
         this.publicOtpService = publicOtpService;
+        this.reviewService = reviewService;
     }
     @GetMapping("/businesses/{slug}")
     public ResponseEntity<ApiResponse<BusinessResponse>> getBusinessBySlug(@PathVariable String slug) {
         Business business = businessService.findBySlug(slug);
-        return ResponseEntity.ok(ApiResponse.success(BusinessMapper.toResponse(business)));
+        Double averageRating = reviewService.getAverageRating(business.getId());
+        long reviewCount = reviewService.getPublishedCount(business.getId());
+        return ResponseEntity.ok(
+            ApiResponse.success(BusinessMapper.toResponse(business, averageRating, (int) reviewCount)));
     }
     @GetMapping("/businesses/{slug}/employees")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getActiveEmployees(@PathVariable String slug) {

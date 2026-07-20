@@ -4,5 +4,7 @@ public enum PublicActionTokenType {
     /** subjectId = appointmentId */
     RESCHEDULE,
     /** subjectId = waitlistEntryId */
-    WAITLIST_OFFER
+    WAITLIST_OFFER,
+    /** subjectId = appointmentId */
+    REVIEW
 }

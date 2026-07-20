@@ -66,6 +66,22 @@ class PublicActionTokenServiceTest {
     }
 
     @Test
+    void should_saveTokenWithReviewTypeAnd30DayExpiry_when_issueReviewTokenCalled() {
+        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        PublicActionToken result = tokenService.issueReviewToken(1L, 300L);
+
+        ArgumentCaptor<PublicActionToken> captor = ArgumentCaptor.forClass(PublicActionToken.class);
+        verify(repository).save(captor.capture());
+        PublicActionToken saved = captor.getValue();
+        assertThat(saved.getSubjectId()).isEqualTo(300L);
+        assertThat(saved.getType()).isEqualTo(PublicActionTokenType.REVIEW);
+        assertThat(saved.getExpiresAt()).isAfter(Instant.now().plus(29, ChronoUnit.DAYS));
+        assertThat(saved.getExpiresAt()).isBefore(Instant.now().plus(31, ChronoUnit.DAYS));
+        assertThat(result).isSameAs(saved);
+    }
+
+    @Test
     void should_returnToken_when_validateCalledWithValidPendingToken() {
         PublicActionToken token = validToken();
         when(repository.findByToken("tok")).thenReturn(Optional.of(token));
