@@ -9,6 +9,7 @@ import com.asaf.appointment_service.exception.appointment.CustomerDayLimitExceed
 import com.asaf.appointment_service.exception.appointment.SlotNotAvailableException;
 import com.asaf.appointment_service.exception.employee.EmployeeOnLeaveException;
 import com.asaf.appointment_service.repository.appointment.AppointmentRepository;
+import com.asaf.appointment_service.repository.calendar.EmployeeExternalBusyRepository;
 import com.asaf.appointment_service.repository.employee.EmployeeLeaveRepository;
 import com.asaf.appointment_service.service.employee.EmployeeCapabilityService;
 import com.asaf.appointment_service.service.employee.EmployeeScheduleService;
@@ -26,15 +27,18 @@ public class AppointmentValidationService {
     private final EmployeeCapabilityService employeeCapabilityService;
     private final EmployeeScheduleService employeeScheduleService;
     private final EmployeeLeaveRepository employeeLeaveRepository;
+    private final EmployeeExternalBusyRepository externalBusyRepository;
 
     public AppointmentValidationService(AppointmentRepository appointmentRepository,
                                         EmployeeCapabilityService employeeCapabilityService,
                                         EmployeeScheduleService employeeScheduleService,
-                                        EmployeeLeaveRepository employeeLeaveRepository) {
+                                        EmployeeLeaveRepository employeeLeaveRepository,
+                                        EmployeeExternalBusyRepository externalBusyRepository) {
         this.appointmentRepository = appointmentRepository;
         this.employeeCapabilityService = employeeCapabilityService;
         this.employeeScheduleService = employeeScheduleService;
         this.employeeLeaveRepository = employeeLeaveRepository;
+        this.externalBusyRepository = externalBusyRepository;
     }
 
     public void validateCapability(Long employeeId, Long serviceId) {
@@ -52,6 +56,7 @@ public class AppointmentValidationService {
         if (!conflicts.isEmpty()) {
             throw new SlotNotAvailableException(AppointmentErrorMessages.SLOT_NOT_AVAILABLE);
         }
+        validateNoExternalBusyOverlap(employeeId, start, end);
         validateEmployeeNotOnLeave(employeeId, start);
         validateEmployeeSchedule(employeeId, start);
     }
@@ -68,6 +73,7 @@ public class AppointmentValidationService {
         if (!conflicts.isEmpty()) {
             throw new SlotNotAvailableException(AppointmentErrorMessages.SLOT_NOT_AVAILABLE);
         }
+        validateNoExternalBusyOverlap(employeeId, start, end);
         validateEmployeeNotOnLeave(employeeId, start);
         validateEmployeeSchedule(employeeId, start);
     }
@@ -129,6 +135,16 @@ public class AppointmentValidationService {
         if (date.isAfter(maxDate)) {
             throw new ValidationException("MAX_ADVANCE_BOOKING_EXCEEDED",
                 "En fazla %d gün sonrasına randevu alınabilir".formatted(business.getMaxAdvanceBookingDays()));
+        }
+    }
+
+    /**
+     * Çalışanın bağlı olduğu Google Takvimi'nden çekilen kişisel dolu bloklarla çakışma
+     * kontrolü (bkz. Modül 5.2 içe akış senkronu). Bağlantı yoksa liste boş döner, etkisiz.
+     */
+    private void validateNoExternalBusyOverlap(Long employeeId, LocalDateTime start, LocalDateTime end) {
+        if (!externalBusyRepository.findOverlapping(employeeId, start, end).isEmpty()) {
+            throw new SlotNotAvailableException(AppointmentErrorMessages.SLOT_NOT_AVAILABLE);
         }
     }
 

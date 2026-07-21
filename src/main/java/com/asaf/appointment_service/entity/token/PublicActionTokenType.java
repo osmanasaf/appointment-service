@@ -8,5 +8,7 @@ public enum PublicActionTokenType {
     /** subjectId = appointmentId */
     REVIEW,
     /** subjectId = appointmentId; tekrar tekrar indirilebilir olması için hiç consume edilmez */
-    CALENDAR_ICS
+    CALENDAR_ICS,
+    /** subjectId = employeeId; Google OAuth "state" parametresi olarak kullanılır, tek kullanımlık */
+    GOOGLE_OAUTH_STATE
 }

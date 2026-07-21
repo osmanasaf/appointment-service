@@ -4,10 +4,12 @@ import com.asaf.appointment_service.dto.appointment.AvailableSlotResponse;
 import com.asaf.appointment_service.entity.appointment.Appointment;
 import com.asaf.appointment_service.entity.business.Business;
 import com.asaf.appointment_service.entity.business.BusinessWorkingHours;
+import com.asaf.appointment_service.entity.calendar.EmployeeExternalBusy;
 import com.asaf.appointment_service.entity.employee.EmployeeServiceCapability;
 import com.asaf.appointment_service.entity.service.ServiceDefinition;
 import com.asaf.appointment_service.repository.appointment.AppointmentRepository;
 import com.asaf.appointment_service.repository.business.BusinessWorkingHoursRepository;
+import com.asaf.appointment_service.repository.calendar.EmployeeExternalBusyRepository;
 import com.asaf.appointment_service.service.business.BusinessService;
 import com.asaf.appointment_service.service.employee.EmployeeCapabilityService;
 import com.asaf.appointment_service.service.employee.EmployeeScheduleService;
@@ -36,6 +38,7 @@ public class AvailabilityService {
     private final AppointmentRepository appointmentRepository;
     private final BusinessWorkingHoursRepository workingHoursRepository;
     private final AppointmentValidationService validationService;
+    private final EmployeeExternalBusyRepository externalBusyRepository;
 
     public AvailabilityService(BusinessService businessService,
                                EmployeeService employeeService,
@@ -44,7 +47,8 @@ public class AvailabilityService {
                                ServiceDefinitionService serviceDefinitionService,
                                AppointmentRepository appointmentRepository,
                                BusinessWorkingHoursRepository workingHoursRepository,
-                               AppointmentValidationService validationService) {
+                               AppointmentValidationService validationService,
+                               EmployeeExternalBusyRepository externalBusyRepository) {
         this.businessService = businessService;
         this.employeeService = employeeService;
         this.capabilityService = capabilityService;
@@ -53,6 +57,7 @@ public class AvailabilityService {
         this.appointmentRepository = appointmentRepository;
         this.workingHoursRepository = workingHoursRepository;
         this.validationService = validationService;
+        this.externalBusyRepository = externalBusyRepository;
     }
 
     @Transactional(readOnly = true)
@@ -72,7 +77,9 @@ public class AvailabilityService {
             int duration = capabilityService.effectiveDuration(employeeId, serviceId, service.totalDurationMinutes());
             List<Appointment> existing = appointmentRepository
                 .findActiveByEmployeeAndDateRange(employeeId, dayStart, dayEnd);
-            return buildSlotsForEmployee(businessId, employeeId, date, duration, business, service, existing);
+            List<EmployeeExternalBusy> externalBusy = externalBusyRepository
+                .findOverlapping(employeeId, dayStart, dayEnd);
+            return buildSlotsForEmployee(businessId, employeeId, date, duration, business, service, existing, externalBusy);
         }
 
         return buildSlotsForAnyCapableEmployee(businessId, serviceId, date, business, service);
@@ -92,6 +99,9 @@ public class AvailabilityService {
         List<Appointment> existingInRange = employeeId != null
             ? appointmentRepository.findActiveByEmployeeAndDateRange(employeeId, rangeStart, rangeEnd)
             : List.of();
+        List<EmployeeExternalBusy> externalBusyInRange = employeeId != null
+            ? externalBusyRepository.findOverlapping(employeeId, rangeStart, rangeEnd)
+            : List.of();
 
         List<LocalDate> availableDates = new ArrayList<>();
         for (LocalDate date = today; !date.isAfter(maxDate); date = date.plusDays(1)) {
@@ -101,7 +111,9 @@ public class AvailabilityService {
             LocalDateTime dayStart = date.atStartOfDay();
             LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
             List<Appointment> dayAppointments = filterByDay(existingInRange, dayStart, dayEnd);
-            if (hasAvailableSlot(businessId, employeeId, serviceId, date, business, service, dayAppointments)) {
+            List<EmployeeExternalBusy> dayExternalBusy = filterBusyByDay(externalBusyInRange, dayStart, dayEnd);
+            if (hasAvailableSlot(businessId, employeeId, serviceId, date, business, service,
+                    dayAppointments, dayExternalBusy)) {
                 availableDates.add(date);
             }
         }
@@ -123,13 +135,20 @@ public class AvailabilityService {
             .toList();
     }
 
+    private List<EmployeeExternalBusy> filterBusyByDay(List<EmployeeExternalBusy> busyBlocks,
+                                                         LocalDateTime dayStart, LocalDateTime dayEnd) {
+        return busyBlocks.stream()
+            .filter(b -> !b.getStartAt().isBefore(dayStart) && b.getStartAt().isBefore(dayEnd))
+            .toList();
+    }
+
     private boolean hasAvailableSlot(Long businessId, Long employeeId, Long serviceId,
                                       LocalDate date, Business business, ServiceDefinition service,
-                                      List<Appointment> dayAppointments) {
+                                      List<Appointment> dayAppointments, List<EmployeeExternalBusy> dayExternalBusy) {
         if (employeeId != null) {
             int duration = capabilityService.effectiveDuration(employeeId, serviceId, service.totalDurationMinutes());
             return !buildSlotsForEmployee(businessId, employeeId, date, duration, business, service,
-                dayAppointments).isEmpty();
+                dayAppointments, dayExternalBusy).isEmpty();
         }
         return !buildSlotsForAnyCapableEmployee(businessId, serviceId, date, business, service).isEmpty();
     }
@@ -153,8 +172,11 @@ public class AvailabilityService {
             LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
             List<Appointment> existing = appointmentRepository
                 .findActiveByEmployeeAndDateRange(cap.getEmployeeId(), dayStart, dayEnd);
+            List<EmployeeExternalBusy> externalBusy = externalBusyRepository
+                .findOverlapping(cap.getEmployeeId(), dayStart, dayEnd);
             List<AvailableSlotResponse> employeeSlots =
-                buildSlotsForEmployee(businessId, cap.getEmployeeId(), date, duration, business, service, existing);
+                buildSlotsForEmployee(businessId, cap.getEmployeeId(), date, duration, business, service,
+                    existing, externalBusy);
             for (AvailableSlotResponse slot : employeeSlots) {
                 if (seenStarts.add(slot.startTime())) {
                     merged.add(slot);
@@ -168,7 +190,8 @@ public class AvailabilityService {
     private List<AvailableSlotResponse> buildSlotsForEmployee(Long businessId, Long employeeId, LocalDate date,
                                                                int totalDuration, Business business,
                                                                ServiceDefinition service,
-                                                               List<Appointment> existingAppointments) {
+                                                               List<Appointment> existingAppointments,
+                                                               List<EmployeeExternalBusy> externalBusy) {
         BusinessWorkingHours workingHours = workingHoursRepository
             .findByBusinessIdAndDayOfWeek(businessId, date.getDayOfWeek())
             .orElse(null);
@@ -196,7 +219,7 @@ public class AvailabilityService {
 
             if (!start.isBefore(now)
                     && !isSlotInBreakTime(currentTime, currentTime.plusMinutes(totalDuration), workingHours)
-                    && isSlotFree(start, end, existingAppointments)) {
+                    && isSlotFree(start, end, existingAppointments, externalBusy)) {
                 boolean instantConfirm = business.isAutoConfirm() && !service.isRequiresConfirmation();
                 slots.add(instantConfirm
                     ? AvailableSlotResponse.instant(start, end, totalDuration)
@@ -209,9 +232,13 @@ public class AvailabilityService {
         return slots;
     }
 
-    private boolean isSlotFree(LocalDateTime start, LocalDateTime end, List<Appointment> existing) {
-        return existing.stream().noneMatch(a ->
+    private boolean isSlotFree(LocalDateTime start, LocalDateTime end, List<Appointment> existing,
+                                List<EmployeeExternalBusy> externalBusy) {
+        boolean freeOfAppointments = existing.stream().noneMatch(a ->
             a.getScheduledAt().isBefore(end) && a.getEndAt().isAfter(start));
+        boolean freeOfExternalBusy = externalBusy.stream().noneMatch(b ->
+            b.getStartAt().isBefore(end) && b.getEndAt().isAfter(start));
+        return freeOfAppointments && freeOfExternalBusy;
     }
 
     private LocalTime resolveEmployeeStartTime(Long employeeId, LocalDate date,

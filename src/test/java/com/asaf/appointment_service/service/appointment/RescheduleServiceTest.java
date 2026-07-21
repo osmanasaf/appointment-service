@@ -30,6 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -109,11 +110,24 @@ class RescheduleServiceTest {
         verify(tokenService).consume(token);
         verify(notificationService).sendRescheduleConfirmation(result);
 
-        org.mockito.ArgumentCaptor<com.asaf.appointment_service.domain.event.SlotFreedEvent> eventCaptor =
-            org.mockito.ArgumentCaptor.forClass(com.asaf.appointment_service.domain.event.SlotFreedEvent.class);
-        verify(eventPublisher).publishEvent(eventCaptor.capture());
-        assertThat(eventCaptor.getValue().employeeId()).isEqualTo(originalEmployeeId);
-        assertThat(eventCaptor.getValue().scheduledAt()).isEqualTo(originalScheduledAt);
+        org.mockito.ArgumentCaptor<Object> eventCaptor = org.mockito.ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, times(2)).publishEvent(eventCaptor.capture());
+
+        com.asaf.appointment_service.domain.event.SlotFreedEvent slotFreedEvent = eventCaptor.getAllValues().stream()
+            .filter(com.asaf.appointment_service.domain.event.SlotFreedEvent.class::isInstance)
+            .map(com.asaf.appointment_service.domain.event.SlotFreedEvent.class::cast)
+            .findFirst().orElseThrow();
+        assertThat(slotFreedEvent.employeeId()).isEqualTo(originalEmployeeId);
+        assertThat(slotFreedEvent.scheduledAt()).isEqualTo(originalScheduledAt);
+
+        com.asaf.appointment_service.domain.event.AppointmentRescheduledEvent rescheduledEvent =
+            eventCaptor.getAllValues().stream()
+                .filter(com.asaf.appointment_service.domain.event.AppointmentRescheduledEvent.class::isInstance)
+                .map(com.asaf.appointment_service.domain.event.AppointmentRescheduledEvent.class::cast)
+                .findFirst().orElseThrow();
+        assertThat(rescheduledEvent.oldEmployeeId()).isEqualTo(originalEmployeeId);
+        assertThat(rescheduledEvent.newEmployeeId()).isEqualTo(5L);
+        assertThat(rescheduledEvent.newScheduledAt()).isEqualTo(newStart);
     }
 
     @Test

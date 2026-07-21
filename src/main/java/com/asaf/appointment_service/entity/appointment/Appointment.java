@@ -80,6 +80,12 @@ public class Appointment extends BaseEntity {
     @Column(name = "package_session_id")
     private Long packageSessionId;
 
+    @Column(name = "google_event_id")
+    private String googleEventId;
+
+    @Column(name = "google_calendar_synced_at")
+    private LocalDateTime googleCalendarSyncedAt;
+
     protected Appointment() {}
 
     private Appointment(Builder builder) {
@@ -137,6 +143,15 @@ public class Appointment extends BaseEntity {
         this.status = AppointmentStatus.RISKY;
         this.risky = true;
         this.riskReason = reason;
+    }
+
+    public void linkGoogleEvent(String googleEventId) {
+        this.googleEventId = googleEventId;
+        this.googleCalendarSyncedAt = LocalDateTime.now();
+    }
+
+    public void unlinkGoogleEvent() {
+        this.googleEventId = null;
     }
 
     public void requestReschedule(String reason) {
@@ -292,6 +307,14 @@ public class Appointment extends BaseEntity {
 
     public void setPackageSessionId(Long packageSessionId) {
         this.packageSessionId = packageSessionId;
+    }
+
+    public String getGoogleEventId() {
+        return googleEventId;
+    }
+
+    public LocalDateTime getGoogleCalendarSyncedAt() {
+        return googleCalendarSyncedAt;
     }
 
     public static class Builder {

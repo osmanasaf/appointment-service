@@ -17,6 +17,7 @@ public class PublicActionTokenService {
     private static final int WAITLIST_OFFER_TOKEN_VALID_HOURS = 2;
     private static final int REVIEW_TOKEN_VALID_HOURS = 24 * 30;
     private static final int CALENDAR_ICS_TOKEN_VALID_HOURS = 24 * 365;
+    private static final int GOOGLE_OAUTH_STATE_TOKEN_VALID_MINUTES = 15;
 
     private final PublicActionTokenRepository repository;
 
@@ -50,6 +51,23 @@ public class PublicActionTokenService {
             .filter(PublicActionToken::isValid)
             .orElseGet(() -> issue(businessId, appointmentId, PublicActionTokenType.CALENDAR_ICS,
                 CALENDAR_ICS_TOKEN_VALID_HOURS));
+    }
+
+    /**
+     * Google OAuth "state" parametresi olarak kullanılan, kısa ömürlü tek kullanımlık token.
+     * subjectId = employeeId; businessId, callback'te sahte businessId/employeeId çifti
+     * gönderilmesini önlemek için token'ın kendisinden okunur, istemciden tekrar alınmaz.
+     */
+    @Transactional
+    public PublicActionToken issueGoogleOauthStateToken(Long businessId, Long employeeId) {
+        PublicActionToken token = PublicActionToken.builder()
+            .businessId(businessId)
+            .subjectId(employeeId)
+            .type(PublicActionTokenType.GOOGLE_OAUTH_STATE)
+            .token(PublicActionToken.generateToken())
+            .expiresAt(Instant.now().plus(GOOGLE_OAUTH_STATE_TOKEN_VALID_MINUTES, ChronoUnit.MINUTES))
+            .build();
+        return repository.save(token);
     }
 
     @Transactional(readOnly = true)

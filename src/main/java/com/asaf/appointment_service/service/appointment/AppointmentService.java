@@ -21,6 +21,7 @@ import com.asaf.appointment_service.service.customer.PackageSessionService;
 import com.asaf.appointment_service.service.employee.EmployeeService;
 import com.asaf.appointment_service.service.service.ServiceDefinitionService;
 import com.asaf.appointment_service.domain.event.AppointmentCreated;
+import com.asaf.appointment_service.domain.event.AppointmentRescheduledEvent;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -138,6 +139,7 @@ public class AppointmentService extends BaseService<Appointment, Long, Appointme
             unassignPackageSession(appointmentId);
             appointment = findByIdOrThrow(appointmentId);
         }
+        Long oldEmployeeId = appointment.getEmployeeId();
         appointment.applyStaffBookingUpdate(
             request.employeeId(),
             request.serviceId(),
@@ -147,6 +149,9 @@ public class AppointmentService extends BaseService<Appointment, Long, Appointme
             request.notes(),
             request.source());
         Appointment saved = repository.save(appointment);
+        eventPublisher.publishEvent(new AppointmentRescheduledEvent(
+            saved.getId(), saved.getBusinessId(), oldEmployeeId, saved.getEmployeeId(),
+            saved.getScheduledAt(), saved.getEndAt()));
         log.info("Staff appointment updated: appointmentId={}, businessId={}", appointmentId, businessId);
         return saved;
     }

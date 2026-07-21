@@ -1,6 +1,7 @@
 package com.asaf.appointment_service.service.appointment;
 
 import com.asaf.appointment_service.common.exception.BusinessException;
+import com.asaf.appointment_service.domain.event.AppointmentRescheduledEvent;
 import com.asaf.appointment_service.domain.event.SlotFreedEvent;
 import com.asaf.appointment_service.dto.appointment.RescheduleContextResponse;
 import com.asaf.appointment_service.entity.appointment.Appointment;
@@ -101,6 +102,9 @@ public class RescheduleService {
         notifyCustomerSafely(saved);
         eventPublisher.publishEvent(new SlotFreedEvent(
             saved.getBusinessId(), freedEmployeeId, freedServiceId, freedScheduledAt, freedEndAt));
+        eventPublisher.publishEvent(new AppointmentRescheduledEvent(
+            saved.getId(), saved.getBusinessId(), freedEmployeeId, saved.getEmployeeId(),
+            saved.getScheduledAt(), saved.getEndAt()));
 
         return saved;
     }

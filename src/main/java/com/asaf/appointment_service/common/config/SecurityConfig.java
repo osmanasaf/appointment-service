@@ -86,6 +86,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/webhooks/**").permitAll()
                 .requestMatchers("/api/v1/test/**").permitAll()
                 .requestMatchers("/api/v1/businesses/categories", "/api/v1/businesses/categories/").permitAll()
+                .requestMatchers("/api/v1/integrations/google/callback").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .anyRequest().authenticated()
             )

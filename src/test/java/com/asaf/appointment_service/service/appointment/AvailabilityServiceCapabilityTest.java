@@ -11,6 +11,7 @@ import com.asaf.appointment_service.entity.service.ServiceDefinition;
 import com.asaf.appointment_service.exception.employee.EmployeeCapabilityNotFoundException;
 import com.asaf.appointment_service.repository.appointment.AppointmentRepository;
 import com.asaf.appointment_service.repository.business.BusinessWorkingHoursRepository;
+import com.asaf.appointment_service.repository.calendar.EmployeeExternalBusyRepository;
 import com.asaf.appointment_service.service.business.BusinessService;
 import com.asaf.appointment_service.service.employee.EmployeeCapabilityService;
 import com.asaf.appointment_service.service.employee.EmployeeScheduleService;
@@ -56,6 +57,8 @@ class AvailabilityServiceCapabilityTest {
     private BusinessWorkingHoursRepository workingHoursRepository;
     @Mock
     private AppointmentValidationService validationService;
+    @Mock
+    private EmployeeExternalBusyRepository externalBusyRepository;
 
     @InjectMocks
     private AvailabilityService availabilityService;
@@ -69,6 +72,8 @@ class AvailabilityServiceCapabilityTest {
         // Çalışana özel takvim tanımlı değil → işletme saatleri kullanılır
         lenient().when(scheduleService.getScheduleForDay(anyLong(), any(DayOfWeek.class)))
             .thenReturn(Optional.empty());
+        lenient().when(externalBusyRepository.findOverlapping(anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
+            .thenReturn(List.of());
     }
 
     private static LocalDate nextOpenBookingDay() {
