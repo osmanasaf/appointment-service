@@ -1,4 +1,4 @@
 ALTER TABLE businesses
-    ADD COLUMN category VARCHAR(50) NOT NULL DEFAULT 'OTHER';
+    ADD COLUMN IF NOT EXISTS category VARCHAR(50) NOT NULL DEFAULT 'OTHER';
 
-CREATE INDEX idx_businesses_category ON businesses (category);
+CREATE INDEX IF NOT EXISTS idx_businesses_category ON businesses (category);
