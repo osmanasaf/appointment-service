@@ -100,6 +100,12 @@
 		</dependency>
 
 		<!-- Flyway — veritabanı migration yönetimi -->
+		<!-- Spring Boot 4.0'da Flyway auto-configuration ana autoconfigure jar'ından
+		     ayrı bir modüle taşındı; bu olmadan spring.flyway.* ayarları sessizce etkisiz kalır. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-flyway</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-core</artifactId>
