@@ -6,6 +6,11 @@ public record RecurringPaymentRequest(
     int paymentAmount,
     String currency,
     String userIp,
+    String userName,
+    String userAddress,
+    String userPhone,
+    String merchantOkUrl,
+    String merchantFailUrl,
     String utoken,
     String ctoken,
     int testMode

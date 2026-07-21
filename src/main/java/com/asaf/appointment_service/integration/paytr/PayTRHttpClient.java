@@ -26,6 +26,8 @@ public class PayTRHttpClient implements PayTRClient {
     private static final String IFRAME_TOKEN_PATH = "/odeme/api/get-token";
     private static final String PAYMENT_PATH = "/odeme";
     private static final String CONTENT_TYPE_FORM = "application/x-www-form-urlencoded";
+    private static final int RECURRING_INSTALLMENT_COUNT = 0;
+    private static final int RECURRING_NON_3D = 1;
 
     private final PayTRProperties properties;
     private final PayTRHashService hashService;
@@ -89,10 +91,10 @@ public class PayTRHttpClient implements PayTRClient {
     @Override
     public RecurringPaymentResponse chargeRecurring(RecurringPaymentRequest request) {
         int testMode = properties.testMode() ? 1 : 0;
-        String paytrToken = hashService.computeRecurringHash(
+        String paytrToken = hashService.computeIFrameHash(
                 request.userIp(), request.merchantOid(), request.email(),
-                request.paymentAmount(), request.currency(),
-                testMode, request.utoken(), request.ctoken()
+                request.paymentAmount(), "card", RECURRING_INSTALLMENT_COUNT,
+                request.currency(), testMode, RECURRING_NON_3D
         );
 
         Map<String, String> params = new LinkedHashMap<>();
@@ -103,11 +105,16 @@ public class PayTRHttpClient implements PayTRClient {
         params.put("payment_amount", String.valueOf(request.paymentAmount()));
         params.put("paytr_token", paytrToken);
         params.put("payment_type", "card");
-        params.put("installment_count", "0");
+        params.put("installment_count", String.valueOf(RECURRING_INSTALLMENT_COUNT));
         params.put("currency", request.currency());
         params.put("test_mode", String.valueOf(testMode));
-        params.put("non_3d", "1");
+        params.put("non_3d", String.valueOf(RECURRING_NON_3D));
         params.put("recurring_payment", "1");
+        params.put("user_name", request.userName());
+        params.put("user_address", request.userAddress());
+        params.put("user_phone", request.userPhone());
+        params.put("merchant_ok_url", request.merchantOkUrl());
+        params.put("merchant_fail_url", request.merchantFailUrl());
         params.put("utoken", request.utoken());
         params.put("ctoken", request.ctoken());
 

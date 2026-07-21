@@ -12,11 +12,14 @@ import org.springframework.stereotype.Service;
 /**
  * PayTR HMAC-SHA256 token hesaplama servisi.
  *
- * iFrame token hash: BASE64(HMAC-SHA256(
+ * Direkt API token hash (iFrame ve kayıtlı kart ile tekrarlayan ödemede aynı formül —
+ * bkz. dev.paytr.com/direkt-api/kart-saklama-api/kayitli-kart-tekrarlayan-odeme):
+ * BASE64(HMAC-SHA256(
  *   merchant_id + user_ip + merchant_oid + email + payment_amount +
- *   payment_type + installment_count + currency + test_mode + non_3d,
- *   merchant_salt
+ *   payment_type + installment_count + currency + test_mode + non_3d + merchant_salt,
+ *   merchant_key
  * ))
+ * utoken/ctoken hash'e dahil edilmez, sadece ayrı form alanı olarak gönderilir.
  *
  * Webhook callback hash doğrulama: BASE64(HMAC-SHA256(
  *   merchant_oid + merchant_salt + status + total_amount,
@@ -52,28 +55,6 @@ public class PayTRHashService {
                 + currency
                 + testMode
                 + non3d
-                + properties.merchantSalt();
-        return computeHmacBase64(hashInput, properties.merchantKey());
-    }
-
-    /**
-     * Kayıtlı kart tekrarlayan ödeme için gönderilecek paytr_token hash'ini hesaplar.
-     */
-    public String computeRecurringHash(String userIp, String merchantOid, String email,
-                                       int paymentAmount, String currency,
-                                       int testMode, String utoken, String ctoken) {
-        String hashInput = properties.merchantId()
-                + userIp
-                + merchantOid
-                + email
-                + paymentAmount
-                + "card"
-                + "0"
-                + currency
-                + testMode
-                + "1"
-                + utoken
-                + ctoken
                 + properties.merchantSalt();
         return computeHmacBase64(hashInput, properties.merchantKey());
     }

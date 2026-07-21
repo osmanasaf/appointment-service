@@ -1,6 +1,7 @@
 package com.asaf.appointment_service.service.payment;
 
 import com.asaf.appointment_service.common.util.MoneyUtil;
+import com.asaf.appointment_service.entity.business.Business;
 import com.asaf.appointment_service.entity.payment.BillingPeriod;
 import com.asaf.appointment_service.entity.payment.PaymentRetry;
 import com.asaf.appointment_service.entity.payment.PaymentTransaction;
@@ -8,10 +9,12 @@ import com.asaf.appointment_service.entity.payment.PaymentTransactionStatus;
 import com.asaf.appointment_service.entity.payment.PaymentType;
 import com.asaf.appointment_service.entity.plan.BusinessSubscription;
 import com.asaf.appointment_service.entity.plan.Plan;
+import com.asaf.appointment_service.integration.email.EmailProperties;
 import com.asaf.appointment_service.integration.paytr.PayTRClient;
 import com.asaf.appointment_service.integration.paytr.config.PayTRProperties;
 import com.asaf.appointment_service.integration.paytr.dto.RecurringPaymentRequest;
 import com.asaf.appointment_service.integration.paytr.dto.RecurringPaymentResponse;
+import com.asaf.appointment_service.repository.business.BusinessRepository;
 import com.asaf.appointment_service.repository.payment.PaymentRetryRepository;
 import com.asaf.appointment_service.repository.payment.StoredCardRepository;
 import com.asaf.appointment_service.repository.payment.PaymentTransactionRepository;
@@ -37,6 +40,10 @@ public class RecurringPaymentScheduler {
     private static final Logger log = LoggerFactory.getLogger(RecurringPaymentScheduler.class);
     private static final String SYSTEM_IP = "127.0.0.1";
     private static final String SYSTEM_EMAIL_SUFFIX = "@system.randevum.pro";
+    private static final String FALLBACK_PHONE = "-";
+    private static final String FALLBACK_ADDRESS = "-";
+    private static final String BILLING_OK_PATH = "/admin/settings/billing/success";
+    private static final String BILLING_FAIL_PATH = "/admin/settings/billing/fail";
 
     private final SubscriptionService subscriptionService;
     private final PayTRClient payTRClient;
@@ -48,6 +55,8 @@ public class RecurringPaymentScheduler {
     private final PlanRepository planRepository;
     private final StoredCardRepository storedCardRepository;
     private final InvoiceService invoiceService;
+    private final BusinessRepository businessRepository;
+    private final EmailProperties emailProperties;
 
     public RecurringPaymentScheduler(SubscriptionService subscriptionService,
                                      PayTRClient payTRClient,
@@ -58,7 +67,9 @@ public class RecurringPaymentScheduler {
                                      BusinessSubscriptionRepository subscriptionRepository,
                                      PlanRepository planRepository,
                                      StoredCardRepository storedCardRepository,
-                                     InvoiceService invoiceService) {
+                                     InvoiceService invoiceService,
+                                     BusinessRepository businessRepository,
+                                     EmailProperties emailProperties) {
         this.subscriptionService = subscriptionService;
         this.payTRClient = payTRClient;
         this.payTRProperties = payTRProperties;
@@ -69,6 +80,8 @@ public class RecurringPaymentScheduler {
         this.planRepository = planRepository;
         this.storedCardRepository = storedCardRepository;
         this.invoiceService = invoiceService;
+        this.businessRepository = businessRepository;
+        this.emailProperties = emailProperties;
     }
 
     @Scheduled(cron = "${paytr.recurring.cron:0 0 3 * * *}", zone = "UTC")
@@ -161,16 +174,22 @@ public class RecurringPaymentScheduler {
 
         String utoken = encryptionService.decrypt(subscription.getPaytrUtokenEncrypted());
         String ctoken = resolveDefaultCtoken(businessId);
+        Business business = businessRepository.findById(businessId).orElse(null);
 
         String merchantOid = "RNV-" + businessId + "-"
                 + UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
 
         RecurringPaymentRequest request = new RecurringPaymentRequest(
                 merchantOid,
-                businessId + SYSTEM_EMAIL_SUFFIX,
+                resolveBusinessEmail(business, businessId),
                 MoneyUtil.toKurus(amount),
                 "TL",
                 SYSTEM_IP,
+                resolveBusinessName(business, businessId),
+                FALLBACK_ADDRESS,
+                resolveBusinessPhone(business),
+                emailProperties.baseUrl() + BILLING_OK_PATH,
+                emailProperties.baseUrl() + BILLING_FAIL_PATH,
                 utoken,
                 ctoken,
                 payTRProperties.testMode() ? 1 : 0
@@ -224,5 +243,24 @@ public class RecurringPaymentScheduler {
         return storedCardRepository.findByBusinessIdAndIsDefaultTrue(businessId)
                 .map(card -> encryptionService.decrypt(card.getCtokenEncrypted()))
                 .orElse(null);
+    }
+
+    private String resolveBusinessEmail(Business business, Long businessId) {
+        if (business != null && business.getEmail() != null && !business.getEmail().isBlank()) {
+            return business.getEmail();
+        }
+        return businessId + SYSTEM_EMAIL_SUFFIX;
+    }
+
+    private String resolveBusinessName(Business business, Long businessId) {
+        if (business != null && business.getName() != null && !business.getName().isBlank()) {
+            return business.getName();
+        }
+        return "Business " + businessId;
+    }
+
+    private String resolveBusinessPhone(Business business) {
+        String phone = business != null ? business.getFormattedPhoneNumber() : null;
+        return phone != null && !phone.isBlank() ? phone : FALLBACK_PHONE;
     }
 }
