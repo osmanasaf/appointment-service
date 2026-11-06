@@ -86,8 +86,8 @@ public class PlanSeeder implements ApplicationRunner {
                         PlanFeature.CUSTOMER_NOTES,
                         PlanFeature.BASIC_REPORTS
                 ))
-                .monthlyPrice(new BigDecimal("690.00"))
-                .yearlyPrice(new BigDecimal("6900.00"))
+                .monthlyPrice(new BigDecimal("490.00"))
+                .yearlyPrice(new BigDecimal("4900.00"))
                 .build();
     }
 
@@ -117,8 +117,8 @@ public class PlanSeeder implements ApplicationRunner {
                         PlanFeature.CALENDAR_SYNC,
                         PlanFeature.MINI_WEBSITE
                 ))
-                .monthlyPrice(new BigDecimal("1190.00"))
-                .yearlyPrice(new BigDecimal("11900.00"))
+                .monthlyPrice(new BigDecimal("690.00"))
+                .yearlyPrice(new BigDecimal("6900.00"))
                 .build();
     }
 
@@ -151,8 +151,8 @@ public class PlanSeeder implements ApplicationRunner {
                         PlanFeature.CALENDAR_SYNC,
                         PlanFeature.MINI_WEBSITE
                 ))
-                .monthlyPrice(new BigDecimal("1990.00"))
-                .yearlyPrice(new BigDecimal("19900.00"))
+                .monthlyPrice(new BigDecimal("1290.00"))
+                .yearlyPrice(new BigDecimal("12900.00"))
                 .build();
     }
 }
